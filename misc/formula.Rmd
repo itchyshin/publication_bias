@@ -1,0 +1,56 @@
+---
+title: "Formula"
+author: "Shinichi Nakagawa"
+date: "28/12/2020"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+### SMD
+
+$$
+\text{SMD}_i = \frac{\bar{\text{X}}_{2i} - \bar{\text{X}}_{1i}}{\sqrt{\frac{(n_{1i}-1)\text{SD}^2_{1i}+(n_{2}-1)\text{SD}^2_{2i}}{n_{1i}+n_{2i}-2}}}
+$$
+
+$$
+\text{Var}({\text{SMD}_i})= \frac{n_{1i}+n_{2}}{n_{1i}n_{2i}}+\frac{\mathrm{SMD}_i^2}{2(n_{1i}+n_{2i})}
+$$
+### lnRR 
+
+
+$$
+\ln{\text{RR}_i} = 
+$$
+
+$$
+\text{Var}(\ln{\text{RR}}) =\frac{\text{SD}^2_{1i}} {n_1i \bar{X}^2_{1i}} + \frac{\text{SD}^2_{2i}} {n_{2i} \bar{X}^2_{2i}}
+$$
+
+
+
+$$
+y_{i} = \beta_{0} + p_{j} + n_{j} + s_{k} + e_{i} + m_{i}
+$$
+
+$$
+z_{i} \sim \mathcal{N}(\beta_\mu, \sigma_p^2\textbf{A}+\sigma_n^2+\sigma_s^2+\sigma_e^2+\sigma_{mi}^2)
+$$
+### meta-regression
+
+$$
+\text{lnRR}_{i} \sim \mathcal{N}(\beta_\mu, \sigma_s^2+\sigma_{mi}^2)
+$$
+
+
+### weight
+
+$$
+\tilde{n}_{i} = \frac{n_{1i}n_{2i}} {n_{1i} + n_{2i}}
+$$
+
+
+$$
+ \frac{1}{\tilde{n}_{i}} = \frac{n_{1i} + n_{2i}}{n_{1i}n_{2i}} =  
+$$
