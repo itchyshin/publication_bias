@@ -144,13 +144,18 @@ y_{i} = \beta_{0} + \beta_{1}se_i  + s_j + u_i + m_i,
 $$
 
 $$
-y_{i} = \beta_{0} + \beta_{1}year_i  + s_j + u_i + m_i,
+y_{i} = \beta_{0} + \beta_{1}year_j  + s_j + u_i + m_i,
 $$
 
 
 $$
 y_{i} = \beta_{0} + \beta_{1}v_i  + s_j + u_i + m_i,
 $$
+
+$$
+y_{i} = \beta_{0} + \beta_{1}se_i + \beta_{2}year_j + \sum^{N_{mod}}_{k = 3}\beta_kx_k + s_j + u_i + m_i,
+$$
+
 
 # Mulitlevel Muskill
 $$
@@ -160,15 +165,18 @@ $$
 $$
 y_{i} = \beta_{0} + \beta_{1}\left(\frac{1}{\tilde{n}_{i}}\right)  + s_j + u_i + m_i,
 $$
+$\sqrt{1/\tilde{n}_{i}}$
+$1/\tilde{n}_{i}$
 
-
-$$
-y_{i} = \beta_{0} + \beta_{1}\sqrt{\frac{1}{\tilde{n}_{i}}} + \beta_{2}year_j + \beta_{3}sex_{i} + \beta_{4}noct_h + a_k + q_k + s_j + u_i + m_i,
-$$
 
 
 $$
-s_{j} \sim \mathcal{N}(0, \sigma_a^2\textbf{A}), u_{i} \sim \mathcal{N}(0, \sigma_q^2), 
+y_{i} = \beta_{0} + \beta_{1}\sqrt{\frac{1}{\tilde{n}_{i}}} + \beta_{2}year_j + \sum^{N_{mod}}_{k = 3}\beta_kx_k + a_h + q_h + s_j + u_i + m_i,
+$$
+
+
+$$
+a_{h} \sim \mathcal{N}(0, \sigma_a^2\textbf{A}), q_{h} \sim \mathcal{N}(0, \sigma_q^2), 
 $$
 
 
