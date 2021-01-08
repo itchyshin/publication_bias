@@ -37,6 +37,22 @@ $$
 $$
 \text{Var}(Zr_i) =\frac{1}{n_i-3},
 $$
+## random-effects model
+
+$$
+y_{i} = \beta_{0} + s_i + m_i,
+$$
+
+$$
+u_{i} \sim \mathcal{N}(0, \sigma_s^2), m_i \sim \mathcal{N}(0, v_i),
+$$
+
+$$
+I^2 = \sigma_s^2 /(\sigma_s^2 + \bar{v}),
+$$
+
+##
+
 
 ### effect sample size (weight)
 
@@ -138,6 +154,19 @@ $$
 resid_{c2i} = y_{i} - (\beta_{0} + \beta_{1}x_{1j} + \beta_{2}x_{2i}+ s_j + u_i),
 $$
 
+$$
+\mathbf{M} = 
+	 \begin{bmatrix}
+  	\sigma_1^2 & \rho\sigma_1\sigma_2 & 0  \\
+  	\rho\sigma_2\sigma_1 & \sigma_2^2  & 0 \\
+  	0 & 0 &\sigma_3^2
+\end{bmatrix}
+$$
+
+$m_i \sim \mathcal{N}(0, \mathbf{M})$
+
+
+
 # Mulitlevel Egger
 $$
 y_{i} = \beta_{0} + \beta_{1}se_i  + s_j + u_i + m_i,
@@ -151,6 +180,7 @@ $$
 $$
 y_{i} = \beta_{0} + \beta_{1}v_i  + s_j + u_i + m_i,
 $$
+
 
 $$
 y_{i} = \beta_{0} + \beta_{1}se_i + \beta_{2}year_j + \sum^{N_{mod}}_{k = 3}\beta_kx_k + s_j + u_i + m_i,
@@ -176,10 +206,23 @@ $$
 
 
 $$
-a_{h} \sim \mathcal{N}(0, \sigma_a^2\textbf{A}), q_{h} \sim \mathcal{N}(0, \sigma_q^2), 
+a_{h} \sim \mathcal{N}(0, \sigma_a^2\textbf{A}), q_{h} \sim \mathcal{N}(0, \sigma_q^2), m_i \sim \mathcal{N}(0, \mathbf{M})
 $$
 
 
 $$
 se^2_i
+$$
+
+## Extras
+
+
+$$
+N_{effect-size} \neq N_{study}
+$$
+
+
+
+$$
+\text{Var}\left( \frac{1}{N_{within}} \sum_{i = 1}^{N_{within}} y_g \right) =  \left( \frac{1}{N_{within}}\right)^2 \left(\sum_{g \neq l}^{N_{within}}{r_{gl}\sqrt{\sigma_g^2\sigma_l^2}} \right)
 $$
