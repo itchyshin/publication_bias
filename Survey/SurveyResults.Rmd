@@ -1,0 +1,73 @@
+---
+title: "Survey of Publication Bias Tests used in 102 EcoEvo Meta-Analysis Publications"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include = F, warning = F, echo = F}
+# tidy
+rm(list=ls())
+# prepare workspace
+knitr::opts_chunk$set(echo = F, warning = F, digits = 3, fig.height = 6, fig.width = 8)
+pacman::p_load(stringr, dplyr, ggplot2)
+
+# loading data
+PB <- read.csv("./Survey/PubBias_tests.csv")
+Item16 <- read.csv("./Survey/Item16PRISMAEcoEvo.csv")
+
+# number of times each test was represented
+PB %>% group_by(PB_reported_in_paper) %>% tally() %>% ungroup %>% arrange(n) %>% 
+  mutate(PB_label = str_wrap(PB_reported_in_paper, width = 35),
+         PB_label = factor(PB_label, levels = unique(PB_label)),
+         percent = paste0(round(n/sum(n)*100,1), "%")) -> Ntests
+
+# ggplot theme
+background.colour = "white"
+tm <- theme(panel.background = element_rect(fill = background.colour),
+            plot.background = element_rect(fill = background.colour),
+            panel.grid = element_blank(),
+            axis.line = element_line(size = 0.75, colour = "black"),
+            axis.ticks = element_line(size = 0.75, colour = "black"),
+            axis.ticks.length = unit(0.1,"cm"),
+            axis.text = element_text(size = 14, colour = "black"),
+            axis.title = element_text(size = 18, colour = "black"),
+          #  axis.title.y = element_text(margin = margin(t=0,r=10,b=0,l=10)),
+            axis.title.y = element_blank(),
+            axis.title.x = element_text(margin = margin(t=10,r=0,b=2,l=0)),
+           # axis.title.x = element_blank(),
+            plot.title = element_text(size = 20, colour = "black", face = "bold", hjust = 0.5, margin = margin(t=2,r=0,b=10,l=0)),
+            legend.background = element_rect(fill = background.colour),
+            legend.title = element_blank(),
+            legend.text = element_text(size = 18, margin = margin(2,0,2,0)),
+            legend.spacing.y = unit(1, "cm"),
+            legend.position = "bottom",
+            text =  element_text(family = "Myriad Pro"),
+            legend.key = element_blank(),
+            plot.margin = unit(c(0.3,1,0.3,0.3), "cm"))
+
+# colour to fill columns
+colcol = "#cad7ed"
+```
+
+## Plot of the types of tests
+
+```{r}
+ggplot(Ntests) + tm +
+  geom_col(aes(PB_label, n), fill = colcol, colour = "#91b0e6") +
+  geom_text(aes(x = PB_label, y = n, label = percent), hjust = -0.1, size = 4) +
+  scale_y_continuous(expand = c(0,0), lim = c(0, 80)) +
+  coord_flip() +
+  labs(x = "type of publication bias test",
+       y = "number of papers reporting publication bias test",
+       title = "frequency of pub bias tests") -> plot_Ntests
+
+ggsave(filename = "./Survey/plot_Ntests.pdf",
+       plot = plot_Ntests,
+       height = 8, width = 12,
+       device = cairo_pdf)
+```
+
