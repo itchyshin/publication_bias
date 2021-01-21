@@ -1,0 +1,116 @@
+---
+title: "Figures3456"
+author: "Shinichi Nakagawa"
+date: "21/01/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# loading pakcages we need
+library(tidyverse)
+library(patchwork)
+library(cowplot)
+library(metafor)
+library(metaviz)
+library(meta)
+```
+
+## Fig 3
+
+### creating data
+
+```{r}
+
+set.seed(7777)
+
+# setting parameters
+n.effect <- 100
+sigma2.s <- 0.05
+beta1 <- 0.2
+# using negative binomial we get good spread of sample size
+n.sample <- rnbinom(n.effect, mu = 30, size = 0.7) + 4
+# variance for Zr
+vi <- 1/(n.sample - 3)
+# moderator x 1
+xi <- rnorm(n.effect)
+
+# there is underling overall effect to r = 0.2 or Zr = 0.203
+Zr <- atanh(0.2) + beta1*xi + rnorm(n.effect, 0, sqrt(sigma2.s)) + rnorm(n.effect, 0, sqrt(vi))
+plot(Zr, 1/sqrt(vi))
+
+dat <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), xi = xi, ni = n.sample)
+
+```
+### Using `metafor`
+
+```{r}
+
+mod_ra <- rma(yi, vi, data = dat)
+mod_fe <- rma(yi, vi, data = dat, method = "FE")
+
+# the mean is from random-effects model
+funnel(mod_ra, yaxis="seinv") # this works with ggdraw(p1)
+funnel(mod_ra, yaxis="sei")
+#funnel(mod_fe, yaxis="sei")
+funnel(dat$yi, dat$vi, ni = dat$ni, yaxis="ni", refline=model$beta)
+
+# contour enhanced plot
+funnel(mod_ra, 
+       yaxis = "sei", 
+       level = c(90, 95, 99), 
+       shade = c("white", "gray55", "gray75"), 
+       refline = 0, legend = TRUE)
+
+# contour enhanced plot
+funnel(mod_ra, 
+       yaxis = "seinv", 
+       level = c(90, 95, 99), 
+       shade = c("white", "gray55", "gray75"), 
+       refline = 0, legend = TRUE)
+
+# the mean annd CI is from fixed effect model
+radial(mod_fe) # this looks a bit too narrow
+
+# meta-regression
+
+mod_re1 <- rma(yi, vi, mod = ~ xi, data = dat)
+
+se_ra <- sqrt(dat$vi + (mod_re1$se[1])^2 + (xi^2*mod_re1$se[2])^2 )
+
+funnel(mod_re1, yaxis="seinv") # this works with ggdraw(p1)
+funnel(mod_re1, yaxis="seinv", type = "rstudent")
+funnel(mod_re1, yaxis="sei")
+
+mod_re2 <- rma(yi, vi, mod = ~ xi, data = dat, method = "FE")
+
+funnel(mod_re2, yaxis="seinv") # this works with ggdraw(p1)
+funnel(mod_re2, yaxis="sei")
+
+```
+
+
+
+### Using `meta`
+```{r}
+mod <- metagen(TE = yi, seTE = sqrt(vi) , data = dat)
+radial(mod, level = 0.95)
+```
+
+
+### Using `metaviz`
+
+```{r}
+help(package = "metaviz")
+viz_funnel(dat$yi, sqrt(dat$vi)
+```
+
+
+
+### combining all together
+
+How to combine base, lattice and ggplot - https://stackoverflow.com/questions/50012553/combining-plots-created-by-r-base-lattice-and-ggplot2
+
+
+
