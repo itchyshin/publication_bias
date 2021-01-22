@@ -15,6 +15,8 @@ library(cowplot)
 library(metafor)
 library(metaviz)
 library(meta)
+library(ggplotify)
+library(grid)
 ```
 
 ## Fig 3
@@ -23,7 +25,7 @@ library(meta)
 
 ```{r}
 
-set.seed(7777)
+set.seed(77777)
 
 # setting parameters
 n.effect <- 100
@@ -42,7 +44,151 @@ plot(Zr, 1/sqrt(vi))
 
 dat <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), xi = xi, ni = n.sample)
 
+rows <- 1:nrow(dat)
+expected <- which(1/dat$sei < 5 & dat$yi < 0.25)
+unexpected <- which(1/dat$sei > 4.7 & dat$yi > 0.25)
+
+col_point <- ifelse(rows %in% expected, "red", ifelse(rows %in% unexpected, "blue", "black"))
+#col_pch <- ifelse(col_point == "black", 16, 21)
 ```
+
+### fig 3
+
+```{r}
+
+#https://stackoverflow.com/questions/50012553/combining-plots-created-by-r-base-lattice-and-ggplot2
+# saving base plot as an object!!! https://www.andrewheiss.com/blog/2016/12/08/save-base-graphics-as-pseudo-objects-in-r/
+
+mod_ra <- rma(yi, vi, data = dat)
+mod_fe <- rma(yi, vi, data = dat, method = "FE")
+
+# margin controlling
+#par(mar=c(5,4,0,0) + 0.1)
+
+#TODO - DL for sunset plot and enhanced counter - making it - 0.01 < p < 0.05 
+
+
+# a
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(dat$yi, dat$vi, ni = dat$ni, yaxis="ni",
+       refline=mod_ra$beta, xlab = "Effect size (Zr)") 
+a <- recordPlot()
+invisible(dev.off())
+
+# b
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_ra, yaxis="seinv", ylim = c(1, 12),
+       ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+b <- recordPlot()
+invisible(dev.off())
+
+
+# c
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_ra, yaxis="sei", ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
+c <- recordPlot()
+invisible(dev.off())
+
+
+# d
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_ra, 
+       yaxis = "sei", 
+       level = c(90, 95), 
+       shade = c("white", "gray55"), 
+       refline = 0, legend = F,  ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
+legend(x = 1, y = 0, legend = c("0.05 < p < 0.10", ""), pch = c(15, 0), col = c("gray55", "white"), bg = "white")
+d <- recordPlot()
+invisible(dev.off())
+
+# e
+e <- viz_sunset(dat[,c("yi", "sei")], 
+           power_contours = "continuous", 
+           contours = T,
+           power_stats = F)
+
+# f 
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_ra, yaxis="seinv", col = col_point,  ylim = c(1, 12),
+       ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+legend(x = 1.4, y = 12, legend = c("expected", "", "unexpected", ""), pch = c(19, 0, 19, 0), col = c("red", "white", "blue", "white"),
+       bg = "white")
+f <- recordPlot()
+invisible(dev.off())
+
+
+# g
+# meta-regression (random-effects model)
+mod_re1 <- rma(yi, vi, mod = ~ xi, data = dat)
+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_re1, yaxis="seinv",  ylim = c(1, 5),
+       ylab = "Precison (1/SE)", xlab = "Standardized residuals (Zr)") 
+g <- recordPlot()
+invisible(dev.off())
+
+# h
+
+#panel_h <- ~galbraith(mod_fe, xlim = c(0, 12.5), zlab = "Z values", xlab = "Precision", center=FALSE) # 
+mod <- metagen(TE = yi, seTE = sqrt(vi) , data = dat)
+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+radial(mod, level = 0.95, pch = 19,  xlab = "Precisoin (1/SE)", ylab = "Z score")
+h <- recordPlot()
+invisible(dev.off())
+
+
+fig3 <- (ggdraw(a) + ggdraw(b)) /(ggdraw(c) + ggdraw(d))/ (plot_grid(e) + ggdraw(f))/ (ggdraw(g) + ggdraw(h)) + plot_annotation(tag_levels = 'a')
+
+
+```
+
+
+### fig 4
+
+```{r}
+# a and b
+# more data for this 100???
+
+# c and d
+# probably 15 data points for cumlative meta-analyses
+
+
+# e and f
+# maybe use the same datasets as Fig 3
+
+
+```
+
+
+
+### fig 5
+
+```{r}
+
+```
+
+### fig 6 
+
+```{r}
+
+```
+
+
 ### Using `metafor`
 
 ```{r}
@@ -50,11 +196,33 @@ dat <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), xi = xi, ni = n.sample)
 mod_ra <- rma(yi, vi, data = dat)
 mod_fe <- rma(yi, vi, data = dat, method = "FE")
 
+panel_a <- funnel(dat$yi, dat$vi, ni = dat$ni, yaxis="ni", refline=mod_ra$beta, xlab = "Effect size (Zr)")
+panel_b <- funnel(mod_ra, yaxis="seinv", ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+panel_c <- funnel(mod_ra, yaxis="sei", ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
+panel_d <- ~funnel(mod_ra, 
+       yaxis = "seinv", 
+       level = c(90, 95, 99), 
+       shade = c("white", "gray55", "gray75"), 
+       refline = 0, legend = TRUE,
+       ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+## testing
 # the mean is from random-effects model
 funnel(mod_ra, yaxis="seinv") # this works with ggdraw(p1)
+
+# saving base plot as an object!!! https://www.andrewheiss.com/blog/2016/12/08/save-base-graphics-as-pseudo-objects-in-r/
+pdf(NULL)
+dev.control(displaylist="enable")
+funnel(mod_ra, yaxis="seinv", col = col_point)
+legend(x = 1.5, y = 12, legend = c("expected", "unexpected"), pch = 19, col = c("red", "blue"),
+       bg = "white")
+panel_f <- recordPlot()
+invisible(dev.off())
+
+ggdraw(panel_f)
+
 funnel(mod_ra, yaxis="sei")
 #funnel(mod_fe, yaxis="sei")
-funnel(dat$yi, dat$vi, ni = dat$ni, yaxis="ni", refline=model$beta)
+funnel(dat$yi, dat$vi, ni = dat$ni, yaxis="ni", refline=mod_ra$beta, xlab = "Effect size (Zr)")
 
 # contour enhanced plot
 funnel(mod_ra, 
@@ -63,6 +231,7 @@ funnel(mod_ra,
        shade = c("white", "gray55", "gray75"), 
        refline = 0, legend = TRUE)
 
+
 # contour enhanced plot
 funnel(mod_ra, 
        yaxis = "seinv", 
@@ -70,8 +239,10 @@ funnel(mod_ra,
        shade = c("white", "gray55", "gray75"), 
        refline = 0, legend = TRUE)
 
+
+
 # the mean annd CI is from fixed effect model
-radial(mod_fe) # this looks a bit too narrow
+radial(mod_fe, xlim = c(0,12.5)) # this looks a bit too narrow
 
 # meta-regression
 
@@ -95,15 +266,52 @@ funnel(mod_re2, yaxis="sei")
 ### Using `meta`
 ```{r}
 mod <- metagen(TE = yi, seTE = sqrt(vi) , data = dat)
-radial(mod, level = 0.95)
+radial(mod, level = 0.95, xlab = "Precisoin (1/SE)", ylab = "Z score")
 ```
 
 
 ### Using `metaviz`
 
 ```{r}
+
+
+panel_e <- viz_sunset(dat[,c("yi", "sei")], 
+           power_contours = "continuous", 
+           method = "DL",
+           contours = T,
+           power_stats = F)
+
+
+## testing
 help(package = "metaviz")
-viz_funnel(dat$yi, sqrt(dat$vi)
+
+# funnel plots
+viz_funnel(dat[,c("yi", "sei")],
+           detail_level = 2)
+
+viz_funnel(dat[,c("yi", "sei")], 
+           y_axi = "precision",
+           method = "DL",
+           sig_contours = F,
+           contours_col = "Greys",
+           xlab = "Zr (Effect size)") +
+        
+
+
+viz_funnel(dat[,c("yi", "sei")], 
+           y_axi = "se",
+           method = "DL",
+           contours_col = "Greys",
+           xlab = "Zr (Effect size)")
+
+#sunset
+viz_sunset(dat[,c("yi", "sei")], 
+           power_contours = "continuous", 
+           method = "DL",
+           contours = T,
+           power_stats = F)
+
+
 ```
 
 
