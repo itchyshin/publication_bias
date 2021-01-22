@@ -67,7 +67,6 @@ mod_fe <- rma(yi, vi, data = dat, method = "FE")
 
 #TODO - DL for sunset plot and enhanced counter - making it - 0.01 < p < 0.05 
 
-
 # a
 pdf(NULL)
 dev.control(displaylist="enable")
