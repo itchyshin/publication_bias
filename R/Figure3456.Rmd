@@ -76,45 +76,17 @@ funnel(dat$yi, dat$vi, ni = dat$ni, yaxis="ni",
 a <- recordPlot()
 invisible(dev.off())
 
+# # b
+# pdf(NULL)
+# dev.control(displaylist="enable")
+# par(mar=c(4,4,0.1,0) + 0.1)
+# funnel(mod_ra, yaxis="seinv", ylim = c(1, 12),
+#        ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+# b <- recordPlot()
+# invisible(dev.off())
+
+
 # b
-pdf(NULL)
-dev.control(displaylist="enable")
-par(mar=c(4,4,0.1,0) + 0.1)
-funnel(mod_ra, yaxis="seinv", ylim = c(1, 12),
-       ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
-b <- recordPlot()
-invisible(dev.off())
-
-
-# c
-pdf(NULL)
-dev.control(displaylist="enable")
-par(mar=c(4,4,0.1,0) + 0.1)
-funnel(mod_ra, yaxis="sei", ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
-c <- recordPlot()
-invisible(dev.off())
-
-
-# d
-pdf(NULL)
-dev.control(displaylist="enable")
-par(mar=c(4,4,0.1,0) + 0.1)
-funnel(mod_ra, 
-       yaxis = "sei", 
-       level = c(90, 95), 
-       shade = c("white", "gray55"), 
-       refline = 0, legend = F,  ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
-legend(x = 1, y = 0, legend = c("0.05 < p < 0.10", ""), pch = c(15, 0), col = c("gray55", "white"), bg = "white")
-d <- recordPlot()
-invisible(dev.off())
-
-# e
-e <- viz_sunset(dat[,c("yi", "sei")], 
-           power_contours = "continuous", 
-           contours = T,
-           power_stats = F)
-
-# f 
 pdf(NULL)
 dev.control(displaylist="enable")
 par(mar=c(4,4,0.1,0) + 0.1)
@@ -122,23 +94,67 @@ funnel(mod_ra, yaxis="seinv", col = col_point,  ylim = c(1, 12),
        ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
 legend(x = 1.4, y = 12, legend = c("expected", "", "unexpected", ""), pch = c(19, 0, 19, 0), col = c("red", "white", "blue", "white"),
        bg = "white")
-f <- recordPlot()
+b <- recordPlot()
 invisible(dev.off())
 
 
-# g
+# c
+# pdf(NULL)
+# dev.control(displaylist="enable")
+# par(mar=c(4,4,0.1,0) + 0.1)
+# funnel(mod_ra, yaxis="sei", ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
+# c <- recordPlot()
+# invisible(dev.off())
+
+
+# c
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_ra, 
+       yaxis = "sei", 
+       level = c(95, 99), 
+       shade = c("white", "gray75"), 
+       refline = 0, legend = F,  ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
+legend(x = 1, y = 0, legend = c("0.01 < p < 0.05", ""), pch = c(15, 0), col = c("gray75", "white"), bg = "white")
+c <- recordPlot()
+invisible(dev.off())
+
+# d
+d <- viz_sunset(dat[,c("yi", "sei")], 
+           power_contours = "continuous", 
+           contours = T,
+           power_stats = F,
+           xlab = "Effect size (Zr)",
+           ylab = "Standard error (SE)")
+
+
+# e
 # meta-regression (random-effects model)
 mod_re1 <- rma(yi, vi, mod = ~ xi, data = dat)
+
+# pdf(NULL)
+# dev.control(displaylist="enable")
+# par(mar=c(4,4,0.1,0) + 0.1)
+# funnel(mod_re1, yaxis="seinv",  ylim = c(1, 5),
+#        ylab = "Precison (1/SE)", xlab = "Standardized residuals (Zr)") 
+# e <- recordPlot()
+# invisible(dev.off())
+
 
 pdf(NULL)
 dev.control(displaylist="enable")
 par(mar=c(4,4,0.1,0) + 0.1)
-funnel(mod_re1, yaxis="seinv",  ylim = c(1, 5),
-       ylab = "Precison (1/SE)", xlab = "Standardized residuals (Zr)") 
-g <- recordPlot()
+funnel(mod_re1, 
+       yaxis = "sei", 
+       level = c(95, 99), 
+       shade = c("white", "gray75"), 
+       refline = 0, legend = F,  ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
+legend(x = 1, y = 0, legend = c("0.01 < p < 0.05", ""), pch = c(15, 0), col = c("gray75", "white"), bg = "white")
+e <- recordPlot()
 invisible(dev.off())
 
-# h
+# f
 
 #panel_h <- ~galbraith(mod_fe, xlim = c(0, 12.5), zlab = "Z values", xlab = "Precision", center=FALSE) # 
 mod <- metagen(TE = yi, seTE = sqrt(vi) , data = dat)
@@ -147,13 +163,13 @@ pdf(NULL)
 dev.control(displaylist="enable")
 par(mar=c(4,4,0.1,0) + 0.1)
 radial(mod, level = 0.95, pch = 19,  xlab = "Precisoin (1/SE)", ylab = "Z score")
-h <- recordPlot()
+f <- recordPlot()
 invisible(dev.off())
 
 
-fig3 <- (ggdraw(a) + ggdraw(b)) /(ggdraw(c) + ggdraw(d))/ (plot_grid(e) + ggdraw(f))/ (ggdraw(g) + ggdraw(h)) + plot_annotation(tag_levels = 'a')
+fig3 <- (ggdraw(a) + ggdraw(b)) /(ggdraw(c) + ggdraw(d))/ (plot_grid(e) + ggdraw(f)) + plot_annotation(tag_levels = 'a')
 
-
+fig3
 ```
 
 
