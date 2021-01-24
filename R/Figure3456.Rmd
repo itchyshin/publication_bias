@@ -96,11 +96,16 @@ par(mar=c(4,4,0.1,0) + 0.1)
 funnel(mod_ra, yaxis="seinv", col = col_point,  
        ylim = c(1, 12), xlim = c(-3, 3),
        ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
-legend(x = 1.4, y = 12, legend = c("expected", "", "unexpected", ""), pch = c(19, 0, 19, 0), col = c("red", "white", "blue", "white"),
-       bg = "white")
+legend(x = 1.4, y = 12, legend = c("expected", "","unexpected"), pch = c(19, 0, 19), col = c("red", "grey83", "blue"),
+       bty = "n")
 b <- recordPlot()
 invisible(dev.off())
 
+# funnel(mod_ra, yaxis="seinv", col = col_point,  
+#        ylim = c(1, 12), xlim = c(-3, 3),
+#        ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+# legend(x = c(1.4, 3.2), y = c(10, 12), legend = c("expected", "", "unexpected", ""), pch = c(19, 0, 19, 0), col = c("red", "white", "blue", "white"),
+#        bg = "white")
 
 # c
 # pdf(NULL)
@@ -119,9 +124,9 @@ funnel(mod_ra,
        yaxis = "sei", 
        xlim = c(-3, 3),
        level = c(95, 99), 
-       shade = c("white", "gray75"), 
+       shade = c("white", "gray55"), 
        refline = 0, legend = F,  ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
-legend(x = 1, y = 0, legend = c("0.01 < p < 0.05", ""), pch = c(15, 0), col = c("gray75", "white"), bg = "white")
+legend(x = 1, y = 0, legend = c("0.01 < p < 0.05"), pch = c(15), col = c("gray55"), bty = "n")
 c <- recordPlot()
 invisible(dev.off())
 
@@ -188,6 +193,7 @@ dat2 <- dat[dat$col_point != "red", ]
 
 mod_ra2 <- rma(yi, vi, data = dat2)
 
+
 regtest(mod_ra2, model = "lm")
 
 # they are the same
@@ -248,10 +254,10 @@ forest(cum_ma, xlab = "Overall estimate (Zr)")
 
 mod_re2 <- rma(yi, vi, mod = ~ year, data = dat3)
 
-p3 <- ggplot(dat3, aes(x = year, y = yi, size = prec)) +
-        geom_point(shape = 21, fill = "grey90") + 
+p4 <- ggplot(dat3, aes(x = year, y = yi, size = prec)) +
          geom_hline(yintercept = 0, linetype = "dashed") + 
         geom_abline(intercept = mod_re2$beta[[1]], slope = mod_re2$beta[[2]]) +
+ geom_point(shape = 21, fill = "grey90") + 
         labs(x = "Publication year", y = "Effect size (Zr)", size ="Precision (1/SE)") + 
         guides(fill = "none", colour = "none") +
   theme(legend.position = c(0, 0.1), legend.justification = c(0, 1)) +
@@ -260,13 +266,16 @@ p3 <- ggplot(dat3, aes(x = year, y = yi, size = prec)) +
   theme(legend.background = element_blank()) +
   theme(axis.text.y = element_text(size = 10, colour = "black", hjust = 0.5, angle = 90))
 
+# funnel
+
+taf <- trimfill(mod_ra2)
 
 ```
 
 
 
 ```{r}
-# a and bdim
+# a and b
 # more data for this 100???
 
 
@@ -280,7 +289,7 @@ p1 <-  ggplot(dat2, aes(prec, zi)) + geom_point() +
 p2 <- ggplot(dat2, aes(sei, yi)) + geom_point() +
        # geom_smooth(method = "lm") + 
         geom_hline(yintercept = 0, linetype = "dashed") + 
-        geom_abline(intercept = egger2$coefficients[[1]], slope = egger2$coefficients[[2]])
+        geom_abline(intercept = egger2$coefficients[[1]], slope = egger2$coefficients[[2]]) +
         labs(x = "Standard error (SE)", 
        y = "Effect size (Zr)")
 
@@ -289,13 +298,55 @@ p2 <- ggplot(dat2, aes(sei, yi)) + geom_point() +
 
 cum <- rma(yi, vi, data=dat3)
 cum_ma <- cumul(cum)
-forest(cum_ma, xlab = "Overall estimate (Zr)")
 
+# p3
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+forest(cum_ma, xlab = "Overall estimate (Zr)")
+p3 <- recordPlot()
+invisible(dev.off())
+
+p4 <- ggplot(dat3, aes(x = year, y = yi, size = prec)) +
+         geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = mod_re2$beta[[1]], slope = mod_re2$beta[[2]]) +
+ geom_point(shape = 21, fill = "grey90") + 
+        labs(x = "Publication year", y = "Effect size (Zr)", size ="Precision (1/SE)") + 
+        guides(fill = "none", colour = "none") +
+  theme(legend.position = c(0, 0.15), legend.justification = c(0, 1)) +
+  theme(legend.direction = "horizontal") +
+  # theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour = "black", hjust = 0.5, angle = 90))
+
+# p5
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(taf, yaxis="seinv", col = col_point,  
+       ylim = c(1, 12), 
+       #xlim = c(-3, 3),
+       ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+p5 <- recordPlot()
+invisible(dev.off())
+
+# p6
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(taf, yaxis="sei", col = col_point,  
+       #xlim = c(-3, 3),
+       ylab = "Standard error (SE)", xlab = "Effect size (Zr)")
+p6 <- recordPlot()
+invisible(dev.off())
 
 
 # e and f
 # maybe use the same datasets as Fig 3
 
+fig4 <- (plot_grid(p1) + plot_grid(p2)) /(ggdraw(p3) + plot_grid(p4))/(plot_grid(p5) + plot_grid(p6)) + plot_annotation(tag_levels = 'a')
+
+fig4
 
 ```
 
@@ -312,6 +363,13 @@ forest(cum_ma, xlab = "Overall estimate (Zr)")
 
 ### fig 6 
 
+#### data creation
+
+```{r}
+
+```
+
+#### plotting
 ```{r}
 
 ```
