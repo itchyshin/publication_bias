@@ -20,7 +20,7 @@ library(grid)
 ```
 
 
-### creating data
+#### creating data
 
 ```{r}
 
@@ -39,7 +39,7 @@ xi <- rnorm(n.effect)
 
 # there is underling overall effect to r = 0.2 or Zr = 0.203
 Zr <- atanh(0.2) + beta1*xi + rnorm(n.effect, 0, sqrt(sigma2.s)) + rnorm(n.effect, 0, sqrt(vi))
-plot(Zr, 1/sqrt(vi))
+qplot(Zr, 1/sqrt(vi))
 
 dat <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), xi = xi, ni = n.sample, prec = 1 / sqrt(vi), wi = 1/vi, zi = Zr/sqrt(vi))
 
@@ -366,6 +366,59 @@ fig4
 #### data creation
 
 ```{r}
+
+# Zr -- 
+
+# 25 studies 
+# data from 1 to 6 
+# 100 effect size
+
+set.seed(777)
+# setting parameters
+n.study  <- 25
+sigma2.s <- 0.05
+sigma2.u <- 0.05
+beta1 <- 0.1
+beta2 <- - 0.05
+# using negative binomial we get good spread of sample size
+n.sample <- rnbinom(n.study, mu = 30, size = 0.2) + 4
+
+# the number of effect size per study
+set.seed(777777)
+n.es.per.s <- rpois(25,3) + 1
+sum(n.es.per.s)
+
+n.effect <- sum(n.es.per.s)
+# variance for Zr
+vi <- 1/(rep(n.sample, n.es.per.s) - 3)
+
+
+
+# In the text, we have two moderators
+# moderator x 1 - study level
+x1j <- rnorm(n.study)
+# moderator x 2 - effect isze level
+x2i <- rnorm(n.effect)
+
+# study position
+
+pos <- rep(1:n.study, n.es.per.s)
+
+# there is underling overall effect to r = 0.3 or Zr = 0.3095196
+Zr <- atanh(0.3) + beta1*x1j[pos] + beta2*x2i + rnorm(n.study, 0, sqrt(sigma2.s))[pos] + 
+        rnorm(n.effect, 0, sqrt(sigma2.u)) + rnorm(n.effect, 0, sqrt(vi))
+
+qplot(Zr, 1/sqrt(vi))
+
+dat2 <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), x1 = x1j, x2 = x2i, ni = n.sample, prec = 1 / sqrt(vi), wi = 1/vi, zi = Zr/sqrt(vi), studyID = pos, effectID = 1:100)
+
+mod1 <- rma(yi, vi, data = dat2)
+
+mod_ml <- rma.mv(yi, vi, mod = ~ x1 + x2, random = list(~ 1 | studyID, ~1 | effectID), data = dat2)
+
+summary(mod_ml)
+funnel
+funnel(mod_ml, yaxis="seinv")
 
 ```
 
