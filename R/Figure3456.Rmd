@@ -157,7 +157,7 @@ dev.control(displaylist="enable")
 par(mar=c(4,4,0.1,0) + 0.1)
 funnel(mod_re1, 
        yaxis = "sei", 
-       xlim = c(-3, 3),
+       xlim = c(-3, 3), ylim = c(0, 1),
        #level = c(95, 99), 
        #shade = c("white", "gray75"), 
        refline = 0, legend = F,  ylab = "Stanard error (SE)", xlab = "Standardized residuls (Zr)")
@@ -364,10 +364,11 @@ fig4
 ### fig 6 
 
 #### data creation
+##### Zr data
 
 ```{r}
 
-# Zr -- 
+# Zr -- data
 
 # 25 studies 
 # data from 1 to 6 
@@ -375,7 +376,7 @@ fig4
 
 set.seed(777)
 # setting parameters
-n.study  <- 25
+n.study  <- 70
 sigma2.s <- 0.05
 sigma2.u <- 0.05
 beta1 <- 0.1
@@ -385,7 +386,7 @@ n.sample <- rnbinom(n.study, mu = 30, size = 0.2) + 4
 
 # the number of effect size per study
 set.seed(777777)
-n.es.per.s <- rpois(25,3) + 1
+n.es.per.s <- rpois(n.study,3) + 1
 sum(n.es.per.s)
 
 n.effect <- sum(n.es.per.s)
@@ -402,32 +403,321 @@ x2i <- rnorm(n.effect)
 
 # study position
 
-pos <- rep(1:n.study, n.es.per.s)
+place <- rep(1:n.study, n.es.per.s)
 
 # there is underling overall effect to r = 0.3 or Zr = 0.3095196
-Zr <- atanh(0.3) + beta1*x1j[pos] + beta2*x2i + rnorm(n.study, 0, sqrt(sigma2.s))[pos] + 
+Zr <- 0 + rnorm(n.study, 0, sqrt(sigma2.s))[place] + 
         rnorm(n.effect, 0, sqrt(sigma2.u)) + rnorm(n.effect, 0, sqrt(vi))
 
-qplot(Zr, 1/sqrt(vi))
+#qplot(Zr, 1/sqrt(vi))
 
-dat2 <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), x1 = x1j, x2 = x2i, ni = n.sample, prec = 1 / sqrt(vi), wi = 1/vi, zi = Zr/sqrt(vi), studyID = pos, effectID = 1:100)
+datA <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), x1 = x1j[place], x2 = x2i, ni = n.sample[place], prec = 1 / sqrt(vi), wi = 1/vi, zi = Zr/sqrt(vi), studyID = place, effectID = 1:n.effect)
 
-mod1 <- rma(yi, vi, data = dat2)
 
-mod_ml <- rma.mv(yi, vi, mod = ~ x1 + x2, random = list(~ 1 | studyID, ~1 | effectID), data = dat2)
+# cutting publication mbias like stuff
+expected <- c(which(1/datA$sei < 5.5 & datA$yi < 0.2), which(1/datA$sei < 3 & datA$yi < 0.7))
 
-summary(mod_ml)
-funnel
-funnel(mod_ml, yaxis="seinv")
+datB <- datA[-expected, ]
+
+qplot(x = yi, y = 1/sqrt(vi), data = datB)
+
+mod_ma <- rma.mv(yi, vi, mod = ~ sqrt(vi), random = list(~ 1 | studyID, ~1 | effectID), data = datB)
+
+mod_mb <- rma.mv(yi, vi, mod = ~ vi, random = list(~ 1 | studyID, ~1 | effectID), data = datB)
+
+summary(mod_ma)
+summary(mod_mb)
+#
+
+# creatomg curve lines
+x = seq(0, 1, by = 0.001)
+y =  mod_mb$beta[[1]] + sqrt(x)* mod_mb$beta[[2]]
+
+vi_curve <- tibble(x = x, y = y)
+
+# E
+
+# SE
+ggplot(datB, aes(sei, yi)) + geom_point() + 
+        geom_line(data = vi_curve, mapping = aes(x = x, y = y, col = "red")) +
+        #geom_point(aes(col = studyID)) +
+       # geom_smooth(method = "lm") + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = mod_ma$beta[[1]], slope = mod_ma$beta[[2]]) +
+        xlim(0, 1) + ylim(-1.5, 2.5) + 
+        labs(x = "Standard error (SE)", y = "Effect size (Zr)")+ 
+        theme(legend.position = "none")
+# F
+
+# Variance
+ggplot(datB, aes(vi, yi)) + geom_point() + 
+        #geom_point(aes(col = studyID)) +
+       # geom_smooth(method = "lm") + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = mod_mb$beta[[1]], slope = mod_mb$beta[[2]], col = "red") +
+        xlim(0, 1) + ylim(-1.5, 2.5) + 
+        labs(x = "Sampling variance", y = "Effect size (Zr)")
+
+#mod_re3 <- rma.mv(yi, vi, mod = ~ x1 + x2, random = list(~ 1 | studyID, ~1 | effectID), data = dat2)
 
 ```
+
+##### lnRR data
+
+```{r}
+# function to make a matix for corelated sampling error
+
+make_VCV_matrix <- function(data, V, cluster, obs, type=c("vcv", "cor"), rho=0.5){
+  type <- match.arg(type)
+  if (missing(data)) {
+    stop("Must specify dataframe via 'data' argument.")
+  }
+  if (missing(V)) {
+    stop("Must specify name of the variance variable via 'V' argument.")
+  }
+  if (missing(cluster)) {
+    stop("Must specify name of the clustering variable via 'cluster' argument.")
+  }
+  if (missing(obs)) {
+    obs <- 1:length(V)   
+  }
+  if (missing(type)) {
+    type <- "vcv" 
+  }
+  
+  new_matrix <- matrix(0,nrow = dim(data)[1],ncol = dim(data)[1]) #make empty matrix of the same size as data length
+  rownames(new_matrix) <- data[ ,obs]
+  colnames(new_matrix) <- data[ ,obs]
+  # find start and end coordinates for the subsets
+  shared_coord <- which(data[ ,cluster] %in% data[duplicated(data[ ,cluster]), cluster]==TRUE)
+  # matrix of combinations of coordinates for each experiment with shared control
+  combinations <- do.call("rbind", tapply(shared_coord, data[shared_coord,cluster], function(x) t(utils::combn(x,2))))
+  
+  if(type == "vcv"){
+    # calculate covariance values between  values at the positions in shared_list and place them on the matrix
+    for (i in 1:dim(combinations)[1]){
+      p1 <- combinations[i,1]
+      p2 <- combinations[i,2]
+      p1_p2_cov <- rho * sqrt(data[p1,V]) * sqrt(data[p2,V])
+      new_matrix[p1,p2] <- p1_p2_cov
+      new_matrix[p2,p1] <- p1_p2_cov
+    }
+    diag(new_matrix) <- data[ ,V]   #add the diagonal
+  }
+  
+  if(type == "cor"){
+    # calculate covariance values between  values at the positions in shared_list and place them on the matrix
+    for (i in 1:dim(combinations)[1]){
+      p1 <- combinations[i,1]
+      p2 <- combinations[i,2]
+      p1_p2_cov <- rho
+      new_matrix[p1,p2] <- p1_p2_cov
+      new_matrix[p2,p1] <- p1_p2_cov
+    }
+    diag(new_matrix) <- 1   #add the diagonal of 1
+  }
+  
+  return(new_matrix)
+}
+```
+
+
+
+```{r}
+
+# lnRR
+# 25 studies 
+# data from 1 to 6 
+# 100 effect size
+
+set.seed(777)
+# setting parameters
+n.study  <- 30
+sigma2.s <- 0.01
+sigma2.u <- 0.005
+beta1 <- 0.1
+beta2 <- -0.01
+# using negative binomial we get good spread of sample size
+n.sample <- rnbinom(n.study, mu = 40, size = 0.5) + 4
+
+
+# the number of effect size per study
+set.seed(7777)
+n.es.per.s <- rpois(n.study,3) + 1
+sum(n.es.per.s)
+
+# sample size
+n.effect <- sum(n.es.per.s)
+
+# cv for each study
+
+cv <- sample(seq(0.3, 0.35,by = 0.001), n.effect, replace = T)
+
+rep_sample <- rep(n.sample, times = n.es.per.s)
+
+# variance for lnRR
+vi <- (2*cv^2)/rep_sample
+
+
+
+# In the text, we have two moderators
+# moderator x 1 - study level
+x1j <- rnorm(n.study)
+# moderator x 2 - effect isze level
+x2i <- rnorm(n.effect)
+
+# study position
+
+pos <- rep(1:n.study, n.es.per.s)
+
+# there is underling overall effect to lnRR = 0.2
+
+dat3 <- data.frame(vi = vi, sei = sqrt(vi), x1 = x1j[pos], x2 = x2i, ni = n.sample[pos], prec = 1 / sqrt(vi), wi = 1/vi, studyID = pos, effectID = 1:n.effect)
+
+# M matrix (V = VCV)
+sigma <- make_VCV_matrix(dat3, "vi", "studyID", "effectID", rho = 0)
+
+lnRR<- 0.3 + beta1*x1j[pos] + beta2*x2i + rnorm(n.study, 0, sqrt(sigma2.s))[pos] + 
+        rnorm(n.effect, 0, sqrt(sigma2.u)) +  mvrnorm(1, rep(0, n.effect), sigma)
+        #rnorm(n.effect, 0, sqrt(vi))
+
+#qplot(lnRR, 1/sqrt(vi))
+
+# dat3 <- data.frame(yi = lnRR, vi = vi, sei = sqrt(vi), x1 = x1j[pos], x2 = x2i, ni = n.sample[pos], prec = 1 / sqrt(vi), wi = 1/vi, zi = lnRR/sqrt(vi), studyID = pos, effectID = 1:n.effect)
+
+dat3$yi <- lnRR
+
+# Panel A
+mod1 <- rma(yi, vi, data = dat3)
+funnel(mod1, col =inferno(25)[pos],
+      ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
+#funnel(mod1, yaxis="seinv", col =inferno(25)[pos] )
+
+mod_ml <- rma.mv(yi, vi, mod = ~ x1 + x2, random = list(~ 1 | studyID, ~1 | effectID), data = dat3)
+
+# residuals - stadnarised
+summary(mod_ml)
+#funnel(mod_ml, yaxis="seinv", col = inferno(25)[pos])
+
+
+# residual marginal
+residm <- dat3$yi - predict(mod_ml)[[1]]
+vi_residm <- vi + predict(mod_ml)[[2]]^2 # adding prediction errors 
+
+# Panel B
+funnel (residm, vi = vi_residm, yaxis = "sei",  col = inferno(25)[pos],  
+        ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Stanard error (SE)", xlab = "Residuals marginal (lnRR)")
+
+
+# residual conditional 1 & 2 + its error
+
+blups <- ranef(mod_ml)
+
+study_effect <- blups$studyID[[1]][pos]
+vi_study <- (blups$studyID[[2]][pos])^2
+
+residc1 <- dat3$yi - (predict(mod_ml)[[1]] + study_effect)
+vi_residc1 <- vi_residm + vi_study
+
+effect_effect <- blups$effectID[[1]]
+vi_effect <- blups$effectID[[1]]^2
+
+residc2 <- dat3$yi - (predict(mod_ml)[[1]] + study_effect + effect_effect)
+vi_residc2 <- vi_residm + vi_study + vi_effect
+
+
+# Panel C
+funnel(residc1, vi = vi_residc1, yaxis = "sei",  col = inferno(25)[pos],
+       ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Stanard error (SE)", xlab = "Residuals conditional 1 (lnRR)")
+
+# Panel D
+funnel(residc2, vi = vi_residc2, yaxis = "sei",  col = inferno(25)[pos],
+       ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Stanard error (SE)", xlab = "Residuals conditional 2 (lnRR)")
+
+#
+
+
+
+```
+
 
 #### plotting
 ```{r}
 
+# Panel A
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod1, col =inferno(25)[pos],
+      ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Stanard error (SE)", xlab = "Effect size (lnRR)")
+pa <- recordPlot()
+invisible(dev.off())
+
+# Panel B
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel (residm, vi = vi_residm, yaxis = "sei",  col = inferno(25)[pos],  
+        ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Stanard error (SE)", xlab = "Residuals marginal (lnRR)")
+pb <- recordPlot()
+invisible(dev.off())
+
+# Panel C
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(residc1, vi = vi_residc1, yaxis = "sei",  col = inferno(25)[pos],
+       ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Stanard error (SE)", xlab = "Residuals conditional 1 (lnRR)")
+pc <- recordPlot()
+invisible(dev.off())
+
+# Panel D
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(residc2, vi = vi_residc2, yaxis = "sei",  col = inferno(25)[pos],
+       ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Stanard error (SE)", xlab = "Residuals conditional 2 (lnRR)")
+pd <- recordPlot()
+invisible(dev.off())
+
+# Panel E
+pe <- ggplot(datB, aes(sei, yi)) + geom_point() + 
+        geom_line(data = vi_curve, mapping = aes(x = x, y = y, col = "red")) +
+        #geom_point(aes(col = studyID)) +
+       # geom_smooth(method = "lm") + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = mod_ma$beta[[1]], slope = mod_ma$beta[[2]]) +
+        xlim(0, 1) + ylim(-1.5, 2.5) + 
+        labs(x = "Standard error (SE)", y = "Effect size (Zr)")+ 
+        theme(legend.position = "none")
+# F
+
+# Variance
+pf <- ggplot(datB, aes(vi, yi)) + geom_point() + 
+        #geom_point(aes(col = studyID)) +
+       # geom_smooth(method = "lm") + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = mod_mb$beta[[1]], slope = mod_mb$beta[[2]], col = "red") +
+        xlim(0, 1) + ylim(-1.5, 2.5) + 
+        labs(x = "Sampling variance", y = "Effect size (Zr)")
+
+fig6 <- (ggdraw(pa) + ggdraw(pb)) /(ggdraw(pc) + ggdraw(pd))/(plot_grid(pe) + plot_grid(pf)) + plot_annotation(tag_levels = 'a')
+
+fig6
+
 ```
 
 
+#######################
+#######################
 ### Using `metafor`
 
 ```{r}
