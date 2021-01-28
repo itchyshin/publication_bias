@@ -357,8 +357,6 @@ fig4
 
 # dmetr
 
-
-
 ```{r}
 #devtools::install_github("MathiasHarrer/dmetar")
 library(dmetar)
@@ -376,6 +374,13 @@ p1<-ggdraw(test)
 p1 +  theme(plot.margin=unit(c(-1,0,-1,0),"cm"))
 
 ```
+
+# metafor selection model
+
+```{r}
+
+```
+
 
 ### fig 6 
 
