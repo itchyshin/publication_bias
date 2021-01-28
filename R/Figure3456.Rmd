@@ -97,8 +97,7 @@ par(mar=c(4,4,0.1,0) + 0.1)
 funnel(mod_ra, yaxis="seinv", col = col_point,  
        ylim = c(1, 12), xlim = c(-3, 3),
        ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
-legend(x = 1.4, y = 12, legend = c("expected", "","unexpected"), pch = c(19, 0, 19), col = c("red", "grey83", "blue"),
-       bty = "n")
+legend(x = 1.4, y = 12, legend = c("expected", "","unexpected"), pch = c(19, 0, 19), col = c("red", "grey83", "blue"), bty = "n")
 b <- recordPlot()
 invisible(dev.off())
 
@@ -361,17 +360,20 @@ fig4
 #devtools::install_github("MathiasHarrer/dmetar")
 library(dmetar)
 
+p_dat <- data.frame("studlab" = as.factor(1:nrow(dat2)), "TE" = dat2$yi, "seTE" = dat2$sei)
+pcurve(p_dat)
+
 pdf(NULL)
 dev.control(displaylist="enable")
 par(mar=c(4,4,0.1,0) + 0.1)
-pcurve(meta1)
-test<- recordPlot()
+pcurve(p_dat)
+plot<- recordPlot()
 invisible(dev.off())
 
 # turuning the base plot into ggplot
-p1<-ggdraw(test)
+plot <- ggdraw(plot)
 
-p1 +  theme(plot.margin=unit(c(-1,0,-1,0),"cm"))
+
 
 ```
 
@@ -407,11 +409,53 @@ plot(sel2b, add=TRUE, col="blue", lty = "dotted")
 plot(sel4b, add=TRUE, col="green", lty = "dotted")
 
 # step function 
+sel5 <- selmodel(model, type="stepfun", steps=c(0.05, 0.10, 0.50, 1.00))
+sel6 <- selmodel(model, type="stepfun", steps=c(0.001, 0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 1))
+sel7 <- selmodel(model, type="stepfun", steps=c(0.05, 1))
 
-
-
+plot(sel5, ylim = c(0,1))
+#plot(sel6, add=TRUE, col="red", scale = T)
+plot(sel7, add=TRUE, col="red")
+legend(x = 0.5, y = 1, legend = c("3 cutpoints", "","1 cutpoint (3 PMS)"), lty =c(1, 0, 1), col = c("black", "", "red"), bty = "n")
 
 ```
+
+#### ploting
+
+```{r}
+# A 
+
+pA <- plot +  theme(plot.margin=unit(c(-1,0,-1,0),"cm"))
+
+# B
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+plot(sel1)
+plot(sel4, add=TRUE, col="red")
+plot(sel1b, add=TRUE, lty = "dotted")
+plot(sel4b, add=TRUE, col="red", lty = "dotted")
+legend(x = 0.6, y = 1, legend = c("half-normal", "","power"), lty =c(1, 0, 1), col = c("black", "", "red"), bty = "n")
+pB <- recordPlot()
+invisible(dev.off())
+
+# C
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+plot(sel5, ylim = c(0,1))
+plot(sel7, add=TRUE, col="red")
+legend(x = 0.5, y = 1, legend = c("3 cutpoints", "","1 cutpoint (3 PSM)"), lty =c(1, 0, 1), col = c("black", "", "red"), bty = "n")
+pC <- recordPlot()
+invisible(dev.off())
+
+
+fig5 <- pA /(ggdraw(pB) + ggdraw(pC)) + plot_annotation(tag_levels = 'a')
+
+fig5
+
+```
+
 
 
 ### fig 6 
