@@ -379,6 +379,38 @@ p1 +  theme(plot.margin=unit(c(-1,0,-1,0),"cm"))
 
 ```{r}
 
+dat2
+
+model <- rma(yi, vi = vi, data = dat2, method = "ML", mod = ~ xi)
+
+#sel0 <- selmodel(model, type = "beta")
+sel1 <- selmodel(model, type="halfnorm", prec="sei", scaleprec=FALSE)
+sel2 <- selmodel(res, type="negexp",   prec="sei", scaleprec=FALSE)
+sel3 <- selmodel(res, type="logistic", prec="sei", scaleprec=FALSE)
+sel4 <- selmodel(res, type="power",    prec="sei",  scaleprec=FALSE)
+sel1b <- selmodel(model, type="halfnorm")
+sel2b <- selmodel(res, type="negexp")
+sel3b <- selmodel(res, type="logistic")
+sel4b <- selmodel(res, type="power")
+
+# plot selection functions
+
+# normal, exponentail, logistic or power
+
+plot(sel1)
+plot(sel2, add=TRUE, col="blue")
+#plot(sel3, add=TRUE, col="red")
+plot(sel4, add=TRUE, col="green")
+plot(sel1b, add=TRUE, lty = "dotted")
+plot(sel2b, add=TRUE, col="blue", lty = "dotted")
+#plot(sel3b, add=TRUE, col="red", lty = "dotted")
+plot(sel4b, add=TRUE, col="green", lty = "dotted")
+
+# step function 
+
+
+
+
 ```
 
 
