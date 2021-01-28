@@ -17,6 +17,7 @@ library(metaviz)
 library(meta)
 library(ggplotify)
 library(grid)
+library(dmetar)
 ```
 
 
@@ -354,10 +355,25 @@ fig4
 
 ### fig 5
 
+# dmetr
+
+
+
 ```{r}
+#devtools::install_github("MathiasHarrer/dmetar")
+library(dmetar)
 
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+pcurve(meta1)
+test<- recordPlot()
+invisible(dev.off())
 
+# turuning the base plot into ggplot
+p1<-ggdraw(test)
 
+p1 +  theme(plot.margin=unit(c(-1,0,-1,0),"cm"))
 
 ```
 
