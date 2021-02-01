@@ -1,0 +1,248 @@
+---
+title: "Publication bias test in EcoEvo"
+author: "Yefeng Yang"
+date: "2021/2/1"
+output: html_document
+subtitle: "Supplementary information"
+---
+
+
+
+## Setup
+
+```{r setup, echo = FALSE}
+# Tidy
+# rm(list=ls())
+
+# Preparing workspace
+knitr::opts_chunk$set(echo = TRUE, include = TRUE)
+
+# Loading packages
+pacman::p_load(knitr, # knit markdown
+               readxl, 
+               readr, 
+               metafor, 
+               dplyr, 
+               tidyverse, 
+               janitor, # generate 1-, 2-way table
+               patchwork, # layout of plots
+               cowplot, 
+               ggpubr,
+               gridExtra
+               )
+
+```
+
+
+
+
+
+## Data cleaning
+
+### Importing raw data
+
+```{r import raw data}
+data1<- read_excel("./gcb15428-sup-0002-supplement2.xlsx", col_names = TRUE)
+
+summary(data1)
+str(data1)
+names(data1)
+
+
+```
+
+
+### Preprocessing and initial check
+
+```{r preprocess raw data}
+# Renames the column names
+  names(data1)[str_detect(names(data1), c("sample.size.control|mean.control|sd.control|sample.size.noise.1|mean.noise|sd.noise"))] <- c("C_N","C_mean", "C_sd", "T_N", "T_mean","T_sd") 
+
+
+
+# Checking missing data
+  dim(data1[is.na(data1$C_mean | data1$C_sd | data1$C_N | data1$T_mean | data1$T_sd | data1$T_N),])
+
+# Checking included studies
+  length(unique(data1$study.nr)) #23, raw_data %>% distinct(Study) %>% nrow()
+
+# Checking the effect size
+  unique(data1$case.nr) %>% length() #122
+
+```
+
+
+
+### Calculating effect size statistics
+
+```{r calculate ES}
+# lnRR
+  lnRR_data1 <- with(data1, escalc(measure = "ROM",
+                                m1i = T_mean,
+                                m2i = C_mean,
+                                sd1i = T_sd,
+                                sd2i = C_sd,
+                                n1i = T_N,
+                                n2i = C_N))
+
+# SMD
+  SMD_data1 <- with(data1, escalc(measure = "SMD",
+                                m1i = T_mean,
+                                m2i = C_mean,
+                                sd1i = T_sd,
+                                sd2i = C_sd,
+                                n1i = T_N,
+                                n2i = C_N))
+
+
+  
+  
+# lnCVR
+  lnCVR_data1 <- with(data1, escalc(measure = "CVR",
+                                 m1i = T_mean,
+                                 m2i = C_mean,
+                                 sd1i = T_sd,
+                                 sd2i = C_sd,
+                                 n1i = T_N,
+                                 n2i = C_N))
+  
+  
+# lnVR
+  lnVR_data1 <- with(data1, escalc(measure = "VR",
+                                sd1i = T_sd,
+                                sd2i = C_sd,
+                                n1i = T_N,
+                                n2i = C_N))
+  
+
+
+
+metrics_data1 <- data.frame(RR = lnRR_data1$yi, VRR = lnRR_data1$vi, CVR = lnCVR_data1$yi, VCVR = lnCVR_data1$vi, VR = lnVR_data1$yi, VVR = lnVR_data1$vi, SMD = SMD_data1$yi, VSMD = SMD_data1$vi)
+dat1 <- cbind(data1, metrics_data1) # bind_cols()
+
+
+
+
+# clean NA
+  dat1 <- dat1[!is.na(dat1$RR),] 
+  dat1 <- dat1[!is.na(dat1$SMD),] 
+  dat1 <- dat1[!is.na(dat1$CVR),] 
+  dat1 <- dat1[!is.na(dat1$VR),]
+  
+  summary(dat1)
+
+```
+
+
+
+
+## New methods for publication bias in Eco Evo 
+### Multilevel meta-regression using sample size
+
+Notes: This new method is builed upon a multilevel model that explicitly incorporates heterogeneity and non-independence among effect sizes (both are pervasive in Eco Evo), which can both detect and correct for funnel asymmetry (e.g., small-study effects) while modelling heterogeneity and non-independence (e.g.,  correlated effect sizes and variance-covariance matrices)
+
+```{r (multilevel)regression-based method}
+
+
+#***************************************************************#
+#                Detecting publication bias (eq. 27)            #
+#***************************************************************#
+
+#####
+First to obtain the overall mean (i.e., intercept or meta-analytic mean). We term it as naive estimate
+#####
+
+# lnRR
+dat1_RR <- rma.mv(yi = RR,V = VRR, random = list(~1|study.nr, ~1|case.nr), method = "REML", data = dat1)
+
+# SMD
+dat1_SMD <- rma.mv(yi = SMD,V = VSMD, random = list(~1|study.nr, ~1|case.nr), method = "REML", data = dat1)
+
+
+#####
+Dose it exist publication bias (i.e., small-study effects). Traditionally, ecologists use convential method (i.e., Egger’s regression test) to detect whether publication bias exists
+
+Let us check publication bias using Egger’s regression test
+#####
+
+# Egger regression
+## lnRR
+Egger.dat1_RR <- rma.mv(yi = RR,V = VRR, random = list(~1|species.english, ~1|study.nr, ~1|case.nr), mods = ~ sqrt(VRR), method = "REML", data = dat1)
+
+## SMD
+Egger.dat1_SMD <- rma.mv(yi = SMD,V = VSMD, random = list(~1|species.english, ~1|study.nr, ~1|case.nr), mods = ~ sqrt(VSMD), method = "REML", data = dat1) 
+
+#####
+Note that when using SMD, Egger test shows that publication bias occurs - the slope is 9.67 (95% CI 7.80 to 11.54)
+#####
+
+
+##### 
+Now we use our proposed method (eq. 27) which incorporates heterogeneity and non-independence
+#####
+
+# New method eq. 27
+## Calculating effective sample size (esz)
+dat1$esz <- 4*(dat1$C_N*dat1$T_N)/(dat1$C_N+dat1$T_N)
+## Calculating effective-sample-size-adjusted variance (esz.var)
+dat1$esz.var <- 4/dat1$esz
+
+## lnRR
+dat1.esz.SE_RR <- rma.mv(yi = RR,V = VRR, random = list(~1|species.english, ~1|study.nr, ~1|case.nr), mods = ~ sqrt(esz.var) + parameter.rough.standardised, method = "REML", data = dat1)
+
+## SMD
+dat1.esz.SE_SMD <- rma.mv(yi = SMD,V = VSMD, random = list(~1|species.english, ~1|study.nr, ~1|case.nr), mods = ~ sqrt(esz.var) + parameter.rough.standardised, method = "REML", data = dat1)
+
+
+#####
+Now the slope from our method comes to 1.6128 (95% CI 0.28 to -1.29), which shows that there is no statistically significant funnel asymmetry (e.g., small-study effects) in the dataset when we control for the heterogeneity and non-independence
+#####
+
+
+One question is should we do parallelly for time lag bias test? Or we just incorporate the variable year into the above model 
+
+
+
+#***************************************************************#
+#               Correcting funnel asymmetry (eq. 28)            #
+#***************************************************************#
+
+#####
+When we find publication bias exists using our method, next should use eq. 28 to estimate the 'potential' ture effect and compare it with the native estimate (i.e., original overall mean) to quantify the degree of bias
+#####
+
+# Obtaining ‘potentially’ bias-adjusted overall estimate 
+## lnRR
+dat1.esz.var_RR <- rma.mv(yi = RR,V = VRR, random = list(~1|species.english, ~1|study.nr, ~1|case.nr), mods = ~ esz.var, method = "REML", data = dat1)
+
+## SMD
+dat1.esz.var_SMD <- rma.mv(yi = SMD,V = VSMD, random = list(~1|species.english, ~1|study.nr, ~1|case.nr), mods = ~ esz.var, method = "REML", data = dat1)
+
+
+#####
+The bias-adjusted overall estimate is a conditional meta-analytic mean from eq. 28 when there is no uncertainty in eq. 28 (i.e., esz.var is 0)
+The 'true' effect is SMD = -0.35 (95% CI 0.20 to 5.85 ) in the case
+#####
+
+
+
+
+# The degree of difference
+
+tibble(`Parameter` = c("Funnel asymmetry estimate", "Bias-corrected estimate"),
+`Coefficient` = c(dat1_SMD$b, dat1.esz.var_SMD$b[1]), 
+`LCL` = c(dat1_SMD$ci.lb, dat1.esz.var_SMD$ci.lb[1]), 
+`UCL` = c(dat1_SMD$ci.ub, dat1.esz.var_SMD$ci.ub[1])) 
+
+
+Deta <-  100*(dat1_SMD$b - dat1.esz.var_SMD$b[1])/abs(dat1.esz.var_SMD$b[1])
+
+#####
+We can see that overstate 133-fold in the magnitude of the overall estimate
+
+Although eq. 28 can estimate the bias-corrected effect, we do not recommend such estimate to be taken as a true estimate. We should treat it as a possible overall estimate as a part of sensitivity analysis in which we run alternative statistical models to test the robustness of results from the original analysis
+#####
+
+```
+
+
