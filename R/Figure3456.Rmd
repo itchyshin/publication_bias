@@ -125,7 +125,8 @@ funnel(mod_ra,
        xlim = c(-3, 3),
        level = c(95, 99), 
        shade = c("white", "gray55"), 
-       refline = 0, legend = F,  ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
+       refline = 0, legend = F, 
+       ylab = "Stanard error (SE)", xlab = "Effect size (Zr)")
 legend(x = 1, y = 0, legend = c("0.01 < p < 0.05"), pch = c(15), col = c("gray55"), bty = "n")
 c <- recordPlot()
 invisible(dev.off())
@@ -167,13 +168,16 @@ invisible(dev.off())
 
 # f
 
-#panel_h <- ~galbraith(mod_fe, xlim = c(0, 12.5), zlab = "Z values", xlab = "Precision", center=FALSE) # 
+# 
 mod <- metagen(TE = yi, seTE = sqrt(vi) , data = dat)
 
 pdf(NULL)
 dev.control(displaylist="enable")
 par(mar=c(4,4,0.1,0) + 0.1)
+#radial.rma(mod_fe, xlim = c(0, 12.5), zlab = "Z score", xlab = "Precision (1/SE)") 
+#legend(1,1, "test", bty = "n")
 radial(mod, level = 0.95, pch = 19,  xlab = "Precisoin (1/SE)", ylab = "Z score")
+#abline(a = 0, b = 0.1908, lwd = 1.5)
 f <- recordPlot()
 invisible(dev.off())
 
