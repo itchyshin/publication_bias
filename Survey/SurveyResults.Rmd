@@ -65,7 +65,7 @@ tm <- theme(panel.background = element_rect(fill = background.colour),
             legend.text = element_text(size = 16, margin = margin(2,0,2,0)),
             legend.spacing.y = unit(1, "cm"),
             legend.position = "bottom",
-            text =  element_text(family = "Times New Roman"),
+            text =  element_text(family = "Arial"),
             legend.key = element_blank(),
             plot.margin = unit(c(0.3,1,0.3,0.3), "cm"))
 
@@ -79,12 +79,11 @@ colcol = "#cad7ed"
 ```{r}
 ggplot(Ntests) + tm + theme(plot.title = element_text(hjust = -1)) +
   geom_col(aes(PB_label, n), fill = colcol, colour = "black", width = 0.75, size = 1) +
-  geom_text(aes(x = PB_label, y = n, label = percent), hjust = -0.1, size = 5, family = "Times New Roman") +
+  geom_text(aes(x = PB_label, y = n, label = percent), hjust = -0.1, size = 5, family = "Arial") +
   scale_y_continuous(expand = c(0,0), lim = c(0, 80)) +
   coord_flip() +
   labs(x = "type of publication bias test",
-       y = "number of papers reporting test",
-       title = "Publication bias tests in ecology & evolution meta-analyses") -> plot_Ntests
+       y = "number of papers reporting test") -> plot_Ntests
 
 ggsave(filename = "./Survey/plot_Ntests.pdf",
        plot = plot_Ntests,
