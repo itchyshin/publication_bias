@@ -226,5 +226,5 @@ $$
 
 
 $$
-\text{Var}\left( \frac{1}{N_{within}} \sum_{i = 1}^{N_{within}} y_g \right) =  \left( \frac{1}{N_{within}}\right)^2 \left(\sum_{g \neq l}^{N_{within}}{r_{gl}\sqrt{\sigma_g^2\sigma_l^2}} \right)
+\text{Var}\left( \frac{1}{N_{within}} \sum_{g = 1}^{N_{within}} y_g \right) =  \left( \frac{1}{N_{within}}\right)^2 \left(\sum_{g = 1}^{N_{within}} \sigma_g^2 + \sum_{g \neq l}^{N_{within}}{r_{gl}\sqrt{\sigma_g^2\sigma_l^2}} \right)
 $$
