@@ -1,0 +1,404 @@
+---
+title: Methods for testing publication bias in ecological and evolutionary meta-analyses
+author: Shinichi Nakagawa, Malgorzata Lagisz, Michael D. Jennions, Julia Koricheva, Daniel W.A. Noble, Timothy H. Parker, Alfredo Sanchez-Tojar, Yefeng Yang, Rose O'Dea
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output:
+  html_document:
+    code_download: yes
+    code_folding: hide
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    toc: yes
+  word_document:
+    toc: yes
+subtitle: Supplementary Information Appendix S2 - Publication bias tests for ecology & evolution
+---
+
+```{r,echo=FALSE, cache=FALSE}
+## numbers >= 10^5 will be denoted in scientific notation, and rounded to 2 digits
+options(digits=3)
+```
+
+```{r setup, echo = FALSE, eval = TRUE}
+###################################################################
+# Worked example publication bias methodology
+#
+# Code written by:
+#
+#         Alfredo Sanchez-Tojar (alfredo.tojar@gmail.com); Departament of Evolutionary Biology, Bielefeld University, Germany
+#
+#         Yefeng...
+#
+# Code validated by:
+#
+#         ...
+#
+# Script first created on November 20th, 2020
+
+###################################################################
+# Description of script and Instructions
+###################################################################
+
+# This script is to generate a worked example to show how to test for
+# publication bias when several layers of non-independence exist in
+# the data, which is common for meta-analytic datasets in ecology 
+# and evolution. We provide two worked examples, one for correlation
+# effect sizes (r) and one for mean comparisons (SMD and lnRR).
+
+rm(list=ls())
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, eval = TRUE)
+pacman::p_load(dplyr,metafor,gt,pander,stringr)#openxlsx
+
+# necessary custom functions
+
+# Function to obtain I^2 (written by Shinichi Nakagawa)
+I2 <- function(model, method = c("Wolfgang", "Shinichi")){
+  warning("Make sure you have the observation (effec size) level random effect\n")
+  ## evaluate choices
+  method <- match.arg(method)
+  
+  # Wolfgang's method
+  if(method == "Wolfgang"){
+    W <- solve(model$V) 
+    X <- model.matrix(model)
+    P <- W - W %*% X %*% solve(t(X) %*% W %*% X) %*% t(X) %*% W
+    I2_total <- sum(model$sigma2) / (sum(model$sigma2) + (model$k - model$p) / sum(diag(P)))
+    I2_each  <- model$sigma2 / (sum(model$sigma2) + (model$k - model$p) / sum(diag(P)))
+    names(I2_each) = paste0("I2_", model$s.names)
+    
+    # putting all together
+    I2s <- c(I2_total = I2_total, I2_each)
+    
+    # or Shinichi Nakagawa
+  } else {
+    # sigma2_v = typical sampling error variance
+    sigma2_v <- sum(1/model$vi) * (model$k-1) / (sum(1/model$vi)^2 - sum((1/model$vi)^2)) 
+    I2_total <- sum(model$sigma2) / (sum(model$sigma2) + sigma2_v) #s^2_t = total variance
+    I2_each  <- model$sigma2 / (sum(model$sigma2) + sigma2_v)
+    names(I2_each) = paste0("I2_", model$s.names)
+    
+    # putting all together
+    I2s <- c(I2_total = I2_total, I2_each)
+  }
+  return(I2s)
+}
+
+# Function to obtain marginal R^2 (written by Shinichi Nakagawa)
+R2 <- function(model){
+  warning("Make sure you have the observation (effec size) level random effect as the last in the formula\n")
+  
+  # fixed effect variance
+  fix <- var(as.numeric(as.vector(model$b) %*% t(as.matrix(model$X))))
+  
+  # marginal
+  R2m <- fix / (fix + sum(model$sigma2))
+  R2
+  
+  # conditional
+  R2c <- (fix + sum(model$sigma2) - model$sigma2[length(model$sigma2)]) / 
+    (fix + sum(model$sigma2))
+  
+  R2s <- c(R2_marginal = R2m, R2_coditional = R2c)
+  
+  return(R2s)
+}
+
+# extracting mean and CI from each metafor model
+estimates.CI <- function(model){
+  db.mf <- data.frame(model$b,row.names = 1:nrow(model$b))
+  db.mf <- cbind(db.mf,model$ci.lb,model$ci.ub,row.names(model$b))
+  names(db.mf) <- c("mean","lower","upper","estimate")
+  return(db.mf[,c("estimate","mean","lower","upper")])
+}
+```
+
+## 1 - Correlation effect sizes
+
+```{r, results="hide"}
+# importing dataset with correlation coefficients
+# dataset.r.original <- read.csv("../data/Sanchez-Tojar_et_al_2018_eLife_Meta4.csv", stringsAsFactors = FALSE)
+dataset.r.original <- read.csv("ft177.csv", stringsAsFactors = FALSE)
+
+# for the example, only analyzing the subset of the data based on observational studies, since
+# observational and experimental studies were analyzed separately, and observational is by far
+# the largest dataset
+# From the article: "We analysed observational (n = 516) and experimental (n = 37) data separately"
+dataset.r.original <- dataset.r.original[dataset.r.original$experimental.design=="observational",]
+
+# double-checking that the number of effects corresponds to what is written in the article: yes, it does
+nrow(dataset.r.original) #516
+```
+
+### 1.1 - Meta-analytic model
+
+Sanchez et al. (2018) tested the hypothesis that body size and parasite infection were correlated across studies and species, which authors found some support for. Here, we reanalysed the data from Sanchez et al. (2018) by conducting a multilevel intercept-only meta-analytic model. Then, we used the data from Sanchez et al. (2018) to provide a worked example on how to test of publication biases in datasets with several layers of non-independence and high heterogeneity (more in the main text), which is common for meta-analyses in ecology and evolution (e.g. Senior et al. 2016; Noble et al. 2017). Detailed results of the meta-analysis are shown in Table S1.
+
+```{r}
+# From the article:
+# We controlled for host phylogenetic non‐independence following Becker et al. (2018),
+# and used the rotl and ape packages to extract the phylogeny, prune the tree, 
+# resolve multichotomies and provide branch lengths (Grafen 1989; Paradis et al. 2004;
+# Michonneau et al. 2016). We nested observations within a study to account for 
+# unit‐level variance and study pseudoreplication, as half of all studies contained
+# more than one effect size (103/199).
+
+# creating a unit-level random effect to model residual variance in metafor
+dataset.r.original$obsID <- 1:nrow(dataset.r.original)
+
+# running multilevel intercept-only meta-analytic model
+meta.analysis.model.1 <- rma.mv(yi, vi,
+                                mods=~1,
+                                random=list(~ 1 | obsID, ~ 1 | study),
+                                method="REML",data=dataset.r.original)
+
+# extracting the mean, 95% confidence intervals and 95% prediction intervals
+#print(meta.analysis.model.1, digits=3)
+metaanalytic.mean.model.1 <- predict(meta.analysis.model.1, digits=3)
+#forest(meta.analysis.model.1)
+
+# estimating relative heterogeneity I2
+I2.model.1 <- I2(meta.analysis.model.1,method = c("Shinichi"))*100
+
+# and absolute heterogeneity Q
+Q.model.1 <- c(meta.analysis.model.1$QE)
+
+# creating a table to show the heterogeneity estimates
+table.model.1 <- data.frame(n=length(unique(dataset.r.original$study)),
+                            k=nrow(dataset.r.original),
+                            mean=round(metaanalytic.mean.model.1[[1]],2),
+                            CI=paste0("[",round(metaanalytic.mean.model.1[[3]],2),",",round(metaanalytic.mean.model.1[[4]],2),"]"),
+                            PI=paste0("[",round(metaanalytic.mean.model.1[[5]],2),",",round(metaanalytic.mean.model.1[[6]],2),"]"),
+                            I2_obsID=round(I2.model.1[2],1),
+                            I2_paperID=round(I2.model.1[3],1),
+                            #I2_popID2=round(I2.model.1[4],1),
+                            I2_total=round(I2.model.1[1],1),
+                            Q=round(Q.model.1,1))
+
+rownames(table.model.1) <- NULL
+
+# creating a fancy table using the R package 'gt'
+table.model.1.gt <- table.model.1 %>% 
+  gt() %>% 
+  cols_label(n=md("**n**"),
+             k=md("**k**"),
+             mean=md("**Meta-analytic mean**"),
+             CI=md("**95% CI**"),
+             PI=md("**95% PI**"),
+             I2_obsID=md("***I*<sup>2</sup><sub>residual</sub> (%)**"),
+             I2_paperID=md("***I*<sup>2</sup><sub>study</sub> (%)**"),
+             #I2_popID2=md("***I*<sup>2</sup><sub>population</sub> (%)**"),
+             #Phylogeny=md("***I*<sup>2</sup><sub>Phylo</sub> (%)**"),
+             I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**"),
+             Q=md("***Q*<sub>test</sub>**")) %>%
+  cols_align(align = "center") %>%
+  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity; *Q*<sub>test</sub> = Cochrane's *Q* test.")) %>%
+  tab_options(table.width=775)
+
+table.model.1.gt
+
+```
+
+**Table S1.** Results of the multilevel intercept-only meta-analysis testing the relationship between body condition and parasite infection across species. Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*).
+
+<br/><br/>
+
+### 1.2 - Publication bias
+
+#### **1.2.1 - The two-step approach**
+
+To test for small-study effects, we are going to follow the two-step approach that we suggested in the main text. First, we run a multilevel meta-regression that has the same random effect structure as the meta-analytic model (Table S1) and that includes the effect sizes' standard errors (SE or sei) as the only moderator (see Equation 21 from the main text). If the slope of this moderator is statistically significant, then we run an additional multilevel meta-regression including the effect sizes' sampling variances (SV or vi) as the only moderator (see Equation 22 from the main text), which allows us to obtain an overall effect (the intercept or B0) after accounting for small-study bias, and this overall is less downwardly  biased when modeling sampling variance than when modeling standard errors (more in the main text; Doucouliagos 2012, 2014).
+
+```{r}
+# creating a varible for the standard error of each effect size (i.e. the square root of the sampling variance, see Figure 1 from the main manuscript)
+dataset.r.original$sei <- sqrt(dataset.r.original$vi)
+
+# Application of Equation 21 from the main manuscript
+publication.bias.model.1.se <- rma.mv(yi, vi,
+                                      mods=~1+sei,
+                                      random=list(~ 1 | obsID, ~ 1 | study),
+                                      method="REML",data=dataset.r.original)
+
+#print(publication.bias.model.1.se,digits=3)
+
+# extracting the mean and 95% confidence intervals
+estimates.publication.bias.model.1.se <- estimates.CI(publication.bias.model.1.se)
+
+
+```
+
+##### **1.2.1.1 - Modelling SE (Eq.21)**
+
+According to the meta-regression, there is no evidence of small-study effects since the slope of the moderator (i.e. SE) is far from being statistically significant (**slope = `r estimates.publication.bias.model.1.se[2,2]`, 95% CI = [`r estimates.publication.bias.model.1.se[2,3]`,`r estimates.publication.bias.model.1.se[2,4]`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.se)[1]*100,1)`%; Figure S1). Since there is no evidence of small-study bias, we do not need to model sampling variance for this two-step approach. 
+
+```{r}
+publication.bias.model.1.se.plot <- predict(publication.bias.model.1.se)
+
+newdat <- data.frame(sei=dataset.r.original$sei,
+                     fit=publication.bias.model.1.se.plot$pred,
+                     upper=publication.bias.model.1.se.plot$ci.ub,
+                     lower=publication.bias.model.1.se.plot$ci.lb,
+                     stringsAsFactors=FALSE)
+
+#newdat <- unique(newdat[order(newdat$sei),])
+newdat <- unique(newdat[order(newdat$sei),])
+
+xaxis <- dataset.r.original$sei
+yaxis <- dataset.r.original$yi
+
+plot(xaxis,yaxis,
+     type="n",
+     ylab="",
+     xlab="",
+     xaxt="n",
+     yaxt="n",
+     ylim=c(-2.25,2.25),
+     xlim=c(0,1))
+
+
+abline(a=0,b=0, lwd=1, lty=1)
+
+
+axis(1,at=seq(0,1,0.1),
+     cex.axis=0.8,tck=-0.02)
+
+axis(2,
+     at=round(seq(-2.5,2.25,0.5),1),
+     cex.axis=0.8,las=2,tck=-0.02)
+
+title(xlab = "standard error (SE)", 
+      ylab = "effect size (Zr)",
+      line = 2.75, cex.lab=1.4)
+
+points(jitter(xaxis,2),yaxis,
+       bg=rgb(0,0,0, 0.1),
+       col=rgb(0,0,0, 0.2),
+       pch=21,
+       cex=1)
+
+lines(newdat$sei, newdat$fit, lwd=2.75,col="darkorchid4") 
+
+polygon(c(newdat$sei,rev(newdat$sei)),
+        c(newdat$lower,rev(newdat$upper)),
+        border=NA,col=rgb(104/255,34/255,139/255, 0.5))
+```
+
+**Figure S1.** Effect sizes do not seem to change with SE, which suggest that there is no evidence of small-study effects in this meta-analytic dataset. The solid line represents the model estimate and shading shows the 95% confidence intervals.
+
+<br/><br/>
+
+##### **1.2.1.2 - Modelling SV (Eq.22)**
+
+Not necessary, since the first step did not find evidence of small-study effects.
+
+<br/><br/>
+
+#### **1.2.2 - Time-lag bias test (Eq.23)**
+
+To test for time-lag bias, also called decline effects, we are again going to fit a multilevel meta-regression that has the same random effect structure as the meta-analytic model (Table S1) and that includes the year of publication as the only moderator (see Equation 23 from the main text). The estimated slope for year will tell us whether effect sizes have become smaller over time since the first effect size was published.
+
+```{r}
+# creating a variable with the year of publication
+dataset.r.original$year <- as.numeric(str_extract(dataset.r.original$study, "(\\d)+"))
+
+# Application of Equation 23 from the main manuscript
+publication.bias.model.1.timelag <- rma.mv(yi, vi,
+                                           mods=~1+year,
+                                           random=list(~ 1 | obsID, ~ 1 | study),
+                                           method="REML",data=dataset.r.original)
+
+#summary(publication.bias.model.1.timelag)
+
+# extracting the mean and 95% confidence intervals
+estimates.publication.bias.model.1.timelag <- estimates.CI(publication.bias.model.1.timelag)
+
+```
+
+The time-lag bias test shows little evidence for decline effects, although theres is a trend for the slope of year to be positive, meaning that effect sizes have trended towards zero over time (**year slope = `r estimates.publication.bias.model.1.timelag[2,2]`; 95% CI = [`r estimates.publication.bias.model.1.timelag[2,3]`,`r estimates.publication.bias.model.1.timelag[2,4]`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.timelag)[1]*100,1)`%; Figure S2).
+
+```{r}
+publication.bias.model.1.timelag.plot <- predict(publication.bias.model.1.timelag,newmods=seq(min(dataset.r.original$year),max(dataset.r.original$year),1))
+
+newdat <- data.frame(year=seq(min(dataset.r.original$year),max(dataset.r.original$year),1),
+                     fit=publication.bias.model.1.timelag.plot$pred,
+                     upper=publication.bias.model.1.timelag.plot$ci.ub,
+                     lower=publication.bias.model.1.timelag.plot$ci.lb,
+                     stringsAsFactors=FALSE)
+
+
+xaxis <- dataset.r.original$year
+yaxis <- dataset.r.original$yi
+cex.study <- (1/dataset.r.original$sei)/10
+
+plot(xaxis,yaxis,
+     type="n",
+     ylab="",
+     xlab="",
+     xaxt="n",
+     yaxt="n",
+     ylim=c(-2.25,2.25),
+     xlim=c(min(xaxis),max(xaxis)))
+
+
+abline(a=0,b=0, lwd=1, lty=1)
+
+
+axis(1,at=seq(min(xaxis),max(xaxis),5),
+     cex.axis=0.8,tck=-0.02)
+
+axis(2,
+     at=round(seq(-2.5,2.25,0.5),1),
+     cex.axis=0.8,las=2,tck=-0.02)
+
+title(xlab = "year of publication", 
+      ylab = "effect size (Zr)",
+      line = 2.75, cex.lab=1.4)
+
+points(jitter(xaxis,2),yaxis,
+       bg=rgb(0,0,0, 0.1),
+       col=rgb(0,0,0, 0.2),
+       pch=21,
+       cex=cex.study)
+
+lines(newdat$year, newdat$fit, lwd=2.75,col="darkorchid4") 
+
+polygon(c(newdat$year,rev(newdat$year)),
+        c(newdat$lower,rev(newdat$upper)),
+        border=NA,col=rgb(104/255,34/255,139/255, 0.5))
+```
+
+**Figure S2.** The overall published effect size has decreased over time since first described. The solid line represents the model estimate, shading shows the 95% confidence intervals and individual effect sizes are scaled by their precision (1/SE).
+
+<br/><br/>
+
+#### 1.2.3 - **All-in publication bias test (Eq.24)**
+
+Not necessary, since the first step did not find evidence of small-study effects.
+
+<br/><br/>
+
+## 2 - Mean differences between two groups
+
+### 2.1 - Meta-analytic model
+
+### 2.2 - Publication bias
+
+#### 2.2.1 - **The two-step approach**
+
+#### 2.2.1.1 - **Sample size quared (Eq.27)**
+
+#### 2.2.1.2 - **Sample size (Eq.28)**
+
+#### 2.2.2 - **Time-lag bias test**
+
+#### 2.2.3 - **All-in publication bias test (Eq.29)**
+
+## R Session Information
+
+```{r}
+sessionInfo() %>% pander()
+```
+
+## References
+
+To be added.
