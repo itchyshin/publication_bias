@@ -1,0 +1,35 @@
+---
+title: "Untitled"
+author: "Shinichi Nakagawa"
+date: "21/02/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+
+### S1.1.1 Representative Sample
+
+To select the representative sample of meta-analysis publications, we first searched the Scopus database for papers with (“meta-analy\*” OR “metaanaly\*” OR “meta-regression”) in the title, abstract, or keywords (where the asterisk allows for any ending to the word, such as “meta-analyses” or “meta-analysis”), restricted the date to papers published after 2009, and restricted the ISSN (International Standard Serial Number) to journals classified as ‘Ecology’ and/or ‘Evolutionary Biology’ by the 2017 rankings of the ISI InCites Journal Citation Reports. On 25 March 2019 this search returned 1,668 papers from 134 journals.
