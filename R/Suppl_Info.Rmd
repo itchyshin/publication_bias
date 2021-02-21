@@ -36,9 +36,20 @@ options(digits=3)
 # clearing up
 ```
 
+```{r, eval =FALSE}
+# install the orchaRd package
+install.packages("devtools")
+install.packages("tidyverse")
+install.packages("metafor")
+install.packages("patchwork")
+install.packages("R.rsp")
+
+devtools::install_github("itchyshin/orchard_plot", subdir = "orchaRd", force = TRUE, build_vignettes = TRUE)
+```
+
 
 ```{r function, echo = FALSE, eval = TRUE}
-#TODO - Alfredo - this is good but it is in the author contribution - can I delete this?? - otherwise, we need to do this section by section (or please rearrange this to reflect who did what)
+#TODO - Alfredo - this is good but it is in the author contribution - can we delete this?? - otherwise, we need to do this section by section (or please rearrange this if you still want it)
 ###################################################################
 # Worked example publication bias methodology
 #
@@ -64,7 +75,8 @@ options(digits=3)
 # and evolution. We provide two worked examples, one for correlation
 # effect sizes (r) and one for mean comparisons (SMD and lnRR).
 
-# packages
+
+# requried packages
 pacman::p_load(tidyverse,
                metafor,
                gt,
@@ -77,7 +89,8 @@ pacman::p_load(tidyverse,
                patchwork,
                here,
                lme4,
-               readxl
+               readxl,
+               orchaRd
                )
 
 # necessary custom functions
@@ -212,7 +225,7 @@ As you can see above, Equation 8's intercept is identical the slope of Equation 
 
 ## Appendix S3: Faile-safe *N* comparisions
 
-We use the function `fsn()` in the R package, `metafor`, as in this web page  [link](https://wviechtb.github.io/metafor/reference/fsn.html).
+We use the function `fsn()` in the R package, `metafor`, as in this web page  ([link](https://wviechtb.github.io/metafor/reference/fsn.html)).
 
 ```{r}
 # an example data using risk ratio (not response ratio)
@@ -225,14 +238,14 @@ fsn(yi, vi, data=dat, type="Rosenberg")
 
 ## Appendix S4: Mulitlevel meta-regession method for publication bias
 
+<!-- Alfredo + Yefeng - please give a quite overview of what we present her e please (as simple and short as possible) - please make sure to reference properly too - thanks -->
 
-
-### S4.1 - Correlation effect sizes
+### S4.1: Correlation effect sizes (**Zr**)
 
 ```{r, results="hide"}
 # importing dataset with correlation coefficients
-# dataset.r.original <- read.csv("../data/Sanchez-Tojar_et_al_2018_eLife_Meta4.csv", stringsAsFactors = FALSE)
-dataset.r.original <- read.xlsx("ft044.xlsx", colNames = TRUE, sheet = 1)
+
+dataset.r.original <- read_excel(here("data","ft044.xlsx"))
 
 # transforming r to Zr for the analyses, and estimating VZr for the weighting
 dataset.r.original$Sample.size <- as.numeric(dataset.r.original$Sample.size)
@@ -250,11 +263,11 @@ dataset.r.original <- dataset.r.original[ , !names(dataset.r.original) %in% c("R
 
 For our first worked example, we used the dataset provided by Garamszegi et al. (2012), who tested the hypothesis that behaviours are correlated across studies and species (behavioural syndrome), which they found support for. Here, we reanalysed the data from Garamszegi et al. (2012) by first conducting a phylogenetic multilevel intercept-only meta-analytic model and then testing for evidence of publication bias following the approaches outlined by Nakagawa et al. (main manuscript).
 
-### 1.1 - Phylogenetic relationships
+#### S4.1.1 - Phylogenetic relationships
 
-Since multiple species (n = `r length(unique(dataset.r.original$Species))` species) are included in this dataset, we need to account for phylogenetic nonindependence in our statistical models. For that, we build a phylogenetic tree for all these species (Figure S1) by retrieving their phylogenetic relationships from the Open Tree of Life (Hinchliff et al. 2015) using the R package `rotl` (Michonneau, Brown, and Winter 2016). We estimated branch lengths following Grafen (1989) as implemented in the function 'compute.brlen()' of the R package `ape` (Paradis and Schliep 2019). We then constructed a phylogenetic relatedness correlation matrix that will be fitted as part of the random effect structure of our models (see below).
+Since multiple species (n = `r length(unique(dataset.r.original$Species))` species) are included in this dataset, we need to account for phylogenetic non-independence in our statistical models. For that, we build a phylogenetic tree for all these species (Figure S1) by retrieving their phylogenetic relationships from the Open Tree of Life (Hinchliff et al. 2015) using the R package `rotl` (Michonneau, Brown, and Winter 2016). We estimated branch lengths following Grafen (1989) as implemented in the function 'compute.brlen()' of the R package `ape` (Paradis and Schliep 2019). We then constructed a phylogenetic relatedness correlation matrix that will be fitted as part of the random effect structure of our models (see below).
 
-```{r fig.height = 9, fig.width = 9.5, fig.align = "center"}
+```{r, eval=FALSE}
 # First, we searched for the species names in the Open Tree Taxonomy (Rees and Cranston 2017) to confirm that all species names were correct, and that no synonyms or typos were present in the database.
 
 # fixing a typo in the original list of species names
@@ -349,8 +362,12 @@ dataset.r.original$Species.updated <- ifelse(dataset.r.original$Species.updated=
 # we can now save the tree
 save(tree, file = "tree_20211802.Rdata")
 
-# # we can now load the saved tree (tree)
-# load("tree_20211802.Rdata") 
+```
+
+
+```{r fig.height = 9, fig.width = 9.5, fig.align = "center"}
+# load the saved tree (tree)
+load(here("data","tree_20211802.Rdata")) 
 
 # compute branch lengths of tree
 phylo_branch <- compute.brlen(tree, method = "Grafen", power = 1)
@@ -360,28 +377,21 @@ phylo_branch <- compute.brlen(tree, method = "Grafen", power = 1)
 
 # matrix to be included in the models
 phylo_cor <- vcv(phylo_branch, cor = T)
-
-# finally, save matrix for future analyses
-save(phylo_cor, file = "phylo_cor.Rdata")
-
-# # we can now load the saved matrix (phylo_cor)
-# load("phylo_cor.Rdata") #phylo_cor
-
-
-# Last but not least, let's plot the tree to ease visualization of the species and their phylogenetic relationships
-
-# we can then plot the tree
-plot(tree, type = "fan", cex=0.65, label.offset =.05, no.margin = TRUE) #check: https://www.rdocumentation.org/packages/ape/versions/5.3/topics/plot.phylo
-
 ```
 
-**Figure S1.** Phylogenetic tree of all species included in this dataset. Notice that some of the names shown in the tree correspond to the most updated synonyms according to the Open Tree Taxonomy (Rees and Cranston 2017) of those originally avialable in the dataset provided by Garamszegi et al. (2012).
+##### Figure S4.1
+
+Phylogenetic tree of all species included in this dataset. Notice that some of the names shown in the tree correspond to the most updated synonyms according to the Open Tree Taxonomy (Rees and Cranston 2017) of those originally avialable in the dataset provided by Garamszegi et al. (2012).
 
 <br/><br/>
-  
-  ### 1.2 - Meta-analytic model
-  
-  Then, we used the data from Garamszegi et al. (2012) to provide a worked example on how to test of publication biases in datasets with several layers of non-independence and high heterogeneity (more in the main text), which is common for meta-analyses in ecology and evolution (e.g. Senior et al. 2016; Noble et al. 2017). Detailed results of the meta-analysis are shown in Table S1.
+```{r}
+# we can then plot the tree
+plot(tree, type = "fan", cex=0.65, label.offset =.05, no.margin = TRUE) #check: https://www.rdocumentation.org/packages/ape/versions/5.3/topics/plot.phylo
+```
+
+#### S4.1.2: Mulilevel-meta-analysis
+
+Then, we used the data from Garamszegi et al. (2012) to provide a worked example on how to test of publication biases in datasets with several layers of non-independence and high heterogeneity (more in the main text), which is common for meta-analyses in ecology and evolution (e.g. Senior et al. 2016; Noble et al. 2017). Detailed results of the meta-analysis are shown in Table S4.1.
 
 ```{r}
 # From the article:
@@ -400,13 +410,6 @@ meta.analysis.model.1 <- rma.mv(yi, vi,
 #print(meta.analysis.model.1, digits=3)
 metaanalytic.mean.model.1 <- predict(meta.analysis.model.1, digits=3)
 #forest(meta.analysis.model.1)
-
-# estimating relative heterogeneity I2
-#I2.model.1 <- I2(meta.analysis.model.1,method = c("Shinichi"))*100
-
-I2.model.1 <- I2(meta.analysis.model.1, 
-                 dataset.r.original$vi, 
-                 ME = FALSE, sims = 1500, phylo = "Species.updated", obs = "obsID")
 
 # and absolute heterogeneity Q
 Q.model.1 <- c(meta.analysis.model.1$QE)
@@ -449,12 +452,14 @@ table.model.1.gt
 **Table S1.** Results of the phylogenetic multilevel intercept-only meta-analysis testing the relationship between behaviours across species. Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*).
 
 <br/><br/>
-  
-  ### 1.3 - Publication bias
-  
-  #### **1.3.1 - The two-step approach**
-  
-  To test for small-study effects, we are going to follow the two-step approach that we suggested in the main text. First, we run a multilevel meta-regression that has the same random effect structure as the meta-analytic model (Table S1) and that includes the effect sizes' standard errors (SE or sei) as the only moderator (see Equation 21 from the main text). If the slope of this moderator is statistically significant, then we run an additional multilevel meta-regression including the effect sizes' sampling variances (SV or vi) as the only moderator (see Equation 22 from the main text), which allows us to obtain an overall effect (the intercept or B0) after accounting for small-study bias, and this overall is less downwardly  biased when modeling sampling variance than when modeling standard errors (more in the main text; Doucouliagos 2012, 2014).
+
+#### S4.1.3: Publication bias
+
+##### S4.1.3.1: Meta-regression with SE (uni-moderator)
+
+
+<!-- in practice, we would not do 2 step for uni-variate models unless we assume homogeneity!, which we never do -->
+<!-- Sorry - this is not where 2 step one comes in - yet - To test for small-study effects, we are going to follow the two-step approach that we suggested in the main text. First, we run a multilevel meta-regression that has the same random effect structure as the meta-analytic model (Table S1) and that includes the effect sizes' standard errors (SE or sei) as the only moderator (see Equation 21 from the main text). If the slope of this moderator is statistically significant, then we run an additional multilevel meta-regression including the effect sizes' sampling variances (SV or vi) as the only moderator (see Equation 22 from the main text), which allows us to obtain an overall effect (the intercept or B0) after accounting for small-study bias, and this overall is less downwardly  biased when modeling sampling variance than when modeling standard errors (more in the main text; REF - Doucouliagos 2012, 2014). -->
 
 ```{r}
 # creating a varible for the standard error of each effect size (i.e. the square root of the sampling variance, see Figure 1 from the main manuscript)
@@ -473,7 +478,7 @@ publication.bias.model.1.se <- rma.mv(yi, vi,
 estimates.publication.bias.model.1.se <- estimates.CI(publication.bias.model.1.se)
 ```
 
-##### **1.3.1.1 - Modelling SE (Eq.21)**
+**Modelling SE (Eq.21)**
 
 According to the meta-regression, there is evidence of small-study effects since the slope of the moderator (i.e. SE) is marginally statistically significant (**slope = `r round(estimates.publication.bias.model.1.se[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.1.se[2,3],2)`,`r round(estimates.publication.bias.model.1.se[2,4],2)`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.se)[1]*100,1)`%; Figure S1), showing that effect sizes with larger SE are larger, and thus, showing evidence that some small effect sizes with large SE are seemingly missing. Since this meta-regression shows some evidence of small-study bias, we can the proceed to run the meta-regression suggested in Equation 22 from the main text, so that we can estimate an overall effect size for the meta-analysis after accouting for the existence of small-study bias.
 
@@ -545,13 +550,13 @@ publication.bias.model.1.sv <- rma.mv(yi, vi,
 estimates.publication.bias.model.1.sv <- estimates.CI(publication.bias.model.1.sv)
 ```
 
-##### **1.3.1.2 - Modelling SV (Eq.22)**
+**Modelling SV (Eq.22)**
 
 The follow-up meta-regression including the effect sizes' sampling variances (SV or vi) as the only moderator (see Equation 22 from the main text) provides us a less downwardly  biased estimate of the overall effect after accounting for small-study bias. This estimated overall effect corresponds to the intercept of the meta-regression, which corresponds to **`r round(estimates.publication.bias.model.1.sv[1,2],2)` (95% CI = [`r round(estimates.publication.bias.model.1.sv[1,3],2)`,`r round(estimates.publication.bias.model.1.sv[1,4],2)`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.sv)[1]*100,1)`%).
 
 <br/><br/>
 
-#### **1.3.2 - Time-lag bias test (Eq.23)**
+##### S4.1.3.2: Meta-regression with `year` (uni-moderator)
 
 To test for time-lag bias, also called decline effects, we are again going to fit a multilevel meta-regression that has the same random effect structure as the meta-analytic model (Table S1) and that includes the year of publication as the only moderator (see Equation 23 from the main text). The estimated slope for year will tell us whether effect sizes have become smaller over time since the first effect size was published.
 
@@ -630,7 +635,7 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 <br/><br/>
 
-#### 1.3.3 - **All-in publication bias test (Eq.24)**
+##### S4.1.3.3: All-in publication bias test (mulit-moderators)
 
 When heterogeneity exists, it is best to combine Equations 21 and 23 with other moderators since those additional moderators will generally explain or be predicted to explain some of the heterogeneity among effect sizes. Therefore, in this case we will run a multilevel meta-regression including the effect sizes' standard errors, the year of publication and the following moderators originally included in Garamszegi et al. (2012): 'taxon class' and 'captivity status' (which accounted for 18.8% of heteregeneity, model not shown).
 
@@ -646,32 +651,70 @@ summary(publication.bias.model.1.timelag.all.in)
 ```
 
 **Need to add a little text and probably also a table showing the results of this meta-regresssion, which I did not do because it would be very specific for the dataset we will finally used. Nonetheless, find below the *R<sup>2</sup><sub>marginal</sub>* estimate:**
-  
-  *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.timelag.all.in)[1]*100,1)`%
 
-## 2 - Mean differences between two groups
+*R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.timelag.all.in)[1]*100,1)`%
 
-### 2.1 - Meta-analytic model
+### S4.2: Mean differences between two groups (lnRR and SMD)
 
-### 2.2 - Publication bias
+#### S4.2.1 - Meta-analytic model
 
-#### 2.2.1 - **The two-step approach**
+#### S4.2.2 - Publication bias
 
-#### 2.2.1.1 - **Sample size quared (Eq.27)**
+##### S4.2.2.1: The two-step approach
 
-#### 2.2.1.2 - **Sample size (Eq.28)**
+**Using Equation 27**
 
-#### 2.2.2 - **Time-lag bias test**
+**Using Equation 28**
 
-#### 2.2.3 - **All-in publication bias test (Eq.29)**
+##### S4.2.2.2: Time-lag bias test
 
+##### S4.2.2.3:  All-in publication bias test (Eq.29)
 
 ## Appendix S5: Avearging and sampling approches for publication bias
 
+### S5.1: Correlation effect sizes (**Zr**)
+
+#### S5.1.1: Averaging 
+
+##### S5.1.1.2: Trim and fill test 
+
+This may not work but do this anyways
+
+##### S5.1.1.3: Selection model (3 PSM)
+
+##### S5.1.1.4: Cumlative meta-analysis 
+
+I guess we do not expect a decline effect - but we do this anyways
+
+#### S5.1.2: Sampling 
+
+##### S5.1.2.2: Trim and fill test 
+
+##### S5.1.2.3: Selection model (3 PSM)
+
+##### S5.1.2.4: Cumlative meta-analysis 
+
+### S5.2: Mean differences between two groups (lnRR and SMD)
+
+#### S5.2.1: Averaging 
+
+##### S5.2.1.2: Trim and fill test 
+
+##### S5.2.1.3: Selection model (3 PSM)
+
+##### S5.2.1.4: Cumlative meta-analysis 
+
+#### S5.2.2: Sampling 
+
+##### S5.2.2.2: Trim and fill test 
+
+##### S5.2.2.3: Selection model (3 PSM)
+
+##### S5.2.2.4: Cumlative meta-analysis 
 
 ## Appendix extra: Figure's R code
 
-
+Shinichi to do
 
 ## R Session Information
 
