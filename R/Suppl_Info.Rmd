@@ -536,25 +536,6 @@ polygon(c(newdat$sei,rev(newdat$sei)),
 
 **Figure S2.** Effect sizes with larger SE are larger, which provides evidence of small-study effects in this meta-analytic dataset. The solid line represents the model estimate and shading shows the 95% confidence intervals.
 
-```{r}
-# Application of Equation 22 from the main manuscript
-publication.bias.model.1.sv <- rma.mv(yi, vi,
-                                      mods=~1+vi,
-                                      random=list(~ 1 | obsID, ~ 1 | study, ~ 1 | Species.updated),
-                                      R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-                                      method="REML",data=dataset.r.original)
-
-#summary(publication.bias.model.1.sv)
-
-# extracting the mean and 95% confidence intervals
-estimates.publication.bias.model.1.sv <- estimates.CI(publication.bias.model.1.sv)
-```
-
-**Modelling SV (Eq.22)**
-
-The follow-up meta-regression including the effect sizes' sampling variances (SV or vi) as the only moderator (see Equation 22 from the main text) provides us a less downwardly  biased estimate of the overall effect after accounting for small-study bias. This estimated overall effect corresponds to the intercept of the meta-regression, which corresponds to **`r round(estimates.publication.bias.model.1.sv[1,2],2)` (95% CI = [`r round(estimates.publication.bias.model.1.sv[1,3],2)`,`r round(estimates.publication.bias.model.1.sv[1,4],2)`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.sv)[1]*100,1)`%).
-
-<br/><br/>
 
 ##### S4.1.3.2: Meta-regression with `year` (uni-moderator)
 
