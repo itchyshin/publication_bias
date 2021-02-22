@@ -45,6 +45,12 @@ install.packages("patchwork")
 install.packages("R.rsp")
 
 devtools::install_github("itchyshin/orchard_plot", subdir = "orchaRd", force = TRUE, build_vignettes = TRUE)
+
+# install the dmetar pacakge
+if (!require("devtools")) {
+  install.packages("devtools")
+}
+devtools::install_github("MathiasHarrer/dmetar")
 ```
 
 
@@ -90,7 +96,15 @@ pacman::p_load(tidyverse,
                here,
                lme4,
                readxl,
-               orchaRd
+               orchaRd,
+               patchwork,
+               cowplot,
+               metaviz,
+               meta,
+               ggplotify,
+               grid,
+               dmetar,
+               viridis
                )
 
 # necessary custom functions
@@ -102,6 +116,8 @@ estimates.CI <- function(model){
   names(db.mf) <- c("mean","lower","upper","estimate")
   return(db.mf[,c("estimate","mean","lower","upper")])
 }
+
+# r and Zr transfromation can be don eby tanh and atanh - base function
 
 ```
 
@@ -245,7 +261,7 @@ fsn(yi, vi, data=dat, type="Rosenberg")
 ```{r, results="hide"}
 # importing dataset with correlation coefficients
 
-dataset.r.original <- read_excel(here("data","ft044.xlsx"))
+dataset.r.original <- read.xlsx(here("data","ft044.xlsx"), colNames = TRUE, sheet = 1)
 
 # transforming r to Zr for the analyses, and estimating VZr for the weighting
 dataset.r.original$Sample.size <- as.numeric(dataset.r.original$Sample.size)
@@ -253,8 +269,8 @@ dataset.r.original$Sample.size <- as.numeric(dataset.r.original$Sample.size)
 # subset dataset to those with 4 or more individuals (this removes two rows, one without sample size and one with sample size = 3)
 dataset.r.original <- dataset.r.original[dataset.r.original$Sample.size>3 & !(is.na(dataset.r.original$Sample.size)),]
 
-dataset.r.original$yi <- r.to.Zr(dataset.r.original$Correlation)
-dataset.r.original$vi <- VZr(as.numeric(dataset.r.original$Sample.size)) #the effect based on 3 individuals won't be able to be analyzed because VZr is then infinite (see VZr function above to understand). Also, there is a missing sample size. 
+dataset.r.original$yi <- atanh(dataset.r.original$Correlation)
+dataset.r.original$vi <- 1/(as.numeric(dataset.r.original$Sample.size)-3) #the effect based on 3 individuals won't be able to be analyzed because VZr is then infinite (see VZr function above to understand). Also, there is a missing sample size. 
 
 # renaming some variables to make it easier
 dataset.r.original$study <- dataset.r.original$Reference
@@ -267,7 +283,7 @@ For our first worked example, we used the dataset provided by Garamszegi et al. 
 
 Since multiple species (n = `r length(unique(dataset.r.original$Species))` species) are included in this dataset, we need to account for phylogenetic non-independence in our statistical models. For that, we build a phylogenetic tree for all these species (Figure S1) by retrieving their phylogenetic relationships from the Open Tree of Life (Hinchliff et al. 2015) using the R package `rotl` (Michonneau, Brown, and Winter 2016). We estimated branch lengths following Grafen (1989) as implemented in the function 'compute.brlen()' of the R package `ape` (Paradis and Schliep 2019). We then constructed a phylogenetic relatedness correlation matrix that will be fitted as part of the random effect structure of our models (see below).
 
-```{r, eval=FALSE}
+```{r}
 # First, we searched for the species names in the Open Tree Taxonomy (Rees and Cranston 2017) to confirm that all species names were correct, and that no synonyms or typos were present in the database.
 
 # fixing a typo in the original list of species names
@@ -286,13 +302,13 @@ dataset.r.original$Species <- ifelse(dataset.r.original$Species=="Taenopygia gut
                                      dataset.r.original$Species)
 
 # # obtaining dataframe listing the Open Tree identifiers potentially matching our list of species (be aware that this will take a few minutes, and you can load the data below)
-taxa <- tnrs_match_names(names = unique(dataset.r.original$Species))
+#taxa <- tnrs_match_names(names = unique(dataset.r.original$Species))
 
 # saving the taxonomic data created on the 18th of February 2021 to speed the process in the future and make the code fully reproducible if taxonomic changes are implemented in the future
-save(taxa,file = "taxa_Open_Tree_of_Life_20210218.RData")
+#save(taxa,file = "taxa_Open_Tree_of_Life_20210218.RData")
 
 # # loading the taxonomic data (taxa) created on the 18th of February 2021
-# load("taxa_Open_Tree_of_Life_20210218.RData")
+load(here("data", "taxa_Open_Tree_of_Life_20210218.RData"))
 
 # # check approximate matches
 # taxa[taxa$approximate_match==TRUE,]
@@ -360,12 +376,12 @@ dataset.r.original$Species.updated <- ifelse(dataset.r.original$Species.updated=
 # all in order
 
 # we can now save the tree
-save(tree, file = "tree_20211802.Rdata")
+#save(tree, file = "tree_20211802.Rdata")
 
 ```
 
 
-```{r fig.height = 9, fig.width = 9.5, fig.align = "center"}
+```{r}
 # load the saved tree (tree)
 load(here("data","tree_20211802.Rdata")) 
 
@@ -384,7 +400,7 @@ phylo_cor <- vcv(phylo_branch, cor = T)
 Phylogenetic tree of all species included in this dataset. Notice that some of the names shown in the tree correspond to the most updated synonyms according to the Open Tree Taxonomy (Rees and Cranston 2017) of those originally avialable in the dataset provided by Garamszegi et al. (2012).
 
 <br/><br/>
-```{r}
+```{r, fig.height = 9, fig.width = 9.5, fig.align = "center"}
 # we can then plot the tree
 plot(tree, type = "fan", cex=0.65, label.offset =.05, no.margin = TRUE) #check: https://www.rdocumentation.org/packages/ape/versions/5.3/topics/plot.phylo
 ```
@@ -402,29 +418,39 @@ dataset.r.original$obsID <- 1:nrow(dataset.r.original)
 # running multilevel intercept-only meta-analytic model
 meta.analysis.model.1 <- rma.mv(yi, vi,
                                 mods=~1,
-                                random=list(~ 1 | obsID, ~ 1 | study, ~ 1 | Species.updated),
+                                random=list(~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
                                 R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-                                method="REML",data=dataset.r.original)
+                                method="REML",
+                                test="t", # using t dist rather than z
+                                data=dataset.r.original)
 
+#summary(meta.analysis.model.1
 # extracting the mean, 95% confidence intervals and 95% prediction intervals
 #print(meta.analysis.model.1, digits=3)
 metaanalytic.mean.model.1 <- predict(meta.analysis.model.1, digits=3)
 #forest(meta.analysis.model.1)
 
 # and absolute heterogeneity Q
-Q.model.1 <- c(meta.analysis.model.1$QE)
+#Q.model.1 <- c(meta.analysis.model.1$QM)
+
+I2.model.1 <- i2_ml(meta.analysis.model.1, method = "wv")
 
 # creating a table to show the heterogeneity estimates
+# we exclude Q test as this is not so meaningful without DF and p (it is Chi-square values givne a df)
 table.model.1 <- data.frame(n=length(unique(dataset.r.original$study)),
                             k=nrow(dataset.r.original),
                             mean=round(metaanalytic.mean.model.1[[1]],2),
                             CI=paste0("[",round(metaanalytic.mean.model.1[[3]],2),",",round(metaanalytic.mean.model.1[[4]],2),"]"),
                             PI=paste0("[",round(metaanalytic.mean.model.1[[5]],2),",",round(metaanalytic.mean.model.1[[6]],2),"]"),
-                            I2_obsID=paste0(round(I2.model.1[1,1]*100,1),"\n[",round(I2.model.1[1,2]*100,1),",",round(I2.model.1[1,3]*100,1),"]"),
-                            I2_paperID=paste0(round(I2.model.1[2,1]*100,1),"\n[",round(I2.model.1[2,2]*100,1),",",round(I2.model.1[2,3]*100,1),"]"),
-                            I2_phylo=paste0(round(I2.model.1[4,1]*100,1),"\n[",round(I2.model.1[4,2]*100,1),",",round(I2.model.1[4,3]*100,1),"]"),
-                            I2_total=paste0(round(I2.model.1[5,1]*100,1),"\n[",round(I2.model.1[5,2]*100,1),",",round(I2.model.1[5,3]*100,1),"]"),
-                            Q=round(Q.model.1,1))
+                            I2_obsID=round(I2.model.1[["I2_obsID"]]*100,1),
+                            I2_paperID=round(I2.model.1[["I2_study"]]*100,1),
+                            I2_nonphylo=round(I2.model.1[["I2_Species"]]*100,1), 
+                            I2_phylo=round(I2.model.1[["I2_Species.updated"]]*100,1),
+                            I2_total=round(I2.model.1[["I2_total"]]*100,1)
+                            )
 
 rownames(table.model.1) <- NULL
 
@@ -438,12 +464,13 @@ table.model.1.gt <- table.model.1 %>%
              PI=md("**95% PI**"),
              I2_obsID=md("***I*<sup>2</sup><sub>residual</sub>\n(%)**"),
              I2_paperID=md("***I*<sup>2</sup><sub>study</sub>\n(%)**"),
+             I2_nonphylo=md("***I*<sup>2</sup><sub>non-phylogeny</sub>\n(%)**"),
              I2_phylo=md("***I*<sup>2</sup><sub>phylogeny</sub>\n(%)**"),
              I2_total=md("***I*<sup>2</sup><sub>total</sub>    \n(%)**"),
-             Q=md("***Q*<sub>test</sub>**")) %>%
+             ) %>%
   cols_align(align = "center") %>%
-  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity; *Q*<sub>test</sub> = Cochrane's *Q* test. *I*<sup>2</sup> are shown with their respective 95% CI. *I*<sup>2</sup><sub>phylogeny</sub> is equivalent to phylogenetic heritability or *H*<sup>2</sup>.")) %>%
-  tab_options(table.width=770)
+  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity; *I*<sup>2</sup><sub>phylogeny</sub> is relates to phylogenetic heritability or *H*<sup>2</sup>.")) #%>%
+ # tab_options(table.width=770)
 
 table.model.1.gt
 
@@ -457,6 +484,7 @@ table.model.1.gt
 
 ##### S4.1.3.1: Meta-regression with SE (uni-moderator)
 
+Something to be written here
 
 <!-- in practice, we would not do 2 step for uni-variate models unless we assume homogeneity!, which we never do -->
 <!-- Sorry - this is not where 2 step one comes in - yet - To test for small-study effects, we are going to follow the two-step approach that we suggested in the main text. First, we run a multilevel meta-regression that has the same random effect structure as the meta-analytic model (Table S1) and that includes the effect sizes' standard errors (SE or sei) as the only moderator (see Equation 21 from the main text). If the slope of this moderator is statistically significant, then we run an additional multilevel meta-regression including the effect sizes' sampling variances (SV or vi) as the only moderator (see Equation 22 from the main text), which allows us to obtain an overall effect (the intercept or B0) after accounting for small-study bias, and this overall is less downwardly  biased when modeling sampling variance than when modeling standard errors (more in the main text; REF - Doucouliagos 2012, 2014). -->
@@ -467,10 +495,15 @@ dataset.r.original$sei <- sqrt(dataset.r.original$vi)
 
 # Application of Equation 21 from the main manuscript
 publication.bias.model.1.se <- rma.mv(yi, vi,
-                                      mods=~1+sei,
-                                      random=list(~ 1 | obsID, ~ 1 | study, ~ 1 | Species.updated),
+                                      mod = 1 + sei,
+                                      random=list(~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-                                      method="REML",data=dataset.r.original)
+                                      method="REML",
+                                      test="t", # using t dist rather than z
+                                      data=dataset.r.original)
 
 #print(publication.bias.model.1.se,digits=3)
 
@@ -478,9 +511,11 @@ publication.bias.model.1.se <- rma.mv(yi, vi,
 estimates.publication.bias.model.1.se <- estimates.CI(publication.bias.model.1.se)
 ```
 
-**Modelling SE (Eq.21)**
+What we need to write here is that - this gives some indication but it is best we look at this once we account for heterogneiety
 
-According to the meta-regression, there is evidence of small-study effects since the slope of the moderator (i.e. SE) is marginally statistically significant (**slope = `r round(estimates.publication.bias.model.1.se[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.1.se[2,3],2)`,`r round(estimates.publication.bias.model.1.se[2,4],2)`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.se)[1]*100,1)`%; Figure S1), showing that effect sizes with larger SE are larger, and thus, showing evidence that some small effect sizes with large SE are seemingly missing. Since this meta-regression shows some evidence of small-study bias, we can the proceed to run the meta-regression suggested in Equation 22 from the main text, so that we can estimate an overall effect size for the meta-analysis after accouting for the existence of small-study bias.
+Not sure the fig is needed yet but may be fine
+
+<!--According to the meta-regression, there is evidence of small-study effects since the slope of the moderator (i.e. SE) is marginally statistically significant (**slope = `r round(estimates.publication.bias.model.1.se[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.1.se[2,3],2)`,`r round(estimates.publication.bias.model.1.se[2,4],2)`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.se)[1]*100,1)`%; Figure S1), showing that effect sizes with larger SE are larger, and thus, showing evidence that some small effect sizes with large SE are seemingly missing. Since this meta-regression shows some evidence of small-study bias, we can the proceed to run the meta-regression suggested in Equation 22 from the main text, so that we can estimate an overall effect size for the meta-analysis after accouting for the existence of small-study bias.-->
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
 publication.bias.model.1.se.plot <- predict(publication.bias.model.1.se)
@@ -548,9 +583,14 @@ dataset.r.original$year <- as.numeric(str_extract(dataset.r.original$study, "(\\
 # Application of Equation 23 from the main manuscript
 publication.bias.model.1.timelag <- rma.mv(yi, vi,
                                            mods=~1+year,
-                                           random=list(~ 1 | obsID, ~ 1 | study, ~ 1 | Species.updated),
-                                           R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-                                           method="REML",data=dataset.r.original)
+                                           random=list(~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
+                                      R = list(Species.updated = phylo_cor), #phylogenetic relatedness
+                                      method="REML",
+                                      test="t", # using t dist rather than z
+                                      data=dataset.r.original)
 
 #summary(publication.bias.model.1.timelag)
 
@@ -559,7 +599,11 @@ estimates.publication.bias.model.1.timelag <- estimates.CI(publication.bias.mode
 
 ```
 
-The time-lag bias test shows no evidence for a decline effect in this dataset (**year slope = `r round(estimates.publication.bias.model.1.timelag[2,2],2)`; 95% CI = [`r round(estimates.publication.bias.model.1.timelag[2,3],2)`,`r round(estimates.publication.bias.model.1.timelag[2,4],2)`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.timelag)[1]*100,1)`%; Figure S2).
+the same as above - but this is unlikley to change even in the full model
+
+Again not sure whether fig is needed but we can keep
+
+<!--The time-lag bias test shows no evidence for a decline effect in this dataset (**year slope = `r round(estimates.publication.bias.model.1.timelag[2,2],2)`; 95% CI = [`r round(estimates.publication.bias.model.1.timelag[2,3],2)`,`r round(estimates.publication.bias.model.1.timelag[2,4],2)`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.timelag)[1]*100,1)`%; Figure S2).-->
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
 publication.bias.model.1.timelag.plot <- predict(publication.bias.model.1.timelag,newmods=seq(min(dataset.r.original$year),max(dataset.r.original$year),1))
@@ -622,13 +666,69 @@ When heterogeneity exists, it is best to combine Equations 21 and 23 with other 
 
 ```{r}
 # Application of Equation 24 from the main manuscript
-publication.bias.model.1.timelag.all.in <- rma.mv(yi, vi,
-                                                  mods=~1+sei+year+Class+CaptivityC,
-                                                  random=list(~ 1 | obsID, ~ 1 | study, ~ 1 | Species.updated),
-                                                  R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-                                                  method="REML",data=dataset.r.original)
+#TODO a few things to notice - we need to make the intercept meaning full; using - 1 but this only works if we have one categorical varaible
+# easiest to get the weighted mean of 
 
-summary(publication.bias.model.1.timelag.all.in)
+publication.bias.model.1.all.se <- rma.mv(yi, vi,
+                                            mods=~sei+
+                                            scale(year)+
+                                            CaptivityC - 1, # take Class - that is already a part of phylo   
+                                            random=list(~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
+                                      R = list(Species.updated = phylo_cor), #phylogenetic relatedness
+                                      method="REML",
+                                      test="t", # using t dist rather than z
+                                      data=dataset.r.original)
+
+summary(publication.bias.model.1.all.se)
+
+```
+
+```{r}
+# Application of Equation 24 from the main manuscript
+#TODO a few things to notice - we need to make the intercept meaning full
+# if marginal, this intercept is still the best estimat 
+
+publication.bias.model.1.v <- rma.mv(yi, vi,
+                                           mods=~vi
+                                           scale(year)+
+                                           CaptivityC - 1, # take Class - that is already a part of phylo   
+                                           random=list(~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
+                                      R = list(Species.updated = phylo_cor), #phylogenetic relatedness
+                                      method="REML",
+                                      test="t", # using t dist rather than z
+                                      data=dataset.r.original)
+
+summary(publication.bias.model.1.v)
+
+# checking correltions among fixed effects
+#model <- lmer(yi ~ vi + scale(year) + CaptivityC + (1|study), weights = 1/vi, data = dataset.r.original)
+#summary(model)
+
+# averaging all the 
+# res.dat <- data.frame(yi = publication.bias.model.1.v$b[-c(1,2)], vi =  publication.bias.model.1.v$se[-c(1,2)]^2, cluster = rep("Captitive", 5))
+# dat <- escalc(yi=yi, vi=vi, data=res.dat)
+# test <- aggregate(dat, cluster = cluster, rho = 0)
+# compare with this
+publication.bias.model.1.v2 <- rma.mv(yi, vi,
+                                           mods=~vi + 
+                                           scale(year),
+                                           random=list(~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
+                                      R = list(Species.updated = phylo_cor), #phylogenetic relatedness
+                                      method="REML",
+                                      test="t", # using t dist rather than z
+                                      data=dataset.r.original)
+
+summary(publication.bias.model.1.v2)
+
 ```
 
 **Need to add a little text and probably also a table showing the results of this meta-regresssion, which I did not do because it would be very specific for the dataset we will finally used. Nonetheless, find below the *R<sup>2</sup><sub>marginal</sub>* estimate:**
@@ -637,7 +737,164 @@ summary(publication.bias.model.1.timelag.all.in)
 
 ### S4.2: Mean differences between two groups (lnRR and SMD)
 
+```{r}
+# importing dataset with mean differences
+dataset.original.mean.diff<-read_excel(here("data", "ft027.xlsx"), col_names = TRUE)
+
+names(dataset.original.mean.diff)
+str(dataset.original.mean.diff)
+
+
+# lnRR
+  lnRR <- with(dataset.original.mean.diff, escalc(measure = "ROM",
+                                m1i = T_mean,
+                                m2i = C_mean,
+                                sd1i = T_sd,
+                                sd2i = C_sd,
+                                n1i = T_N,
+                                n2i = C_N))
+
+  SMD <- with(dataset.original.mean.diff, escalc(measure = "SMD",
+                                m1i = T_mean,
+                                m2i = C_mean,
+                                sd1i = T_sd,
+                                sd2i = C_sd,
+                                n1i = T_N,
+                                n2i = C_N))
+  
+
+metrics <- data.frame(RR = lnRR$yi, VRR = lnRR$vi, SMD = SMD$yi, VSMD = SMD$vi)
+dataset.mean.diff <- cbind(dataset.original.mean.diff, metrics) # bind_cols()
+
+
+
+
+
+# clean NA
+  dataset.mean.diff <- dataset.mean.diff[!is.na(dataset.mean.diff$RR),]
+  
+  dataset.mean.diff <- dataset.mean.diff[!is.na(dataset.mean.diff$SMD),]
+  
+```
+
+
 #### S4.2.1 - Meta-analytic model
+
+XXX et al. (XXXX) tested the hypothesis that X and Y were correlated across studies and species. Indeed, the authors found support for their hypothesis, showing that X and Y were correlated across studies and species. Here, we reanalysed the data from XXX et al. (XXXX) by conducting a multilevel intercept-only meta-analytic model. Then, we used the data from XXX et al. (XXXX) to provide a worked example on how to test of publication biases in datasets with several layers of non-independence and high heterogeneity (more in the main text), which is common for meta-analyses in ecology and evolution (e.g. Senior et al. 2016; Noble et al. 2017). Detailed results of the meta-analysis are shown in Table S1.
+
+```{r}
+# creating a unit-level random effect to model residual variance in metafor
+dataset.mean.diff$obsID <- 1:nrow(dataset.mean.diff)
+
+
+# running multilevel intercept-only meta-analytic model
+meta.analysis.model.RR <- rma.mv(RR, VRR,
+                                mods = ~ 1,
+                                random = list(~ 1 | paperID, 
+                                              ~ 1 | obsID),
+                                method = "REML",
+                                test = "t",
+                                data = dataset.mean.diff)
+
+
+meta.analysis.model.SMD <- rma.mv(SMD, VSMD,
+                                mods = ~ 1,
+                                random = list(~ 1 | paperID, ~ 1 | obsID),
+                                method = "REML",data = dataset.mean.diff)
+
+# extracting the mean, 95% confidence intervals and 95% prediction intervals
+#print(meta.analysis.model.1, digits=3)
+metaanalytic.mean.model.RR <- predict(meta.analysis.model.RR, digits=3)
+metaanalytic.mean.model.SMD <- predict(meta.analysis.model.SMD, digits=3)
+#forest(meta.analysis.model.1)
+
+# estimating relative heterogeneity I2
+I2.model.RR <- I2(meta.analysis.model.RR,method = c("Shinichi"))*100
+I2.model.SMD <- I2(meta.analysis.model.SMD,method = c("Shinichi"))*100
+
+# and absolute heterogeneity Q
+#Q.model.RR <- c(meta.analysis.model.RR$QE)
+#Q.model.SMD <- c(meta.analysis.model.SMD$QE)
+
+# creating a table to show the heterogeneity estimates
+table.model.RR <- data.frame(n=length(unique(dataset.mean.diff$paperID)),
+                            k=nrow(dataset.mean.diff),
+                            mean=round(metaanalytic.mean.model.RR[[1]],2),
+                            CI=paste0("[",round(metaanalytic.mean.model.RR[[3]],2),",",round(metaanalytic.mean.model.RR[[4]],2),"]"),
+                            PI=paste0("[",round(metaanalytic.mean.model.RR[[5]],2),",",round(metaanalytic.mean.model.RR[[6]],2),"]"),
+                            I2_obsID=round(I2.model.RR[2],1),
+                            I2_paperID=round(I2.model.RR[3],1),
+                            #I2_popID2=round(I2.model.RR[4],1),
+                            I2_total=round(I2.model.RR[1],1),
+                            Q=round(Q.model.RR,1))
+
+rownames(table.model.RR) <- NULL
+
+#write.csv(table.model.RR, "./table/table.model.RR.csv", row.names = FALSE)
+
+table.model.SMD <- data.frame(n=length(unique(dataset.mean.diff$paperID)),
+                            k=nrow(dataset.mean.diff),
+                            mean=round(metaanalytic.mean.model.SMD[[1]],2),
+                            CI=paste0("[",round(metaanalytic.mean.model.SMD[[3]],2),",",round(metaanalytic.mean.model.SMD[[4]],2),"]"),
+                            PI=paste0("[",round(metaanalytic.mean.model.SMD[[5]],2),",",round(metaanalytic.mean.model.SMD[[6]],2),"]"),
+                            I2_obsID=round(I2.model.SMD[2],1),
+                            I2_paperID=round(I2.model.SMD[3],1),
+                            #I2_popID2=round(I2.model.SMD[4],1),
+                            I2_total=round(I2.model.SMD[1],1),
+                            Q=round(Q.model.SMD,1))
+
+rownames(table.model.SMD) <- NULL
+
+#write.csv(table.model.SMD, "./table/table.model.SMD.csv", row.names = FALSE)
+
+# creating a fancy table using the R package 'gt'
+table.model.RR.gt <- table.model.RR %>% 
+  gt() %>% 
+  cols_label(n=md("**n**"),
+             k=md("**k**"),
+             mean=md("**Meta-analytic mean**"),
+             CI=md("**95% CI**"),
+             PI=md("**95% PI**"),
+             I2_obsID=md("***I*<sup>2</sup><sub>residual</sub> (%)**"),
+             I2_paperID=md("***I*<sup>2</sup><sub>study</sub> (%)**"),
+             #I2_popID2=md("***I*<sup>2</sup><sub>population</sub> (%)**"),
+             #Phylogeny=md("***I*<sup>2</sup><sub>Phylo</sub> (%)**"),
+             I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**"),
+             Q=md("***Q*<sub>test</sub>**")) %>%
+  cols_align(align = "center") %>%
+  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity; *Q*<sub>test</sub> = Cochrane's *Q* test.")) %>%
+  tab_options(table.width=775)
+
+table.model.RR.gt
+
+
+
+table.model.SMD.gt <- table.model.SMD %>% 
+  gt() %>% 
+  cols_label(n=md("**n**"),
+             k=md("**k**"),
+             mean=md("**Meta-analytic mean**"),
+             CI=md("**95% CI**"),
+             PI=md("**95% PI**"),
+             I2_obsID=md("***I*<sup>2</sup><sub>residual</sub> (%)**"),
+             I2_paperID=md("***I*<sup>2</sup><sub>study</sub> (%)**"),
+             #I2_popID2=md("***I*<sup>2</sup><sub>population</sub> (%)**"),
+             #Phylogeny=md("***I*<sup>2</sup><sub>Phylo</sub> (%)**"),
+             I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**"),
+             Q=md("***Q*<sub>test</sub>**")) %>%
+  cols_align(align = "center") %>%
+  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity; *Q*<sub>test</sub> = Cochrane's *Q* test.")) %>%
+  tab_options(table.width=775)
+
+table.model.SMD.gt
+
+```
+
+**Table S1.** Results of the multilevel intercept-only meta-analysis testing the relationship between XXX and YYY across species. Estimates are presented as standardized effect sizes using log transformed ratio of means (i.e., lnRR).standardized mean difference (i.e., Hedges' g)
+
+<br/><br/>
+
+**We could also provide an orchard plot of the results. The reason why I did not do it is because I need to update R to do that and have not found the time. If you'd like to provide an orchard plot, maybe the fastest would be for Yefeng to do that**
 
 #### S4.2.2 - Publication bias
 
@@ -696,6 +953,9 @@ I guess we do not expect a decline effect - but we do this anyways
 ## Appendix extra: Figure's R code
 
 Shinichi to do
+
+
+
 
 ## R Session Information
 
