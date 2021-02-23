@@ -378,6 +378,8 @@ dataset.r.original$Species.updated <- ifelse(dataset.r.original$Species.updated=
 # we can now save the tree
 #save(tree, file = "tree_20211802.Rdata")
 
+dataset.r <- dataset.r.original
+
 ```
 
 
@@ -413,7 +415,7 @@ Then, we used the data from Garamszegi et al. (2012) to provide a worked example
 # From the article:
 
 # creating a unit-level random effect to model residual variance in metafor
-dataset.r.original$obsID <- 1:nrow(dataset.r.original)
+dataset.r$obsID <- 1:nrow(dataset.r)
 
 # running multilevel intercept-only meta-analytic model
 meta.analysis.model.1 <- rma.mv(yi, vi,
@@ -425,7 +427,7 @@ meta.analysis.model.1 <- rma.mv(yi, vi,
                                 R = list(Species.updated = phylo_cor), #phylogenetic relatedness
                                 method="REML",
                                 test="t", # using t dist rather than z
-                                data=dataset.r.original)
+                                data=dataset.r)
 
 #summary(meta.analysis.model.1
 # extracting the mean, 95% confidence intervals and 95% prediction intervals
@@ -491,7 +493,7 @@ Something to be written here
 
 ```{r}
 # creating a varible for the standard error of each effect size (i.e. the square root of the sampling variance, see Figure 1 from the main manuscript)
-dataset.r.original$sei <- sqrt(dataset.r.original$vi)
+dataset.r.original$sei <- sqrt(dataset.r$vi)
 
 # Application of Equation 21 from the main manuscript
 publication.bias.model.1.se <- rma.mv(yi, vi,
@@ -503,7 +505,7 @@ publication.bias.model.1.se <- rma.mv(yi, vi,
                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
                                       method="REML",
                                       test="t", # using t dist rather than z
-                                      data=dataset.r.original)
+                                      data=dataset.r)
 
 #print(publication.bias.model.1.se,digits=3)
 
@@ -578,7 +580,7 @@ To test for time-lag bias, also called decline effects, we are again going to fi
 
 ```{r}
 # creating a variable with the year of publication
-dataset.r.original$year <- as.numeric(str_extract(dataset.r.original$study, "(\\d)+"))
+dataset.r$year <- as.numeric(str_extract(dataset.r$study, "(\\d)+"))
 
 # Application of Equation 23 from the main manuscript
 publication.bias.model.1.timelag <- rma.mv(yi, vi,
@@ -590,7 +592,7 @@ publication.bias.model.1.timelag <- rma.mv(yi, vi,
                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
                                       method="REML",
                                       test="t", # using t dist rather than z
-                                      data=dataset.r.original)
+                                      data=dataset.r)
 
 #summary(publication.bias.model.1.timelag)
 
@@ -615,9 +617,9 @@ newdat <- data.frame(year=seq(min(dataset.r.original$year),max(dataset.r.origina
                      stringsAsFactors=FALSE)
 
 
-xaxis <- dataset.r.original$year
-yaxis <- dataset.r.original$yi
-cex.study <- (1/dataset.r.original$sei)/3
+xaxis <- dataset.r$year
+yaxis <- dataset.r$yi
+cex.study <- (1/dataset.r$sei)/3
 
 plot(xaxis,yaxis,
      type="n",
@@ -774,14 +776,14 @@ dataset.smd <- escalc(measure = "SMD",
 # dataset.mean.diff <- cbind(dataset.original.mean.diff, metrics) # bind_cols()
 
 # clean NA
-  dataset.rr <- dataset.rr[!is.na(dataset.rr$yi),]
+  dataset.rr <- dataset.rr[!is.na(dataset.rr$yi) & dataset.rr$vi != 0, ]
   
-  dataset.smd <- dataset.smd[!is.na(dataset.smd$yi),]
+  dataset.smd <- dataset.smd[!is.na(dataset.smd$yi) & dataset.smd$vi != 0, ]
   
 ```
 
 
-#### S4.2.1 - Meta-analytic model
+#### S4.2.1: Meta-analytic model
 
 <!--XXX et al. (XXXX) tested the hypothesis that X and Y were correlated across studies and species. Indeed, the authors found support for their hypothesis, showing that X and Y were correlated across studies and species. Here, we reanalysed the data from XXX et al. (XXXX) by conducting a multilevel intercept-only meta-analytic model. Then, we used the data from XXX et al. (XXXX) to provide a worked example on how to test of publication biases in datasets with several layers of non-independence and high heterogeneity (more in the main text), which is common for meta-analyses in ecology and evolution (e.g. Senior et al. 2016; Noble et al. 2017). Detailed results of the meta-analysis are shown in Table S1.-->
 
@@ -796,7 +798,7 @@ meta.analysis.model.RR <- rma.mv(yi, vi,
                                 random = list(~ 1 | paperID, 
                                               ~ 1 | obsID),
                                 method = "REML",
-                                teat = "t",
+                                test = "t",
                                 data = dataset.rr)
 
 
@@ -1202,6 +1204,15 @@ Some intro - an overview
 #### S5.1.1: Averaging 
 
 use aggregate
+
+```{r}
+
+agg <- aggregate(dataset.r, cluster=study, struct="ID")
+agg
+dataset.r
+
+```
+
 
 ##### S5.1.1.2: Trim and fill test 
 
