@@ -480,7 +480,7 @@ table.model.1.gt
 
 <br/><br/>
 
-#### S4.1.3: Publication bias
+#### S4.1.3: Publication bias tests with mulitlevel meta-regression
 
 ##### S4.1.3.1: Meta-regression with SE (uni-moderator)
 
@@ -715,10 +715,13 @@ summary(publication.bias.model.1.v)
 # dat <- escalc(yi=yi, vi=vi, data=res.dat)
 # test <- aggregate(dat, cluster = cluster, rho = 0)
 # compare with this
+# TODO - I need to think about what's the best
+
 publication.bias.model.1.v2 <- rma.mv(yi, vi,
                                            mods=~vi + 
                                            scale(year),
-                                           random=list(~ 1 | Species.updated, # phylo effect
+                                           random=list(~1 | CaptivityC,
+                                             ~ 1 | Species.updated, # phylo effect
                                             ~ 1 | Species, # non-phylo effect
                                             ~ 1 | study, 
                                             ~ 1 | obsID), 
@@ -741,66 +744,69 @@ summary(publication.bias.model.1.v2)
 # importing dataset with mean differences
 dataset.original.mean.diff<-read_excel(here("data", "ft027.xlsx"), col_names = TRUE)
 
-names(dataset.original.mean.diff)
-str(dataset.original.mean.diff)
+#names(dataset.original.mean.diff)
+#str(dataset.original.mean.diff)
 
 
 # lnRR
-  lnRR <- with(dataset.original.mean.diff, escalc(measure = "ROM",
+dataset.rr  <- escalc(measure = "ROM",
                                 m1i = T_mean,
                                 m2i = C_mean,
                                 sd1i = T_sd,
                                 sd2i = C_sd,
                                 n1i = T_N,
-                                n2i = C_N))
+                                n2i = C_N,
+                        data = dataset.original.mean.diff,
+                        append = T)
 
-  SMD <- with(dataset.original.mean.diff, escalc(measure = "SMD",
+dataset.smd <- escalc(measure = "SMD",
                                 m1i = T_mean,
                                 m2i = C_mean,
                                 sd1i = T_sd,
                                 sd2i = C_sd,
                                 n1i = T_N,
-                                n2i = C_N))
+                                n2i = C_N,
+                     data = dataset.original.mean.diff,
+                        append = T)
   
 
-metrics <- data.frame(RR = lnRR$yi, VRR = lnRR$vi, SMD = SMD$yi, VSMD = SMD$vi)
-dataset.mean.diff <- cbind(dataset.original.mean.diff, metrics) # bind_cols()
-
-
-
-
+# metrics <- data.frame(RR = lnRR$yi, VRR = lnRR$vi, SMD = SMD$yi, VSMD = SMD$vi)
+# dataset.mean.diff <- cbind(dataset.original.mean.diff, metrics) # bind_cols()
 
 # clean NA
-  dataset.mean.diff <- dataset.mean.diff[!is.na(dataset.mean.diff$RR),]
+  dataset.rr <- dataset.rr[!is.na(dataset.rr$yi),]
   
-  dataset.mean.diff <- dataset.mean.diff[!is.na(dataset.mean.diff$SMD),]
+  dataset.smd <- dataset.smd[!is.na(dataset.smd$yi),]
   
 ```
 
 
 #### S4.2.1 - Meta-analytic model
 
-XXX et al. (XXXX) tested the hypothesis that X and Y were correlated across studies and species. Indeed, the authors found support for their hypothesis, showing that X and Y were correlated across studies and species. Here, we reanalysed the data from XXX et al. (XXXX) by conducting a multilevel intercept-only meta-analytic model. Then, we used the data from XXX et al. (XXXX) to provide a worked example on how to test of publication biases in datasets with several layers of non-independence and high heterogeneity (more in the main text), which is common for meta-analyses in ecology and evolution (e.g. Senior et al. 2016; Noble et al. 2017). Detailed results of the meta-analysis are shown in Table S1.
+<!--XXX et al. (XXXX) tested the hypothesis that X and Y were correlated across studies and species. Indeed, the authors found support for their hypothesis, showing that X and Y were correlated across studies and species. Here, we reanalysed the data from XXX et al. (XXXX) by conducting a multilevel intercept-only meta-analytic model. Then, we used the data from XXX et al. (XXXX) to provide a worked example on how to test of publication biases in datasets with several layers of non-independence and high heterogeneity (more in the main text), which is common for meta-analyses in ecology and evolution (e.g. Senior et al. 2016; Noble et al. 2017). Detailed results of the meta-analysis are shown in Table S1.-->
 
 ```{r}
 # creating a unit-level random effect to model residual variance in metafor
-dataset.mean.diff$obsID <- 1:nrow(dataset.mean.diff)
-
+dataset.rr$obsID <- 1:nrow(dataset.rr)
+dataset.smd$obsID <- 1:nrow(dataset.smd)
 
 # running multilevel intercept-only meta-analytic model
-meta.analysis.model.RR <- rma.mv(RR, VRR,
+meta.analysis.model.RR <- rma.mv(yi, vi,
+                                mods = ~ 1,
+                                random = list(~ 1 | paperID, 
+                                              ~ 1 | obsID),
+                                method = "REML",
+                                teat = "t",
+                                data = dataset.rr)
+
+
+meta.analysis.model.SMD <- rma.mv(yi, vi,
                                 mods = ~ 1,
                                 random = list(~ 1 | paperID, 
                                               ~ 1 | obsID),
                                 method = "REML",
                                 test = "t",
-                                data = dataset.mean.diff)
-
-
-meta.analysis.model.SMD <- rma.mv(SMD, VSMD,
-                                mods = ~ 1,
-                                random = list(~ 1 | paperID, ~ 1 | obsID),
-                                method = "REML",data = dataset.mean.diff)
+                                data = dataset.smd)
 
 # extracting the mean, 95% confidence intervals and 95% prediction intervals
 #print(meta.analysis.model.1, digits=3)
@@ -809,8 +815,8 @@ metaanalytic.mean.model.SMD <- predict(meta.analysis.model.SMD, digits=3)
 #forest(meta.analysis.model.1)
 
 # estimating relative heterogeneity I2
-I2.model.RR <- I2(meta.analysis.model.RR,method = c("Shinichi"))*100
-I2.model.SMD <- I2(meta.analysis.model.SMD,method = c("Shinichi"))*100
+I2.model.RR <- i2_ml(meta.analysis.model.RR)*100
+I2.model.SMD <- i2_ml(meta.analysis.model.SMD)*100
 
 # and absolute heterogeneity Q
 #Q.model.RR <- c(meta.analysis.model.RR$QE)
@@ -822,11 +828,9 @@ table.model.RR <- data.frame(n=length(unique(dataset.mean.diff$paperID)),
                             mean=round(metaanalytic.mean.model.RR[[1]],2),
                             CI=paste0("[",round(metaanalytic.mean.model.RR[[3]],2),",",round(metaanalytic.mean.model.RR[[4]],2),"]"),
                             PI=paste0("[",round(metaanalytic.mean.model.RR[[5]],2),",",round(metaanalytic.mean.model.RR[[6]],2),"]"),
-                            I2_obsID=round(I2.model.RR[2],1),
-                            I2_paperID=round(I2.model.RR[3],1),
-                            #I2_popID2=round(I2.model.RR[4],1),
-                            I2_total=round(I2.model.RR[1],1),
-                            Q=round(Q.model.RR,1))
+                            I2_obsID=round(I2.model.RR[[3]],1),
+                            I2_paperID=round(I2.model.RR[[2]],1),
+                            I2_total=round(I2.model.RR[[2]],1))
 
 rownames(table.model.RR) <- NULL
 
@@ -837,11 +841,9 @@ table.model.SMD <- data.frame(n=length(unique(dataset.mean.diff$paperID)),
                             mean=round(metaanalytic.mean.model.SMD[[1]],2),
                             CI=paste0("[",round(metaanalytic.mean.model.SMD[[3]],2),",",round(metaanalytic.mean.model.SMD[[4]],2),"]"),
                             PI=paste0("[",round(metaanalytic.mean.model.SMD[[5]],2),",",round(metaanalytic.mean.model.SMD[[6]],2),"]"),
-                            I2_obsID=round(I2.model.SMD[2],1),
-                            I2_paperID=round(I2.model.SMD[3],1),
-                            #I2_popID2=round(I2.model.SMD[4],1),
-                            I2_total=round(I2.model.SMD[1],1),
-                            Q=round(Q.model.SMD,1))
+                            I2_obsID=round(I2.model.SMD[[3]],1),
+                            I2_paperID=round(I2.model.SMD[[2]],1),
+                            I2_total=round(I2.model.SMD[[1]],1))
 
 rownames(table.model.SMD) <- NULL
 
@@ -857,34 +859,27 @@ table.model.RR.gt <- table.model.RR %>%
              PI=md("**95% PI**"),
              I2_obsID=md("***I*<sup>2</sup><sub>residual</sub> (%)**"),
              I2_paperID=md("***I*<sup>2</sup><sub>study</sub> (%)**"),
-             #I2_popID2=md("***I*<sup>2</sup><sub>population</sub> (%)**"),
-             #Phylogeny=md("***I*<sup>2</sup><sub>Phylo</sub> (%)**"),
-             I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**"),
-             Q=md("***Q*<sub>test</sub>**")) %>%
+             I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**")) %>%
   cols_align(align = "center") %>%
-  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity; *Q*<sub>test</sub> = Cochrane's *Q* test.")) %>%
-  tab_options(table.width=775)
+  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity")) #%>%
+  #tab_options(table.width=775)
 
 table.model.RR.gt
 
 
-
 table.model.SMD.gt <- table.model.SMD %>% 
   gt() %>% 
-  cols_label(n=md("**n**"),
+cols_label(n=md("**n**"),
              k=md("**k**"),
              mean=md("**Meta-analytic mean**"),
              CI=md("**95% CI**"),
              PI=md("**95% PI**"),
              I2_obsID=md("***I*<sup>2</sup><sub>residual</sub> (%)**"),
              I2_paperID=md("***I*<sup>2</sup><sub>study</sub> (%)**"),
-             #I2_popID2=md("***I*<sup>2</sup><sub>population</sub> (%)**"),
-             #Phylogeny=md("***I*<sup>2</sup><sub>Phylo</sub> (%)**"),
-             I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**"),
-             Q=md("***Q*<sub>test</sub>**")) %>%
+             I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**")) %>%
   cols_align(align = "center") %>%
-  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity; *Q*<sub>test</sub> = Cochrane's *Q* test.")) %>%
-  tab_options(table.width=775)
+  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity"))  #%>%
+  #tab_options(table.width=775)
 
 table.model.SMD.gt
 
@@ -896,33 +891,333 @@ table.model.SMD.gt
 
 **We could also provide an orchard plot of the results. The reason why I did not do it is because I need to update R to do that and have not found the time. If you'd like to provide an orchard plot, maybe the fastest would be for Yefeng to do that**
 
-#### S4.2.2 - Publication bias
+#### S4.2.2: Publication bias tests with mulitlevel meta-regression
 
-##### S4.2.2.1: The two-step approach
+Something here?
 
-**Using Equation 27**
+##### S4.2.2.1: Meta-regression with effective sampling size (uni-moderator)
 
-**Using Equation 28**
+Here try not repeat what you already said - you can pretty much say as above and what's differet
 
-##### S4.2.2.2: Time-lag bias test
+<!--To test for small-study effects, we are going to follow the two-step approach that we suggested in the main text. First, we run a multilevel meta-regression that has the same random effect structure as the meta-analytic model (Table S1) and that includes the effect sizes' standard errors (SE or sei) as the only moderator (see Equation 21 from the main text). If the slope of this moderator is statistically significant, then we run an additional multilevel meta-regression including the effect sizes' sampling variances (SV or vi) as the only moderator (see Equation 22 from the main text), which allows us to obtain an overall effect (the intercept or B0) after accounting for small-study bias, and this overall is less downwardly  biased when modeling sampling variance than when modeling standard errors (more in the main text; Doucouliagos 2012, 2014).-->
 
-##### S4.2.2.3:  All-in publication bias test (Eq.29)
+```{r}
+# calculating "effective sample size" to account for unbalanced sampling, for SMD and lnRR (esz, hereafter, see Equation 25 from the main manuscript)
+
+dataset.rr$inv_n_tilda <-  (dataset.rr$C_N + dataset.mean.diff$T_N)/(dataset.rr$C_N*dataset.rr$T_N)
+
+dataset.smd$inv_n_tilda <-  (dataset.smd$C_N + dataset.smd$T_N)/(dataset.smd$C_N*dataset.smd$T_N)
+
+# Application of Equation 27 from the main manuscript
+publication.bias.model.RR.srin <- rma.mv(yi, vi,
+                                      mods= ~ 1 + sqrt(inv_n_tilda),
+                                      random=list(~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.rr)
+#publication.bias.model.RR.srin
+
+publication.bias.model.SMD.srin <- rma.mv(yi, vi,
+                                      mods= ~ 1 + sqrt(inv_n_tilda),
+                                      random=list(~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.smd)
+
+#publication.bias.model.SMD.srin
+
+#print(publication.bias.model.1.se,digits=3)
+
+# extracting the mean and 95% confidence intervals
+estimates.publication.bias.model.RR.srin <- estimates.CI(publication.bias.model.RR.srin)
+
+estimates.publication.bias.model.SMD.srin <- estimates.CI(publication.bias.model.SMD.srin)
+
+```
+This is an interesting example where sig is different between lnRR and SMD but we should not be so exicted yet - we need to control for heterogeniety first
+
+probably change  below
+
+<!--According to the meta-regression, there is evidence of small-study effects since the slope of the moderator (i.e. SE) is statistically significant (**slope = `r estimates.publication.bias.model.RR.se[2,2]`, 95% CI = [`r estimates.publication.bias.model.1.se[2,3]`,`r estimates.publication.bias.model.RR.se[2,4]`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.RR.se)[1]*100,1)`%; Figure S1), showing that effect sizes with larger SE are larger, and thus, showing evidence that some small effect sizes with large SE are seemingly missing. Since this meta-regression shows some evidence of small-study bias, we  proceed to run the meta-regression suggested in Equation 28 from the main text, so that we can estimate an overall effect size for the meta-analysis after accouting for the existence of small-study bias.-->
+
+**For the time being, I have assumed that the slope for SE is statistically significant, which is not in this dataset, but should be for the final chosen example. That is, even the wording it's based on that, i.e. the results for this specific example do not agree with the description of the results. APOLOGIES if it is confussing**
+
+```{r}
+publication.bias.model.RR.se.plot <- predict(publication.bias.model.RR.se)
+
+newdat.RR <- data.frame(sei=dataset.mean.diff$RR.esz.sei,
+                     fit=publication.bias.model.RR.se.plot$pred,
+                     upper=publication.bias.model.RR.se.plot$ci.ub,
+                     lower=publication.bias.model.RR.se.plot$ci.lb,
+                     stringsAsFactors=FALSE)
+
+#newdat <- unique(newdat[order(newdat$sei),])
+newdat.RR <- unique(newdat.RR[order(newdat.RR$sei),])
+
+xaxis <- dataset.mean.diff$RR.esz.sei
+yaxis <- dataset.mean.diff$RR
+
+plot(xaxis,yaxis,
+     type="n",
+     ylab="",
+     xlab="",
+     xaxt="n",
+     yaxt="n"
+     #ylim=c(-1,2),
+     #xlim=c(0,1.1)
+     )
+
+
+abline(a=0,b=0, lwd=1, lty=1)
+
+
+axis(1,at=seq(0,1,0.1),
+     cex.axis=0.8,tck=-0.02)
+
+axis(2,
+     #at=round(seq(-2.5,2.25,0.5),1),
+     cex.axis=0.8,las=2,tck=-0.02)
+
+title(xlab = "Effective sample size based standard error (SE)", 
+      ylab = "Effect size (lnRR)",
+      line = 2.75, cex.lab=1.4)
+
+points(jitter(xaxis,2),yaxis,
+       bg=rgb(0,0,0, 0.1),
+       col=rgb(0,0,0, 0.2),
+       pch=21,
+       cex=1)
+
+lines(newdat.RR$sei, newdat.RR$fit, lwd=2.75,col="darkorchid4") 
+
+polygon(c(newdat.RR$sei,rev(newdat.RR$sei)),
+        c(newdat.RR$lower,rev(newdat.RR$upper)),
+        border=NA,col=rgb(104/255,34/255,139/255, 0.5))
+```
+
+**Figure S1.** Effect sizes with larger SE are larger, which provides evidence of small-study effects in this meta-analytic dataset. The solid line represents the model estimate and shading shows the 95% confidence intervals.
+
+
+
+##### S4.2.2.2: Time-lag bias test (uni-moderator)
+
+To test for time-lag bias, also called decline effects, we are again going to fit a multilevel meta-regression that has the same random effect structure as the meta-analytic model (Table S1) and that includes the year of publication as the only moderator (see Equation 23 from the main text). The estimated slope for year will tell us whether effect sizes have become smaller over time since the first effect size was published.
+
+```{r}
+# Application of Equation 23 from the main manuscript
+publication.bias.model.RR.timelag <- rma.mv(yi, vi,
+                                      mods= ~ 1 + year,
+                                      random=list(~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.rr)
+
+publication.bias.model.SDM.timelag <- rma.mv(yi, vi,
+                                      mods= ~ 1 + year,
+                                      random=list(~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.smd)
+
+#summary(publication.bias.model.1.timelag)
+
+# extracting the mean and 95% confidence intervals
+estimates.publication.bias.model.RR.timelag <- estimates.CI(publication.bias.model.RR.timelag)
+estimates.publication.bias.model.SMD.timelag <- estimates.CI(publication.bias.model.SDM.timelag)
+```
+
+<!--The time-lag bias test indeed shows evidence for a decline effects since the slope of year is negative, meaning that effect sizes have trended towards zero over time (**year slope = `r estimates.publication.bias.model.RR.timelag[2,2]`; 95% CI = [`r estimates.publication.bias.model.RR.timelag[2,3]`,`r estimates.publication.bias.model.RR.timelag[2,4]`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.RR.timelag)[1]*100,1)`%; Figure S2).
+
+```{r}
+publication.bias.model.RR.timelag.plot <- predict(publication.bias.model.RR.timelag,newmods=seq(min(dataset.mean.diff$Year),max(dataset.mean.diff$Year),1))
+
+newdat.RR <- data.frame(year=seq(min(dataset.mean.diff$Year),max(dataset.mean.diff$Year),1),
+                     fit=publication.bias.model.RR.timelag.plot$pred,
+                     upper=publication.bias.model.RR.timelag.plot$ci.ub,
+                     lower=publication.bias.model.RR.timelag.plot$ci.lb,
+                     stringsAsFactors=FALSE)
+
+
+xaxis <- dataset.mean.diff$Year
+yaxis <- dataset.mean.diff$RR
+cex.study <- 1/dataset.mean.diff$RR.esz.sei
+
+plot(xaxis,yaxis,
+     type="n",
+     ylab="",
+     xlab="",
+     xaxt="n",
+     yaxt="n",
+     ylim=c(-2.25,2.25),
+     xlim=c(min(xaxis),max(xaxis))
+     )
+
+
+abline(a=0,b=0, lwd=1, lty=1)
+
+
+axis(1, at=seq(min(xaxis),max(xaxis),5),
+     cex.axis=0.8,tck=-0.02)
+
+axis(2,
+     #at=round(seq(-2.5,2.25,0.5),1),
+     cex.axis=0.8,las=2,tck=-0.02)
+
+title(xlab = "Year of publication", 
+      ylab = "Effect size (lnRR)",
+      line = 2.75, cex.lab=1.4)
+
+points(jitter(xaxis,2),yaxis,
+       bg=rgb(0,0,0, 0.1),
+       col=rgb(0,0,0, 0.2),
+       pch=21,
+       cex=cex.study)
+
+lines(newdat.RR$year, newdat.RR$fit, lwd=2.75,col="darkorchid4") 
+
+polygon(c(newdat.RR$year,rev(newdat.RR$year)),
+        c(newdat.RR$lower,rev(newdat.RR$upper)),
+        border=NA,col=rgb(104/255,34/255,139/255, 0.5))
+```
+
+**Figure S2.** The overall published effect size has decreased over time since first described. The solid line represents the model estimate, shading shows the 95% confidence intervals and individual effect sizes are scaled by their precision (1/SE).-->
+
+<br/><br/>
+
+
+##### S4.2.2.3:  All-in publication bias test (mulit-moderators)
+
+Try not to repeat what you do not need to 
+
+<!--When heterogeneity exists, it is best to combine Equations 27 and 23 with other moderators since those additional moderators will generally explain or be predicted to explain some of the heterogeneity among effect sizes. Therefore, in this case we will run a multilevel meta-regression including the effective sample size based standard errors, the year of publication and the following moderators originally included in XXX et al. (XXXX): 'season', 'group composition' and 'type of interactions'.-->
+
+```{r}
+# preparing the moderators that need to be included in a meta-regression that also contains a  moderator with the standard errors of the effect sizes and the year of publication
+
+
+
+# Application of Equation 29 from the main manuscript
+publication.bias.model.RR.timelag.srin. <- rma.mv(yi, vi,
+                                      mods= ~ 1 + sqrt(inv_n_tilda) + 
+                                        scale(year) + 
+                                        Experimental.or.Observational.,
+                                      random=list(
+                                        ~1 |Disturbance_category,
+                                        ~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.rr,
+                                      control=list(optimizer="optim", optmethod="Nelder-Mead"))
+
+
+# none of these seem to be sig factors (explaining sig heterogeneity)
+test <- rma.mv(yi, vi,
+              mods= ~ 1 + Disturbance_category + 
+                    Biome + 
+                    Species.category..invader.,
+              random=list(~ 1 | obsID, 
+                         ~ 1 | paperID),
+              method="REML",
+              test = "t",
+              data=dataset.rr,
+              control=list(optimizer="optim", optmethod="Nelder-Mead")
+               )
+
+###
+publication.bias.model.RR.timelag.all.eN <- rma.mv(yi, vi,
+                                      mods= ~ 1 + inv_n_tilda + 
+                                        scale(year) + 
+                                        Experimental.or.Observational.,
+                                      random=list(
+                                        ~1 |Disturbance_category,
+                                        ~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.rr,
+                                      control=list(optimizer="optim", optmethod="Nelder-Mead"))
+
+publication.bias.model.RR.timelag.all.eN1 <- rma.mv(yi, vi,
+                                      mods= ~ 1 + inv_n_tilda + 
+                                        scale(year),
+                                      random=list(
+                                        ~1 |Disturbance_category,
+                                        ~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.rr,
+                                      control=list(optimizer="optim", optmethod="Nelder-Mead"))
+#####
+
+# Application of Equation 29 from the main manuscript
+publication.bias.model.SMD.timelag.al.srin <- rma.mv(yi, vi,
+                                      mods= ~ 1 + sqrt(inv_n_tilda) + 
+                                        scale(year) + 
+                                        Experimental.or.Observational.,
+                                      random=list(
+                                        ~1 |Disturbance_category,
+                                        ~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.smd,
+                                      control=list(optimizer="optim", optmethod="Nelder-Mead"))
+
+publication.bias.model.SMD.timelag.al.srin1 <- rma.mv(yi, vi,
+                                      mods= ~ 1 + sqrt(inv_n_tilda) + 
+                                        scale(year),
+                                      random=list(
+                                        ~1 |Disturbance_category,
+                                        ~ 1 | obsID, 
+                                        ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.smd,
+                                      control=list(optimizer="optim", optmethod="Nelder-Mead"))
+
+
+```
+
+**Need to add a little text and probably also a table showing the results of this meta-regresssion, which I did not do because it would be very specific for the dataset we will finally used. Nonetheless, find below the *R<sup>2</sup><sub>marginal</sub>* estimate, which for this sparrow example is pretty high and much coming from the publication bias tests**
+
+*R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.timelag.all.in)[1]*100,1)`%
+
 
 ## Appendix S5: Avearging and sampling approches for publication bias
+
+Some intro - an overview 
+
+1. averaging vs sampling?
+2. what is trim and fill methods?
+3. what is 3 PSM?
 
 ### S5.1: Correlation effect sizes (**Zr**)
 
 #### S5.1.1: Averaging 
 
+use aggregate
+
 ##### S5.1.1.2: Trim and fill test 
 
 This may not work but do this anyways
 
+Easy
+
 ##### S5.1.1.3: Selection model (3 PSM)
+
+Easy
 
 ##### S5.1.1.4: Cumlative meta-analysis 
 
 I guess we do not expect a decline effect - but we do this anyways
+
+Easy.....
 
 #### S5.1.2: Sampling 
 
