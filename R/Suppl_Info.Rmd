@@ -51,6 +51,12 @@ if (!require("devtools")) {
   install.packages("devtools")
 }
 devtools::install_github("MathiasHarrer/dmetar")
+
+# getting metaAidR
+install.packages("devtools")
+library(devtools)
+install_github("daniel1noble/metaAidR")
+
 ```
 
 
@@ -104,7 +110,8 @@ pacman::p_load(tidyverse,
                ggplotify,
                grid,
                dmetar,
-               viridis
+               viridis,
+               metaAidR
                )
 
 # necessary custom functions
@@ -399,6 +406,8 @@ phylo_cor <- vcv(phylo_branch, cor = T)
 
 ##### Figure S4.1
 
+<!--- please label Figs like this - level 5--->
+
 Phylogenetic tree of all species included in this dataset. Notice that some of the names shown in the tree correspond to the most updated synonyms according to the Open Tree Taxonomy (Rees and Cranston 2017) of those originally avialable in the dataset provided by Garamszegi et al. (2012).
 
 <br/><br/>
@@ -446,6 +455,7 @@ meta.analysis.model.r <- rma.mv(yi, vi,
                                 method="REML",
                                 test="t", # using t dist rather than z
                                 data=dataset.r)
+
 
 #summary(meta.analysis.model.1
 # extracting the mean, 95% confidence intervals and 95% prediction intervals
@@ -498,6 +508,16 @@ table.model.r.gt
 
 **Table S1.** Results of the phylogenetic multilevel intercept-only meta-analysis testing the relationship between behaviours across species. Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*).
 
+
+Something about funnel plot??
+
+```{r}
+funnel(meta.analysis.model.r, yaxis="seinv",
+       xlab = "Effect size (Zr)")
+
+```
+
+
 <br/><br/>
 
 #### S4.1.4: Publication bias tests with mulitlevel meta-regression
@@ -511,7 +531,7 @@ Something to be written here
 
 ```{r}
 # creating a varible for the standard error of each effect size (i.e. the square root of the sampling variance, see Figure 1 from the main manuscript)
-dataset.r.original$sei <- sqrt(dataset.r$vi)
+dataset.r$sei <- sqrt(dataset.r$vi)
 
 # Application of Equation 21 from the main manuscript m
 publication.bias.model.r.se <- rma.mv(yi, vi,
@@ -627,12 +647,12 @@ Again not sure whether fig is needed but we can keep
 <!--The time-lag bias test shows no evidence for a decline effect in this dataset (**year slope = `r round(estimates.publication.bias.model.1.timelag[2,2],2)`; 95% CI = [`r round(estimates.publication.bias.model.1.timelag[2,3],2)`,`r round(estimates.publication.bias.model.1.timelag[2,4],2)`]**; *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.timelag)[1]*100,1)`%; Figure S2).-->
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
-publication.bias.model.1.timelag.plot <- predict(publication.bias.model.1.timelag,newmods=seq(min(dataset.r.original$year),max(dataset.r.original$year),1))
+publication.bias.model.r.timelag.plot <- predict(publication.bias.model.r.timelag,newmods=seq(min(dataset.r$year),max(dataset.r$year),1))
 
-newdat <- data.frame(year=seq(min(dataset.r.original$year),max(dataset.r.original$year),1),
-                     fit=publication.bias.model.1.timelag.plot$pred,
-                     upper=publication.bias.model.1.timelag.plot$ci.ub,
-                     lower=publication.bias.model.1.timelag.plot$ci.lb,
+newdat <- data.frame(year=seq(min(dataset.r$year),max(dataset.r$year),1),
+                     fit=publication.bias.model.r.timelag.plot$pred,
+                     upper=publication.bias.model.r.timelag.plot$ci.ub,
+                     lower=publication.bias.model.r.timelag.plot$ci.lb,
                      stringsAsFactors=FALSE)
 
 
@@ -690,7 +710,7 @@ When heterogeneity exists, it is best to combine Equations 21 and 23 with other 
 #TODO a few things to notice - we need to make the intercept meaning full; using - 1 but this only works if we have one categorical varaible
 # easiest to get the weighted mean of 
 
-publication.bias.model.1.all.se <- rma.mv(yi, vi,
+publication.bias.model.r.all.se <- rma.mv(yi, vi,
                                             mods=~sei+
                                             scale(year)+
                                             CaptivityC - 1, # take Class - that is already a part of phylo   
@@ -701,9 +721,25 @@ publication.bias.model.1.all.se <- rma.mv(yi, vi,
                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
                                       method="REML",
                                       test="t", # using t dist rather than z
-                                      data=dataset.r.original)
+                                      data=dataset.r)
 
-summary(publication.bias.model.1.all.se)
+#summary(publication.bias.model.r.all.se)
+
+meta.regression.r.resduals.funnel.plot <- rma.mv(yi, vi,
+                                            mods=~1 +
+                                            scale(year)+
+                                            CaptivityC , # take Class - that is already a part of phylo   
+                                            random=list(~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
+                                      R = list(Species.updated = phylo_cor), #phylogenetic relatedness
+                                      method="REML",
+                                      test="t", # using t dist rather than z
+                                      data=dataset.r)
+
+funnel(meta.regression.r.resduals.funnel.plot, yaxis = "seinv")
+
 
 ```
 
@@ -761,7 +797,11 @@ summary(publication.bias.model.1.v2)
 
 ### S4.2: Mean differences between two groups (lnRR and SMD)
 
-```{r}
+#### S4.2.2: Exploratiory data analysis
+
+as in the section above
+
+```{r, fig.width=7, fig.height= 8}
 # importing dataset with mean differences
 dataset.original.mean.diff<-read_excel(here("data", "ft027.xlsx"), col_names = TRUE)
 
@@ -799,21 +839,16 @@ dataset.smd <- escalc(measure = "SMD",
   
   dataset.smd <- dataset.smd[!is.na(dataset.smd$yi) & dataset.smd$vi != 0, ]
   
-```
 
-#### S4.2.2: Exploratiory data analysis
-
-as in the section above
-
-
-```{r}
 # here it is OK - but we find some strange data in SMD and lnRR 
-par(mfrow = c(2, 2))
+par(mfrow = c(3, 2))
 funnel(dataset.rr$yi, dataset.rr$vi, yaxis="seinv",
        #xlim = c(-3, 3),
+       ylab = "Precision (1/SE)",
        xlab = "Effect size (lnRR)") 
 funnel(dataset.smd$yi, dataset.smd$vi, yaxis="seinv",
        #xlim = c(-3, 3),
+       ylab = "Precision (1/SE)",
        xlab = "Effect size (SMD)") 
 
 dataset.rr <- dataset.rr[dataset.rr$vi != min(dataset.rr$vi), ]
@@ -823,14 +858,32 @@ dataset.smd <- dataset.smd[dataset.smd$yi != min(dataset.smd$yi),]
 # taking outilers
 funnel(dataset.rr$yi, dataset.rr$vi, yaxis="seinv",
        #xlim = c(-3, 3),
+       ylab = "Precision (1/SE)",
        xlab = "Effect size (lnRR)") 
 funnel(dataset.smd$yi, dataset.smd$vi, yaxis="seinv",
        #xlim = c(-3, 3),
+       ylab = "Precision (1/SE)",
        xlab = "Effect size (SMD)") 
 
+# calculating "effective sample size" to account for unbalanced sampling, for SMD and lnRR (esz, hereafter, see Equation 25 from the main manuscript)
+
+dataset.rr$e_n <- 4*(dataset.rr$C_N*dataset.rr$T_N) / (dataset.rr$C_N + dataset.rr$T_N)
+dataset.smd$e_n <- 4*(dataset.smd$C_N*dataset.smd$T_N) / (dataset.smd$C_N + dataset.smd$T_N)
+
+#using effecitve sampling size
+
+funnel(dataset.rr$yi, dataset.rr$vi, ni = dataset.rr$e_n, yaxis="ni",
+       #xlim = c(-3, 3),
+       ylab = "Effective sample size",
+       xlab = "Effect size (lnRR)") 
+funnel(dataset.smd$yi, dataset.smd$vi, ni = dataset.smd$e_n, yaxis="ni",
+       #xlim = c(-3, 3),
+       ylab = "Effective sample size",
+       xlab = "Effect size (SMD)") 
 
 ```
 
+Write something how different funnel plots look quite different!
 
 #### S4.2.2: Meta-analytic model
 
@@ -942,6 +995,11 @@ table.model.SMD.gt
 
 **We could also provide an orchard plot of the results. The reason why I did not do it is because I need to update R to do that and have not found the time. If you'd like to provide an orchard plot, maybe the fastest would be for Yefeng to do that**
 
+```{r}
+
+```
+
+
 #### S4.2.3: Publication bias tests with mulitlevel meta-regression
 
 Something here?
@@ -954,10 +1012,11 @@ Here try not repeat what you already said - you can pretty much say as above and
 
 ```{r}
 # calculating "effective sample size" to account for unbalanced sampling, for SMD and lnRR (esz, hereafter, see Equation 25 from the main manuscript)
+# getting the inverse of it
 
 dataset.rr$inv_n_tilda <-  (dataset.rr$C_N + dataset.rr$T_N)/(dataset.rr$C_N*dataset.rr$T_N)
-
 dataset.smd$inv_n_tilda <-  (dataset.smd$C_N + dataset.smd$T_N)/(dataset.smd$C_N*dataset.smd$T_N)
+
 
 # Application of Equation 27 from the main manuscript
 publication.bias.model.RR.srin <- rma.mv(yi, vi,
@@ -987,7 +1046,7 @@ estimates.publication.bias.model.RR.srin <- estimates.CI(publication.bias.model.
 estimates.publication.bias.model.SMD.srin <- estimates.CI(publication.bias.model.SMD.srin)
 
 ```
-This is an interesting example where sig is different between lnRR and SMD but we should not be so exicted yet - we need to control for heterogeniety first
+OK - once we get rid of an outliner lnRR and SDM match
 
 probably change  below
 
@@ -1149,8 +1208,6 @@ Try not to repeat what you do not need to
 ```{r}
 # preparing the moderators that need to be included in a meta-regression that also contains a  moderator with the standard errors of the effect sizes and the year of publication
 
-
-
 # Application of Equation 29 from the main manuscript
 publication.bias.model.RR.timelag.srin <- rma.mv(yi, vi,
                                       mods= ~ 1 + sqrt(inv_n_tilda) + 
@@ -1164,20 +1221,6 @@ publication.bias.model.RR.timelag.srin <- rma.mv(yi, vi,
                                       test = "t",
                                       data=dataset.rr,
                                       control=list(optimizer="optim", optmethod="Nelder-Mead"))
-
-
-# none of these seem to be sig factors (explaining sig heterogeneity)
-test <- rma.mv(yi, vi,
-              mods= ~ 1 + Disturbance_category + 
-                    Biome + 
-                    Species.category..invader.,
-              random=list(~ 1 | obsID, 
-                         ~ 1 | paperID),
-              method="REML",
-              test = "t",
-              data=dataset.rr,
-              control=list(optimizer="optim", optmethod="Nelder-Mead")
-               )
 
 ###
 publication.bias.model.RR.timelag.all.eN <- rma.mv(yi, vi,
@@ -1220,8 +1263,21 @@ publication.bias.model.SMD.timelag.al.srin <- rma.mv(yi, vi,
                                       data=dataset.smd,
                                       control=list(optimizer="optim", optmethod="Nelder-Mead"))
 
-publication.bias.model.SMD.timelag.al.srin1 <- rma.mv(yi, vi,
-                                      mods= ~ 1 + sqrt(inv_n_tilda) + 
+publication.bias.model.SMD.timelag.al.eN <- rma.mv(yi, vi,
+                                      mods= ~ 1 + inv_n_tilda + 
+                                        scale(year) + 
+                                        Experimental.or.Observational.,
+                                      random=list(
+                                        ~1 |Disturbance_category,
+                                        ~ 1 | obsID, 
+                                                  ~ 1 | paperID),
+                                      method="REML",
+                                      test = "t",
+                                      data=dataset.smd,
+                                      control=list(optimizer="optim", optmethod="Nelder-Mead"))
+
+publication.bias.model.SMD.timelag.al.eN1 <- rma.mv(yi, vi,
+                                      mods= ~ 1 + inv_n_tilda + 
                                         scale(year),
                                       random=list(
                                         ~1 |Disturbance_category,
@@ -1279,7 +1335,22 @@ funnel(trimfill.r, yaxis="seinv")
 ##### S5.1.1.3: Selection model (3 PSM)
 
 ```{r}
+# Note we need to set  method="ML",
+# withou modrators
 
+meta.regression.r.agg0 <- rma(yi, vi, 
+                            method="ML",
+                            test="knha", 
+                            data=dataset.r)
+
+
+three.PSM.r0 <- selmodel(meta.regression.r.agg0, type="stepfun", steps=c(0.05, 1))
+
+# look at confidence intervals - not just point estimate
+summary(three.PSM.r0)
+
+
+# with moderators 
 meta.regression.r.agg <- rma(yi, vi, 
                               mod = ~ scale(year) 
                             + CaptivityC - 1, 
@@ -1310,7 +1381,7 @@ forest(cum.meta.analysis.model.r.agg, xlab = "Overall estimate (Zr)")
 ##### S5.1.2.2: Trim and fill test 
 
 
-
+I will leave this to Alfredo and Yefeng to solve (but discuss it with them to give some directions)
 
 ##### S5.1.2.3: Selection model (3 PSM)
 
@@ -1336,21 +1407,116 @@ dataset.smd.agg
 
 ```{r}
 
+# lnRR
 meta.analysis.model.rr.agg <- rma(yi, vi, test="knha", # using t dist rather than z
                                       data=dataset.rr.agg)
 trimfill.rr <- trimfill(meta.analysis.model.rr.agg)
-funnel(trimfill.rr, yaxis="seinv")
 
+#SMD
 meta.analysis.model.smd.agg <- rma(yi, vi, test="knha", # using t dist rather than z
                                       data=dataset.smd.agg)
 trimfill.smd <- trimfill(meta.analysis.model.smd.agg)
-funnel(trimfill.smd, yaxis="seinv")
+
+par(mfrow = c(1,2))
+funnel(trimfill.rr, yaxis="seinv",
+       ylab = "Precision (1/SE)",
+       xlab = "Effect size (lnRR)") 
+funnel(trimfill.smd, yaxis="seinv",
+       ylab = "Precision (1/SE)",
+       xlab = "Effect size (SDM)") 
 
 ```
 
 ##### S5.2.1.3: Selection model (3 PSM)
 
+```{r}
+
+# lnRR
+
+# moderator
+meta.regression.rr.agg0 <- rma(yi, vi, 
+                              #mod = ~ scale(year),
+                            method="ML",
+                            test="knha", 
+                            data=dataset.rr)
+
+
+three.PSM.rr0 <- selmodel(meta.regression.rr.agg0, type="stepfun", steps=c(0.05, 1))
+
+summary(three.PSM.rr0)
+
+# taking out Exp vs Obs
+meta.regression.rr.agg0 <- rma(yi, vi, 
+                              #mod = ~ scale(year),
+                            method="ML",
+                            test="knha", 
+                            data=dataset.rr)
+
+
+three.PSM.rr0 <- selmodel(meta.regression.rr.agg0, type="stepfun", steps=c(0.05, 1))
+
+summary(three.PSM.rr0)
+
+# with moderator
+meta.regression.rr.agg <- rma(yi, vi, 
+                              mod = ~ scale(year) 
+                            + Experimental.or.Observational. - 1, 
+                             #+ Class-1,
+                            method="ML",
+                            test="knha", 
+                            data=dataset.rr)
+
+
+three.PSM.rr <- selmodel(meta.regression.rr.agg, type="stepfun", steps=c(0.05, 1))
+
+summary(three.PSM.rr)
+
+
+## SMD
+
+# without moderators
+meta.regression.smd.agg0 <- rma(yi, vi, 
+                            method="ML",
+                            test="knha", 
+                            data=dataset.smd)
+
+
+three.PSM.smd0 <- selmodel(meta.regression.smd.agg0, type="stepfun", steps=c(0.05, 1))
+
+summary(three.PSM.smd0)
+
+
+# with moderators
+meta.regression.smd.agg <- rma(yi, vi, 
+                              mod = ~ scale(year) 
+                            + Experimental.or.Observational. - 1, 
+                             #+ Class-1,
+                            method="ML",
+                            test="knha", 
+                            data=dataset.smd)
+
+
+three.PSM.smd <- selmodel(meta.regression.smd.agg, type="stepfun", steps=c(0.05, 1))
+
+summary(three.PSM.smd)
+
+```
+
+
 ##### S5.2.1.4: Cumlative meta-analysis 
+
+```{r, fig.height= 8, fig.width= 7}
+# lnRR
+cum.meta.analysis.model.rr.agg <- cumul(meta.analysis.model.rr.agg)
+
+# SMD
+cum.meta.analysis.model.smd.agg <- cumul(meta.analysis.model.smd.agg)
+
+par(mfrow = c(1, 2))
+
+forest(cum.meta.analysis.model.rr.agg, xlab = "Overall estimate (lnRR)")
+forest(cum.meta.analysis.model.smd.agg, xlab = "Overall estimate (SMD)")
+```
 
 #### S5.2.2: Sampling 
 
@@ -1362,9 +1528,546 @@ funnel(trimfill.smd, yaxis="seinv")
 
 ## Appendix extra: Figure's R code
 
-Shinichi to do
+##### Code for Fig. 1
+
+There is no code for Fig. 1 (created in PowerPoint)
+
+##### Code for Fig. 2
+
+Rose??
+
+##### Code for Fig. 3
+
+```{r, fig.height= 8, fig.width= 7}
+
+# creating data
+
+set.seed(77777)
+
+# setting parameters
+n.effect <- 100
+sigma2.s <- 0.05
+beta1 <- 0.2
+# using negative binomial we get good spread of sample size
+n.sample <- rnbinom(n.effect, mu = 30, size = 0.7) + 4
+# variance for Zr
+vi <- 1/(n.sample - 3)
+# moderator x 1
+xi <- rnorm(n.effect)
+
+# there is underling overall effect to r = 0.2 or Zr = 0.203
+Zr <- atanh(0.2) + beta1*xi + rnorm(n.effect, 0, sqrt(sigma2.s)) + rnorm(n.effect, 0, sqrt(vi))
+#qplot(Zr, 1/sqrt(vi))
+
+dat <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), xi = xi, ni = n.sample, prec = 1 / sqrt(vi), wi = 1/vi, zi = Zr/sqrt(vi))
+
+rows <- 1:nrow(dat)
+expected <- which(1/dat$sei < 5 & dat$yi < 0.25)
+unexpected <- which(1/dat$sei > 4.7 & dat$yi > 0.25)
+
+col_point <- ifelse(rows %in% expected, "red", ifelse(rows %in% unexpected, "blue", "black"))
+
+dat$col_point <- col_point
+
+#https://stackoverflow.com/questions/50012553/combining-plots-created-by-r-base-lattice-and-ggplot2
+# saving base plot as an object!!! https://www.andrewheiss.com/blog/2016/12/08/save-base-graphics-as-pseudo-objects-in-r/
+
+mod_ra <- rma(yi, vi, data = dat)
+mod_fe <- rma(yi, vi, data = dat, method = "FE")
+
+# margin controlling
+#par(mar=c(5,4,0,0) + 0.1)
+
+# - done TODO - DL for sunset plot and enhanced counter - making it - 0.01 < p < 0.05 
+
+# a
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(dat$yi, dat$vi, ni = dat$ni, yaxis="ni",
+       xlim = c(-3, 3),
+       refline=mod_ra$beta, xlab = "Effect size (Zr)") 
+a <- recordPlot()
+invisible(dev.off())
 
 
+# b
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_ra, yaxis="seinv", col = col_point,  
+       ylim = c(1, 12), xlim = c(-3, 3),
+       ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+legend(x = 1.4, y = 12, legend = c("expected", "","unexpected"), pch = c(19, 0, 19), col = c("red", "grey83", "blue"), bty = "n")
+b <- recordPlot()
+invisible(dev.off())
+
+
+# c
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_ra, 
+       yaxis = "sei", 
+       xlim = c(-3, 3),
+       level = c(95, 99), 
+       shade = c("white", "gray55"), 
+       refline = 0, legend = F, 
+       ylab = "Standard error (SE)", xlab = "Effect size (Zr)")
+legend(x = 1, y = 0, legend = c("0.01 < p < 0.05"), pch = c(15), col = c("gray55"), bty = "n")
+c <- recordPlot()
+invisible(dev.off())
+
+# d
+d <- viz_sunset(dat[,c("yi", "sei")], 
+           power_contours = "continuous", 
+           contours = T,
+           power_stats = F,
+           xlab = "Effect size (Zr)",
+           ylab = "Standard error (SE)")
+
+
+# e
+# meta-regression (random-effects model)
+mod_re1 <- rma(yi, vi, mod = ~ xi, data = dat)
+
+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod_re1, 
+       yaxis = "sei", 
+       xlim = c(-3, 3), ylim = c(0, 1),
+       #level = c(95, 99), 
+       #shade = c("white", "gray75"), 
+       refline = 0, legend = F,  ylab = "Standard error (SE)", xlab = "Standardized residuls (Zr)")
+#legend(x = 1, y = 0, legend = c("0.01 < p < 0.05", ""), pch = c(15, 0), col = c("gray75", "white"), bg = "white")
+e <- recordPlot()
+invisible(dev.off())
+
+# f
+
+# 
+mod <- metagen(TE = yi, seTE = sqrt(vi) , data = dat)
+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+#radial.rma(mod_fe, xlim = c(0, 12.5), zlab = "Z score", xlab = "Precision (1/SE)") 
+#legend(1,1, "test", bty = "n")
+radial(mod, level = 0.95, pch = 19,  xlab = "Precision (1/SE)", ylab = "Z score")
+#abline(a = 0, b = 0.1908, lwd = 1.5)
+f <- recordPlot()
+invisible(dev.off())
+
+# fig 3
+(ggdraw(a) + ggdraw(b)) /(ggdraw(c) + ggdraw(d))/ (plot_grid(e) + ggdraw(f)) + plot_annotation(tag_levels = 'a')
+
+```
+
+Fig 3 - see the text
+
+##### Code for Fig. 4
+
+```{r, fig.height= 8, fig.width= 8}
+# creating data with publication bias
+
+dat2 <- dat[dat$col_point != "red", ]
+
+# meta-analysis
+mod_ra2 <- rma(yi, vi, data = dat2)
+
+# egger regression (the same as in S2)
+egger1 <- lm(zi ~ prec, data = dat2)
+egger2 <- lm(yi ~ sei, weight = wi, data = dat2)
+
+# data for time-lag bias
+set.seed(123)
+position <- sample(1:nrow(dat2), size = 15)
+
+dat3 <- dat2[sort(position), ]
+
+sorting <- c(12, 13, 14, 3, 4, 9, 8, 5, 10, 11,  6, 7, 2, 15, 1)
+
+dat3 <- dat3[sorting, ]        
+dat3$year <- c(2000, 2001, 2003, 2005, 2006, 2007, 2008, 2009, 2010, 2012, 2013, 2014, 2016, 2018, 2019)
+
+# cumlatie meta-analysis
+cum <- rma(yi, vi, data=dat3)
+cum_ma <- cumul(cum)
+#forest(cum_ma, xlab = "Overall estimate (Zr)")
+
+
+# meta-regression
+
+mod_re2 <- rma(yi, vi, mod = ~ year, data = dat3)
+
+# funnel
+taf <- trimfill(mod_ra2)
+
+# Plotting from here
+
+p1 <-  ggplot(dat2, aes(prec, zi)) + geom_point() +
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_hline(yintercept = egger1$coefficients[[1]]) +
+        #geom_smooth(method = "lm") + 
+        labs(x = "Precision (1/SE)", 
+       y = "Z score")
+
+p2 <- ggplot(dat2, aes(sei, yi)) + geom_point() +
+       # geom_smooth(method = "lm") + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = egger2$coefficients[[1]], slope = egger2$coefficients[[2]]) +
+        labs(x = "Standard error (SE)", 
+       y = "Effect size (Zr)")
+
+# c and d
+# probably 15 data points for cumulative meta-analyses
+
+cum <- rma(yi, vi, data=dat3)
+cum_ma <- cumul(cum)
+
+# p3
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+forest(cum_ma, xlab = "Overall estimate (Zr)")
+p3 <- recordPlot()
+invisible(dev.off())
+
+# p4
+p4 <- ggplot(dat3, aes(x = year, y = yi, size = prec)) +
+         geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = mod_re2$beta[[1]], slope = mod_re2$beta[[2]]) +
+ geom_point(shape = 21, fill = "grey90") + 
+        labs(x = "Publication year", y = "Effect size (Zr)", size ="Precision (1/SE)") + 
+        guides(fill = "none", colour = "none") +
+  theme(legend.position = c(0, 0.15), legend.justification = c(0, 1)) +
+  theme(legend.direction = "horizontal") +
+  # theme(legend.background = element_rect(fill = "white", colour = "black")) +
+  theme(legend.background = element_blank()) +
+  theme(axis.text.y = element_text(size = 10, colour = "black", hjust = 0.5, angle = 90))
+
+# p5
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(taf, yaxis="seinv", col = col_point,  estimator="R0",
+       ylim = c(1, 12), 
+       #xlim = c(-3, 3),
+       ylab = "Precison (1/SE)", xlab = "Effect size (Zr)")
+p5 <- recordPlot()
+invisible(dev.off())
+
+# p6
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(taf, yaxis="sei", col = col_point,  estimator="R0",
+       #xlim = c(-3, 3),
+       ylab = "Standard error (SE)", xlab = "Effect size (Zr)")
+p6 <- recordPlot()
+invisible(dev.off())
+
+
+# e and f
+# maybe use the same datasets as Fig 3
+
+# fig 4
+(plot_grid(p1) + plot_grid(p2)) /(ggdraw(p3) + plot_grid(p4))/(plot_grid(p5) + plot_grid(p6)) + plot_annotation(tag_levels = 'a')
+
+
+```
+
+
+##### Code for Fig. 5
+
+```{r, fig.height= 8, fig.width= 7, message = FALSE}
+# dmetr
+
+#devtools::install_github("MathiasHarrer/dmetar")
+#library(dmetar)
+
+p_dat <- data.frame("studlab" = as.factor(1:nrow(dat2)), "TE" = dat2$yi, "seTE" = dat2$sei)
+#pcurve(p_dat)
+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+invisible(pcurve(p_dat))
+plot<- recordPlot()
+invisible(dev.off())
+
+# turuning the base plot into ggplot
+plot <- ggdraw(plot)
+
+#dat2
+
+model <- rma(yi, vi = vi, data = dat2, method = "ML", mod = ~ xi)
+
+# only sel1 and sel3 are used
+#sel0 <- selmodel(model, type = "beta")
+sel1 <- selmodel(model, type="halfnorm", prec="sei", scaleprec=FALSE)
+#sel2 <- selmodel(model, type="negexp",   prec="sei", scaleprec=FALSE)
+sel3 <- selmodel(model, type="logistic", prec="sei", scaleprec=FALSE)
+#sel4 <- selmodel(model, type="power",    prec="sei",  scaleprec=FALSE)
+sel1b <- selmodel(model, type="halfnorm")
+#sel2b <- selmodel(model, type="negexp")
+sel3b <- selmodel(model, type="logistic")
+#sel4b <- selmodel(model, type="power")
+
+# step function 
+sel5 <- selmodel(model, type="stepfun", steps=c(0.05, 0.10, 0.50, 1.00))
+#sel6 <- selmodel(model, type="stepfun", steps=c(0.001, 0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 1))
+sel7 <- selmodel(model, type="stepfun", steps=c(0.05, 1))
+
+#plot(sel5, ylim = c(0,1))
+#plot(sel6, add=TRUE, col="red", scale = T)
+#plot(sel7, add=TRUE, col="red")
+#legend(x = 0.5, y = 1, legend = c("3 cutpoints", "","1 cutpoint (3 PMS)"), lty =c(1, 0, 1), col = c("black", "", "red"), bty = "n")
+
+# plotting from here
+pA <- plot +  theme(plot.margin=unit(c(-1,0,-1,0),"cm"))
+
+# B
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+plot(sel1)
+plot(sel3, add=TRUE, col="red")
+plot(sel1b, add=TRUE, lty = "dotted")
+plot(sel3b, add=TRUE, col="red", lty = "dotted")
+legend(x = 0.6, y = 1, legend = c("half-normal", "","logistic"), lty =c(1, 0, 1), col = c("black", "", "red"), bty = "n")
+pB <- recordPlot()
+invisible(dev.off())
+
+# C
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+plot(sel5, ylim = c(0,1))
+plot(sel7, add=TRUE, col="red", lty = 3)
+legend(x = 0.5, y = 1, legend = c("3 cutpoints", "","1 cutpoint (3 PSM)"), lty =c(1, 0, 1), col = c("black", "", "red"), bty = "n")
+pC <- recordPlot()
+invisible(dev.off())
+
+# Fig 5
+pA /(ggdraw(pB) + ggdraw(pC)) + plot_annotation(tag_levels = 'a')
+
+```
+
+##### Code for Fig. 6
+
+```{r, fig.height= 8, fig.width= 7, message = FALSE}
+
+# Zr data creation
+set.seed(777)
+# setting parameters
+n.study  <- 70
+sigma2.s <- 0.05
+sigma2.u <- 0.05
+beta1 <- 0.1
+beta2 <- - 0.05
+# using negative binomial we get good spread of sample size
+n.sample <- rnbinom(n.study, mu = 30, size = 0.2) + 4
+
+# the number of effect size per study
+set.seed(777777)
+n.es.per.s <- rpois(n.study,3) + 1
+#sum(n.es.per.s)
+
+n.effect <- sum(n.es.per.s)
+# variance for Zr
+vi <- 1/(rep(n.sample, n.es.per.s) - 3)
+
+# In the text, we have two moderators
+# moderator x 1 - study level
+x1j <- rnorm(n.study)
+# moderator x 2 - effect isze level
+x2i <- rnorm(n.effect)
+
+# study position
+place <- rep(1:n.study, n.es.per.s)
+
+# there is underling overall effect to r = 0.3 or Zr = 0.3095196
+Zr <- 0 + rnorm(n.study, 0, sqrt(sigma2.s))[place] + 
+        rnorm(n.effect, 0, sqrt(sigma2.u)) + rnorm(n.effect, 0, sqrt(vi))
+
+#qplot(Zr, 1/sqrt(vi))
+
+datA <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), x1 = x1j[place], x2 = x2i, ni = n.sample[place], prec = 1 / sqrt(vi), wi = 1/vi, zi = Zr/sqrt(vi), studyID = place, effectID = 1:n.effect)
+
+
+# cutting publication mbias like stuff
+expected <- c(which(1/datA$sei < 5.5 & datA$yi < 0.2), which(1/datA$sei < 3 & datA$yi < 0.7))
+
+datB <- datA[-expected, ]
+
+#qplot(x = yi, y = 1/sqrt(vi), data = datB)
+
+mod_ma <- rma.mv(yi, vi, mod = ~ sqrt(vi), random = list(~ 1 | studyID, ~1 | effectID), data = datB)
+
+mod_mb <- rma.mv(yi, vi, mod = ~ vi, random = list(~ 1 | studyID, ~1 | effectID), data = datB)
+
+#summary(mod_ma)
+#summary(mod_mb)
+
+
+# creating curve lines
+x = seq(0, 1, by = 0.001)
+#x <- x[-1000]
+y =  mod_mb$beta[[1]] + sqrt(x)* mod_mb$beta[[2]]
+
+vi_curve <- tibble(x = x, y = y)
+
+# lnRR
+
+set.seed(777)
+# setting parameters
+n.study  <- 30
+sigma2.s <- 0.01
+sigma2.u <- 0.005
+beta1 <- 0.1
+beta2 <- -0.01
+# using negative binomial we get good spread of sample size
+n.sample <- rnbinom(n.study, mu = 40, size = 0.5) + 4
+
+# the number of effect size per study
+set.seed(7777)
+n.es.per.s <- rpois(n.study,3) + 1
+#sum(n.es.per.s)
+
+# sample size
+n.effect <- sum(n.es.per.s)
+
+# cv for each study
+
+cv <- sample(seq(0.3, 0.35,by = 0.001), n.effect, replace = T)
+
+rep_sample <- rep(n.sample, times = n.es.per.s)
+
+# variance for lnRR
+vi <- (2*cv^2)/rep_sample
+
+# In the text, we have two moderators
+# moderator x 1 - study level
+x1j <- rnorm(n.study)
+# moderator x 2 - effect isze level
+x2i <- rnorm(n.effect)
+
+# study position
+
+pos <- rep(1:n.study, n.es.per.s)
+
+# there is underling overall effect to lnRR = 0.2
+
+dat3 <- data.frame(vi = vi, sei = sqrt(vi), x1 = x1j[pos], x2 = x2i, ni = n.sample[pos], prec = 1 / sqrt(vi), wi = 1/vi, studyID = pos, effectID = 1:n.effect)
+
+# M matrix (V = VCV)
+sigma <- make_VCV_matrix(dat3, "vi", "studyID", "effectID", rho = 0)
+
+lnRR<- 0.3 + beta1*x1j[pos] + beta2*x2i + rnorm(n.study, 0, sqrt(sigma2.s))[pos] + 
+        rnorm(n.effect, 0, sqrt(sigma2.u)) +  MASS::mvrnorm(1, rep(0, n.effect), sigma)
+
+dat3$yi <- lnRR
+
+mod_ml <- rma.mv(yi, vi, mod = ~ x1 + x2, random = list(~ 1 | studyID, ~1 | effectID), data = dat3)
+
+# residuals - stadnarised
+#summary(mod_ml)
+#funnel(mod_ml, yaxis="seinv", col = inferno(25)[pos])
+
+# residual marginal
+residm <- dat3$yi - predict(mod_ml)[[1]]
+vi_residm <- vi + predict(mod_ml)[[2]]^2 # adding prediction errors 
+
+
+# residual conditional 1 & 2 + its error
+blups <- ranef(mod_ml)
+
+study_effect <- blups$studyID[[1]][pos]
+vi_study <- (blups$studyID[[2]][pos])^2
+
+residc1 <- dat3$yi - (predict(mod_ml)[[1]] + study_effect)
+vi_residc1 <- vi_residm + vi_study
+
+effect_effect <- blups$effectID[[1]]
+vi_effect <- blups$effectID[[1]]^2
+
+residc2 <- dat3$yi - (predict(mod_ml)[[1]] + study_effect + effect_effect)
+vi_residc2 <- vi_residm + vi_study + vi_effect
+
+
+# plotting
+# Panel A
+mod1 <- rma(yi, vi, data = dat3)
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(mod1, col =inferno(25)[pos],
+      ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Standard error (SE)", xlab = "Effect size (lnRR)")
+pa <- recordPlot()
+invisible(dev.off())
+
+# Panel B
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel (residm, vi = vi_residm, yaxis = "sei",  col = inferno(25)[pos],  
+        ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Standard error (SE)", xlab = "Residuals marginal (lnRR)")
+pb <- recordPlot()
+invisible(dev.off())
+
+# Panel C
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(residc1, vi = vi_residc1, yaxis = "sei",  col = inferno(25)[pos],
+       ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Standard error (SE)", xlab = "Residuals conditional 1 (lnRR)")
+pc <- recordPlot()
+invisible(dev.off())
+
+# Panel D
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(residc2, vi = vi_residc2, yaxis = "sei",  col = inferno(25)[pos],
+       ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
+        ylab = "Standard error (SE)", xlab = "Residuals conditional 2 (lnRR)")
+pd <- recordPlot()
+invisible(dev.off())
+
+# Panel E
+pe <- ggplot(datB, aes(sei, yi)) + geom_point() + 
+        geom_line(data = vi_curve, mapping = aes(x = x, y = y, col = "red")) +
+        #geom_point(aes(col = studyID)) +
+       # geom_smooth(method = "lm") + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = mod_ma$beta[[1]], slope = mod_ma$beta[[2]]) +
+        xlim(0, 1) + ylim(-1.5, 2.5) + 
+        labs(x = "Standard error (SE)", y = "Effect size (Zr)")+ 
+        theme(legend.position = "none")
+# F
+
+# Variance
+pf <- ggplot(datB, aes(vi, yi)) + geom_point() + 
+        #geom_point(aes(col = studyID)) +
+       # geom_smooth(method = "lm") + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        geom_abline(intercept = mod_mb$beta[[1]], slope = mod_mb$beta[[2]], col = "red") +
+        xlim(0, 1) + ylim(-1.5, 2.5) + 
+        labs(x = "Sampling variance", y = "Effect size (Zr)")
+
+# fig6
+(ggdraw(pa) + ggdraw(pb)) /(ggdraw(pc) + ggdraw(pd))/(plot_grid(pe) + plot_grid(pf)) + plot_annotation(tag_levels = 'a')
+
+```
+##### Code for Fig. 7
+
+There is no code for Fig. 7 (created in PowerPoint)
 
 
 ## R Session Information
