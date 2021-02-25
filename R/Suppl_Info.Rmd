@@ -158,7 +158,7 @@ The sample of 102 meta-analysis papers met the following four inclusion criteria
 
 
 #### S1.1.3 Assessing 102 meta-analysis papers
-Papers were independently assessed by seven authors (RO, DN, JK, MJ, ML, RO, SN, and TP) as part of a larger, time-consuming survey. The one survey question pertaining to this project was: “Which publication bias tests are reported in the paper? (Select all that apply)”. There were 11 possible choices for respondents to select: (A) Funnel plots (including contour-enhanced funnel plots); (B) Normal quantile (QQ) plots (Wang & Bushman); (C) Correlation-based tests (e.g. Begg & Manzumdar rank correlation); (D) Regression-based tests (e.g. Egger regression and its variants); (E) File drawer numbers or fail-safe N (Rosenthal, Orwin or Rosenberg method); (F) Trim-and-fill tests; (G) P-curve, P-uniform or its variants; (H) Selection (method) models (e.g. Copas, Hedges or lyengar & Greenhouse model); (I) Time-lag bias tests (e.g., regression or correlation on the relationship between effect sizes and time or cumulative meta-analysis); (J) None reported and (K) ‘Other’ methods. According to Sutton ({, 2009 #17}) (see also {Vevea, 2019 #16}), Methods A-D are tests detecting publication bias, whereas Methods E-F are assessing the impact of publication bias.
+Papers were independently assessed by seven authors (RO, DN, JK, MJ, ML, RO, SN, and TP) as part of a larger, time-consuming survey. The one survey question pertaining to this project was: “Which publication bias tests are reported in the paper? (Select all that apply)”. There were 11 possible choices for respondents to select: (A) Funnel plots (including contour-enhanced funnel plots); (B) Normal quantile (QQ) plots (Wang & Bushman); (C) Correlation-based tests (e.g. Begg & Manzumdar rank correlation); (D) Regression-based tests (e.g. Egger regression and its variants); (E) File drawer numbers or fail-safe N (Rosenthal, Orwin or Rosenberg method); (F) Trim-and-fill tests; (G) P-curve, P-uniform or its variants; (H) Selection (method) models (e.g. Copas, Hedges or lyengar & Greenhouse model); (I) Time-lag bias tests (e.g., regression or correlation on the relationship between effect sizes and time or cumulative meta-analysis); (J) None reported and (K) ‘Other’ methods. According to Sutton ({, 2009 #17}) (see also {Vevea, 2019 #16}), Methods A-D are tests detecting publication bias, whereas Methods E-F are assessing the impact of publication bias. 
 
 ### S1.2 Results
 Among the 102 assessed papers, 17.8% did not report any tests of publication bias. 
@@ -485,7 +485,7 @@ table.model.r <- data.frame(n=length(unique(dataset.r$study)),
 rownames(table.model.r) <- NULL
 
 # creating a fancy table using the R package 'gt'
-table.model.1.gt <- table.model.r %>% 
+table.model.r.gt <- table.model.r %>% 
   gt() %>% 
   cols_label(n=md("**n**"),
              k=md("**k**"),
@@ -725,6 +725,36 @@ publication.bias.model.r.all.se <- rma.mv(yi, vi,
 
 #summary(publication.bias.model.r.all.se)
 
+
+publication.bias.model.r.all.se <- rma.mv(yi, vi,
+                                            mods=~sei+
+                                            scale(year),
+                                            random=list(~1 | CaptivityC,
+                                              ~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
+                                      R = list(Species.updated = phylo_cor), #phylogenetic relatedness
+                                      method="REML",
+                                      test="t", # using t dist rather than z
+                                      data=dataset.r)
+
+
+# for plotting year effect
+publication.bias.model.r.all.se2 <- rma.mv(yi, vi,
+                                            mods=~scale(sei)+
+                                            year,
+                                            random=list(~1 | CaptivityC,
+                                              ~ 1 | Species.updated, # phylo effect
+                                            ~ 1 | Species, # non-phylo effect
+                                            ~ 1 | study, 
+                                            ~ 1 | obsID), 
+                                      R = list(Species.updated = phylo_cor), #phylogenetic relatedness
+                                      method="REML",
+                                      test="t", # using t dist rather than z
+                                      data=dataset.r)
+
+
 meta.regression.r.resduals.funnel.plot <- rma.mv(yi, vi,
                                             mods=~1 +
                                             scale(year)+
@@ -748,9 +778,9 @@ funnel(meta.regression.r.resduals.funnel.plot, yaxis = "seinv")
 #TODO a few things to notice - we need to make the intercept meaning full
 # if marginal, this intercept is still the best estimat 
 
-publication.bias.model.1.v <- rma.mv(yi, vi,
-                                           mods=~vi
-                                           scale(year)+
+publication.bias.model.r.v <- rma.mv(yi, vi,
+                                           mods=~vi + 
+                                           scale(year) +
                                            CaptivityC - 1, # take Class - that is already a part of phylo   
                                            random=list(~ 1 | Species.updated, # phylo effect
                                             ~ 1 | Species, # non-phylo effect
@@ -759,9 +789,9 @@ publication.bias.model.1.v <- rma.mv(yi, vi,
                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
                                       method="REML",
                                       test="t", # using t dist rather than z
-                                      data=dataset.r.original)
+                                      data=dataset.r)
 
-summary(publication.bias.model.1.v)
+summary(publication.bias.model.r.v)
 
 # checking correltions among fixed effects
 #model <- lmer(yi ~ vi + scale(year) + CaptivityC + (1|study), weights = 1/vi, data = dataset.r.original)
@@ -785,7 +815,7 @@ publication.bias.model.1.v2 <- rma.mv(yi, vi,
                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
                                       method="REML",
                                       test="t", # using t dist rather than z
-                                      data=dataset.r.original)
+                                      data=dataset.r)
 
 summary(publication.bias.model.1.v2)
 
@@ -1285,8 +1315,7 @@ publication.bias.model.SMD.timelag.al.eN1 <- rma.mv(yi, vi,
                                         ~ 1 | paperID),
                                       method="REML",
                                       test = "t",
-                                      data=dataset.smd,
-                                      control=list(optimizer="optim", optmethod="Nelder-Mead"))
+                                      data=dataset.smd)
 
 
 ```
