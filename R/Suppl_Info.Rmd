@@ -451,8 +451,6 @@ table.model.r <- data.frame(n=length(unique(dataset.r$study)),
                             I2_total=round(I2.model.r[["I2_total"]]*100,1)
 )
 
-rownames(table.model.r) <- NULL
-
 # creating a fancy table using the R package 'gt'
 table.model.r.gt <- table.model.r %>% 
   gt() %>% 
@@ -529,7 +527,7 @@ To test for time-lag bias, also called decline effects, we can first fit a simpl
 # creating a variable with the year of publication
 dataset.r$year <- as.numeric(str_extract(dataset.r$study, "(\\d)+"))
 
-# centring year of publication to help with interpretation, particularly in S4.1.4.3.
+# mean-centring year of publication to help with interpretation, particularly in S4.1.4.3.
 dataset.r$year.c <- as.vector(scale(dataset.r$year, scale = F))
 
 # Application of Equation 23 from the main manuscript
@@ -554,11 +552,10 @@ According to this uni-moderator meta-regression, there is no indication of decli
 
 ##### S4.1.4.3: All-in publication bias test (multi-moderator)
 
-When heterogeneity exists, which will normally be the case, particularly so in ecology and evolution (Senior et al. 2016), it is best to combine Equations 21 and 23 with other moderators since those additional moderators will generally explain or be predicted to explain some of the heterogeneity among effect sizes. That is, this all-in publication bias test (multi-moderator meta-regression) would be the best test of small-study (publication bias) and decline effects (time-lag bias) in most meta-analytic datasets. For our data, we will run a multi-moderator phylogenetic multilevel meta-regression including the effect sizes' standard errors, the year of publication (mean-centred) and a moderator originally included in Garamszegi et al. (2012), 'captivity status'. Although Garamszegi et al. (2012) included other moderators in their model (i.e. species, taxonomic class, spatial overlap, age, sex and season), we decided to focus only on those moderators that were available for all effect sizes (see Table 2 in Garamszegi et al. 2012), and we also excluded 'species' and 'taxonomic class' since those effects would be already modelled by our phylogenetic approach.
+When heterogeneity exists, which will normally be the case, particularly so in ecology and evolution (Senior et al. 2016), it is best to combine Equations 21 and 23 with other moderators since those additional moderators will generally explain or be predicted to explain some of the heterogeneity among effect sizes. That is, this all-in publication bias test (multi-moderator meta-regression) would be the best test of small-study (publication bias) and decline effects (time-lag bias) in most meta-analytic datasets. For our data, we will run a multi-moderator phylogenetic multilevel meta-regression including the effect sizes' standard errors, the year of publication (mean-centred) and a moderator originally included in Garamszegi et al. (2012), 'captivity status'. Although Garamszegi et al. (2012) included other moderators in their model (i.e. species, taxonomic class, spatial overlap, age, sex and season), we decided to focus only on those moderators that were available for the entire database (see Table 2 in Garamszegi et al. 2012), and we also excluded 'species' and 'taxonomic class' since those effects would be already modelled by our phylogenetic approach.
 
 ```{r}
 # Application of Equation 24 from the main manuscript
-#### easiest to get the weighted mean of 
 
 # Note that we are removing the intercept in this model (using '-1') just because the intercept is not of interest at this point and instead we prefer to see the slopes of the continues moderators and the estimates of all the levels of the categorical moderator 'CaptivityC'. Note that whether to remove or not the intercept does not change the conclusions of the small-study effects test or the decline effects test.
 publication.bias.model.r.all.se <- rma.mv(yi, vi,
@@ -581,10 +578,10 @@ publication.bias.model.r.all.se <- rma.mv(yi, vi,
 estimates.publication.bias.model.r.all.se <- estimates.CI(publication.bias.model.r.all.se)
 ```
 
-In this case, the all-in publication bias test confirms what we observed in the uni-moderator meta-regressions above (sections S4.1.4.1 and S4.1.4.2). First, the multi-moderator meta-regression shows a statistically significant slope for the moderator 'SE' (**slope = `r round(estimates.publication.bias.model.r.all.se[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[1,3],2)`,`r round(estimates.publication.bias.model.r.all.se[1,4],2)`]**; Figure S4.4), showing evidence of a small-study effect. In other words, the largest effect sizes in the dataset tend to be those with the lowest precision (i.e. larger uncertainty; Figure S4.4). This result agrees with the findings originally reported in Garamszegi et al. (2012), where the authors found evidence of publication bias after applying a simple correlation method first proposed by Begg and Mazumdar (1994) and the trim-and-fill method (Duval and Tweedie 2000) - although bear in mind that we do not recommend to use those simple methods for meta-analytic databases with multiple levels of non-independence and high heterogeneity (more in the main text). Second, the all-in publication bias test also confirms that there is no evidence of decline effects in these data since the slope of the moderator 'year' was again essentially zero (**slope = `r round(estimates.publication.bias.model.r.all.se[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[2,3],2)`,`r round(estimates.publication.bias.model.r.all.se[2,4],2)`]**; Figure S4.5). Overall, the moderators included in this multi-moderator meta-regression explained a total of `r round(r2_ml(publication.bias.model.r.all.se)[[1]]*100,1)`% (i.e. *R<sup>2</sup><sub>marginal</sub>*) of the heterogeneity observed in the meta-analytic model (Table S4.1).
+In this case, the all-in publication bias test confirms what we observed in the uni-moderator meta-regressions above (sections S4.1.4.1 and S4.1.4.2). First, the multi-moderator meta-regression shows a statistically significant slope for the moderator 'SE' (**slope = `r round(estimates.publication.bias.model.r.all.se[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[1,3],2)`,`r round(estimates.publication.bias.model.r.all.se[1,4],2)`]**; Figure S4.4), showing evidence of small-study effect. In other words, the largest effect sizes in the dataset tend to be those with the lowest precision (i.e. larger uncertainty; Figure S4.4). This result agrees with the findings originally reported in Garamszegi et al. (2012), where the authors found evidence of publication bias after applying a simple correlation method proposed by Begg and Mazumdar (1994) and the trim-and-fill method (Duval and Tweedie 2000) - although bear in mind that we do not recommend to use those simple methods for meta-analytic databases with multiple levels of non-independence and high heterogeneity (more in the main text). Second, the all-in publication bias test also confirms that there is no evidence of decline effects in the data since the slope of the moderator 'year' was again indistinguishable from zero (**slope = `r round(estimates.publication.bias.model.r.all.se[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[2,3],2)`,`r round(estimates.publication.bias.model.r.all.se[2,4],2)`]**; Figure S4.5). Overall, the moderators included in this multi-moderator meta-regression explained a total of `r round(r2_ml(publication.bias.model.r.all.se)[[1]]*100,1)`% (i.e. *R<sup>2</sup><sub>marginal</sub>*) of the heterogeneity observed in the meta-analytic model (Table S4.1).
 
 ```{r}
-# to plot the 'sei' effect we are simply including the moderator 'CaptivityC' as a random effect for simplicity of plotting. Note that this does not change the estimates of the moderators.
+# to plot the 'sei' effect we are simply including the moderator 'CaptivityC' as a random effect for simplicity of plotting. Note that this does not substantially change the estimates of the moderators, and that alternative approaches could be used for this.
 publication.bias.model.r.all.se.plot <- rma.mv(yi, vi,
                                                mods=~1+
                                                  sei+
@@ -683,7 +680,7 @@ polygon(c(newdat$sei,rev(newdat$sei)),
 The overall effect size has remained seemingly unchanged over time since the first effect size was published. The solid line represents the model estimate, shading shows the 95% confidence intervals and individual effect sizes are scaled by their precision (1/SE).
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
-# predicting effect sizes for a range of years from the minimum observed in the data to the maximum observed in data, while SE is kept at its mean value
+# predicting effect sizes for a range of years from the minimum observed in the data to the maximum observed in data, while SE is kept at its mean value. Keep in mind that alternative ways could be used, for example, one could use median-centring rather than mean-centring.
 predict.publication.bias.model.r.all.se.plot.2 <- predict(publication.bias.model.r.all.se.plot,
                                                           newmods=cbind(mean(dataset.r$sei),
                                                                         seq(min(dataset.r$year.c),
@@ -739,15 +736,15 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 <br/><br/>
 
-Once we have confirmed that there is evidence of small-study effects (see above), the next step in our suggested two-step approach is to calculate the adjusted overall effect size, that is, the overall effect once we account for small-study effects (see the main text). Bear in mind that, if the slope for the moderator 'SE' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test (Stanley and Doucouliagos 2012, 2014; more in the main text). However, since the slope for the moderator 'SE' was statistically significant, the approach to estimate the adjusted overall effect is to fit a similar multi-moderator regression to the one above but including the effect sizes' sampling variances (SV or vi) instead of their SE as a moderator. The reason for using sampling variance instead of standard errors when calculating the adjusted overall effect when the slope for 'SE' is statistically signficant, is becuase using 'SV' would lead to an adjusted overall effect that is less downwardly biased than when using 'SE' (more in the main text; Stanley and Doucouliagos 2012, 2014).
+Once we have confirmed that there is evidence of small-study effects (see above), the next step in our suggested two-step approach is to calculate the adjusted overall effect size, that is, the overall effect once we account for small-study effects (see the main text). Bear in mind that, if the slope for the moderator 'SE' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test (Stanley and Doucouliagos 2012, 2014; more in the main text). However, since the slope for the moderator 'SE' was statistically significant, the approach to estimate the adjusted overall effect is to fit a similar multi-moderator regression to the one above but including the effect sizes' sampling variances (SV or vi) instead of their SE as a moderator. The reason for using sampling variance instead of standard errors when calculating the adjusted overall effect when the slope for 'SE' is statistically signficant is becuase using 'SV' leads to an adjusted overall effect that is less downwardly biased than when using 'SE' (more in the main text; Stanley and Doucouliagos 2012, 2014).
 
-What moderators to include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect. We are going to fit two different models to showcase some of these possibilities. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017) and that none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published, so we can only "guess". The two models that we are going to fit are:
+What moderators to include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect. We are going to fit three different models to showcase some of these possibilities. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017) and that none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published. The three models that we are going to fit are:
 
 1. Multi-moderator meta-regression only including sampling variance and year of publication (mean-centred) as moderators. The intercept of this meta-regression would represent the adjusted overall effect size. 
 
-2. Multi-moderator meta-regression including sampling variance, year of publication (mean-centred) and the categorical factor 'captivity status', which has five levels, as moderators. In this meta-regression, we are going to remove the intercept so that we obtained adjusted overall effects for each of the levels of the factor 'captivity status'.
+2. Multi-moderator meta-regression including sampling variance and year of publication (mean-centred) as moderators, and 'captivity status', which has five levels, as a random effect. The goal of this meta-regression is to provide an adjusted overall effect size after accouting for the variance explained by 'captivity status'. Bear in mind that other alternative approaches might be used (e.g. mean-centring the categorical factor following Schielzeth 2010), but results should not change substantially.
 
-If the goal was to provide an adjusted overall effect size after accouting for the variance explained by 'captivity status', we could also either include 'captivity status', which has five levels, as a random effect or consider mean-centring this categorical factor following Schielzeth (2010). In this example, we will keep it simple and only run the two models discussed above.
+3. Multi-moderator meta-regression including sampling variance, year of publication (mean-centred) and the categorical factor 'captivity status', which has five levels, as moderators. In this meta-regression, we are going to remove the intercept so that we obtain adjusted overall effects for each of the levels of the factor 'captivity status'.
 
 ```{r}
 # model 1: ignoring CaptivityC
@@ -763,8 +760,22 @@ publication.bias.model.r.v.1 <- rma.mv(yi, vi,
                                        test="t", # using t dist rather than z because t is a better, more conservative distribution than z
                                        data=dataset.r)
 
-# model 2: providing an adjusted effect for each level of CaptivityC
+# model 2: adding CaptivityC as a random effect to provide an adjusted overall effect across levels
 publication.bias.model.r.v.2 <- rma.mv(yi, vi,
+                                       mods=~1+vi +
+                                         year.c, # take Class - that is already a part of phylo
+                                       random=list(~ 1 | Species.updated, # phylo effect
+                                                   ~ 1 | Species, # non-phylo effect
+                                                   ~ 1 | study,
+                                                   ~ 1 | obsID,
+                                                   ~ 1 | CaptivityC),
+                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
+                                       method="REML",
+                                       test="t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                       data=dataset.r)
+
+# model 3: providing an adjusted effect for each level of CaptivityC
+publication.bias.model.r.v.3 <- rma.mv(yi, vi,
                                        mods=~-1+vi + 
                                          year.c +
                                          CaptivityC, # take Class - that is already a part of phylo   
@@ -777,9 +788,8 @@ publication.bias.model.r.v.2 <- rma.mv(yi, vi,
                                        test="t", # using t dist rather than z because t is a better, more conservative distribution than z
                                        data=dataset.r)
 
-
-# model 2b: comparing results without correcting for publication bias
-publication.bias.model.r.v.2b <- rma.mv(yi, vi,
+# model 3b: comparing results without correcting for publication bias
+publication.bias.model.r.v.3b <- rma.mv(yi, vi,
                                         mods=~-1+
                                           CaptivityC, # take Class - that is already a part of phylo   
                                         random=list(~ 1 | Species.updated, # phylo effect
@@ -791,96 +801,19 @@ publication.bias.model.r.v.2b <- rma.mv(yi, vi,
                                         test="t", # using t dist rather than z because t is a better, more conservative distribution than z
                                         data=dataset.r)
 
-# # model 3: adding CaptivityC as a random effect to provide an adjusted overall effect across levels
-# publication.bias.model.r.v.3 <- rma.mv(yi, vi,
-#                                        mods=~1+vi + 
-#                                          year.c, # take Class - that is already a part of phylo   
-#                                        random=list(~ 1 | Species.updated, # phylo effect
-#                                                    ~ 1 | Species, # non-phylo effect
-#                                                    ~ 1 | study, 
-#                                                    ~ 1 | obsID,
-#                                                    ~ 1 | CaptivityC), 
-#                                        R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-#                                        method="REML",
-#                                        test="t", # using t dist rather than z because t is a better, more conservative distribution than z
-#                                        data=dataset.r)
-
-
-# # mean-centring the categorical predictor 'CaptivityC' by creating dummy variables as suggested in Schielzeth 2010 (https://doi.org/10.1111/j.2041-210X.2010.00012.x)
-# 
-# dataset.r$CaptivityC.dummy.1 <- ifelse(dataset.r$CaptivityC=="FW",1,0)
-# dataset.r$CaptivityC.dummy.2 <- ifelse(dataset.r$CaptivityC=="WCT",1,0)
-# dataset.r$CaptivityC.dummy.3 <- ifelse(dataset.r$CaptivityC=="WCT&FC",1,0)
-# dataset.r$CaptivityC.dummy.4 <- ifelse(dataset.r$CaptivityC=="WCT&FW",1,0)
-# 
-# dataset.r$CaptivityC.dummy.1.c <- scale(dataset.r$CaptivityC.dummy.1,scale=F)
-# dataset.r$CaptivityC.dummy.2.c <- scale(dataset.r$CaptivityC.dummy.2,scale=F)
-# dataset.r$CaptivityC.dummy.3.c <- scale(dataset.r$CaptivityC.dummy.3,scale=F)
-# dataset.r$CaptivityC.dummy.4.c <- scale(dataset.r$CaptivityC.dummy.4,scale=F)
-# 
-# 
-# publication.bias.model.r.v.4 <- rma.mv(yi, vi,
-#                                        mods=~1+vi + 
-#                                          year.c +
-#                                          CaptivityC.dummy.1.c+
-#                                          CaptivityC.dummy.2.c+
-#                                          CaptivityC.dummy.3.c+
-#                                          CaptivityC.dummy.4.c,
-#                                        random=list(~ 1 | Species.updated, # phylo effect
-#                                                    ~ 1 | Species, # non-phylo effect
-#                                                    ~ 1 | study, 
-#                                                    ~ 1 | obsID), 
-#                                        R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-#                                        method="REML",
-#                                        test="t", # using t dist rather than z because t is a better, more conservative distribution than z
-#                                        data=dataset.r)
-
-# # mean-centring alternative way, not sure about it's validity though
-# dataset.r$CaptivityC.dummy <- ifelse(dataset.r$CaptivityC=="FC",0,
-#                                      ifelse(dataset.r$CaptivityC=="FW",1,
-#                                             ifelse(dataset.r$CaptivityC=="WCT",2,
-#                                                    ifelse(dataset.r$CaptivityC=="WCT&FC",3,4))))
-# 
-# dataset.r$CaptivityC.dummy.c <- as.vector(scale(dataset.r$CaptivityC.dummy,scale=F))
-# 
-# 
-# publication.bias.model.r.v.5 <- rma.mv(yi, vi,
-#                                          mods=~1+vi + 
-#                                            year.c +
-#                                            CaptivityC.dummy.c, # take Class - that is already a part of phylo 
-#                                          random=list(~ 1 | Species.updated, # phylo effect
-#                                                      ~ 1 | Species, # non-phylo effect
-#                                                      ~ 1 | study, 
-#                                                      ~ 1 | obsID), 
-#                                          R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-#                                          method="REML",
-#                                          test="t", # using t dist rather than z because t is a better, more conservative distribution than z
-#                                          data=dataset.r)
-
-
-# checking correltions among fixed effects
-#model <- lmer(yi ~ vi + scale(year) + CaptivityC + (1|study), weights = 1/vi, data = dataset.r.original)
-#summary(model)
-
-# averaging all the 
-# res.dat <- data.frame(yi = publication.bias.model.1.v$b[-c(1,2)], vi =  publication.bias.model.1.v$se[-c(1,2)]^2, cluster = rep("Captitive", 5))
-# dat <- escalc(yi=yi, vi=vi, data=res.dat)
-# test <- aggregate(dat, cluster = cluster, rho = 0)
-# compare with this
-# TODO - I need to think about what's the best
-
 # extracting the mean and 95% confidence intervals
 estimates.publication.bias.model.r.v.1 <- estimates.CI(publication.bias.model.r.v.1)
 estimates.publication.bias.model.r.v.2 <- estimates.CI(publication.bias.model.r.v.2)
-estimates.publication.bias.model.r.v.2b <- estimates.CI(publication.bias.model.r.v.2b)
+estimates.publication.bias.model.r.v.3 <- estimates.CI(publication.bias.model.r.v.3)
+estimates.publication.bias.model.r.v.3b <- estimates.CI(publication.bias.model.r.v.3b)
 ```
 
-Model 1 estimated an adjusted overall effect size that was slightly smaller (**adjusted effect = `r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]**) than that obtained by the multilevel meta-analysis (**unadjusted effect = `r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]**; more in section S4.1.3), reflecting the correction after accounting for publication bias. Model 2 also showed slightly smaller effects for all levels of the categorical factor 'captivity status' (Table S4.2). 
+Model 1 estimated an adjusted overall effect size that was slightly smaller (**adjusted effect = `r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]**) than that obtained by the multilevel meta-analysis (**unadjusted effect = `r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]**; more in section S4.1.3), highlithing the downward correction of the overall effect after accounting for publication bias. For our worked example, model 2 provides the same exact adjusted overall effect (**adjusted effect><sub>captivityl</sub>  = `r round(estimates.publication.bias.model.r.v.2[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.2[1,3],2)`,`r round(estimates.publication.bias.model.r.v.2[1,4],2)`]**) than model 1 since the variance explained by the random effect 'captivity status' is zero. The latter results agree with the low variance explained by 'captivity status' when included as a moderator (*R<sup>2</sup><sub>marginal</sub>* = `r round(r2_ml(publication.bias.model.r.v.3b)[[1]]*100,1)`%). Ideally, the moderators included in the all-in publication bias test would explain more variance, but this will depend on the specific meta-analytic database being analyzed. Last, model 3 also showed slightly smaller effects for all levels of the categorical factor 'captivity status' (Table S4.2). 
 
 ```{r}
 # creating a table to show the results of model 2
-table.comparing.captivity.levels <- merge(estimates.publication.bias.model.r.v.2[c(3:7),],
-                                          estimates.publication.bias.model.r.v.2b,
+table.comparing.captivity.levels <- merge(estimates.publication.bias.model.r.v.3[c(3:7),],
+                                          estimates.publication.bias.model.r.v.3b,
                                           by="estimate",
                                           all.x=T)
 
@@ -907,7 +840,7 @@ table.model.r.captivity.gt <- table.comparing.captivity.levels %>%
 table.model.r.captivity.gt
 ```
 
-**Table S4.2.** Results adjusted and unadjusted for publication bias using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. **Zr**).
+**Table S4.2.** Adjusted and unadjusted for publication bias results for all levels of the moderator 'captivity status' using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. **Zr**).
 
 ### S4.2: Mean differences between two groups (lnRR and SMD)
 
