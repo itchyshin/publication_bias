@@ -40,13 +40,13 @@ options(digits=3)
 # install the orchaRd package
 install.packages("devtools")
 install.packages("tidyverse")
-install.packages("metafor")
+install.packages("metafor")# for section S5, one has to install the developing version of metafor using: remotes::install_github("wviechtb/metafor")
 install.packages("patchwork")
 install.packages("R.rsp")
 
 devtools::install_github("itchyshin/orchard_plot", subdir = "orchaRd", force = TRUE, build_vignettes = TRUE)
 
-# install the dmetar pacakge
+# install the dmetar package
 if (!require("devtools")) {
   install.packages("devtools")
 }
@@ -578,7 +578,7 @@ publication.bias.model.r.all.se <- rma.mv(yi, vi,
 estimates.publication.bias.model.r.all.se <- estimates.CI(publication.bias.model.r.all.se)
 ```
 
-In this case, the all-in publication bias test confirms what we observed in the uni-moderator meta-regressions above (sections S4.1.4.1 and S4.1.4.2). First, the multi-moderator meta-regression shows a statistically significant slope for the moderator 'SE' (**slope = `r round(estimates.publication.bias.model.r.all.se[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[1,3],2)`,`r round(estimates.publication.bias.model.r.all.se[1,4],2)`]**; Figure S4.4), showing evidence of small-study effect. In other words, the largest effect sizes in the dataset tend to be those with the lowest precision (i.e. larger uncertainty; Figure S4.4). This result agrees with the findings originally reported in Garamszegi et al. (2012), where the authors found evidence of publication bias after applying a simple correlation method proposed by Begg and Mazumdar (1994) and the trim-and-fill method (Duval and Tweedie 2000) - although bear in mind that we do not recommend to use those simple methods for meta-analytic databases with multiple levels of non-independence and high heterogeneity (more in the main text). Second, the all-in publication bias test also confirms that there is no evidence of decline effects in the data since the slope of the moderator 'year' was again indistinguishable from zero (**slope = `r round(estimates.publication.bias.model.r.all.se[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[2,3],2)`,`r round(estimates.publication.bias.model.r.all.se[2,4],2)`]**; Figure S4.5). Overall, the moderators included in this multi-moderator meta-regression explained a total of `r round(r2_ml(publication.bias.model.r.all.se)[[1]]*100,1)`% (i.e. *R<sup>2</sup><sub>marginal</sub>*) of the heterogeneity observed in the meta-analytic model (Table S4.1).
+In this case, the all-in publication bias test confirms what we observed in the uni-moderator meta-regressions above (sections S4.1.4.1 and S4.1.4.2). First, the multi-moderator meta-regression shows a statistically significant slope for the moderator 'SE' (**slope = `r round(estimates.publication.bias.model.r.all.se[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[1,3],2)`,`r round(estimates.publication.bias.model.r.all.se[1,4],2)`]**; Figure S4.4), showing evidence of small-study effect. In other words, the largest effect sizes in the dataset tend to be those with the lowest precision (i.e. larger uncertainty; Figure S4.4). This result agrees with the findings originally reported in Garamszegi et al. (2012), where the authors found evidence of publication bias after applying a simple correlation method proposed by Begg and Mazumdar (1994) and the trim-and-fill method (Duval and Tweedie 2000a,b) - although bear in mind that we do not recommend to use those simple methods for meta-analytic databases with multiple levels of non-independence and high heterogeneity (more in the main text). Second, the all-in publication bias test also confirms that there is no evidence of decline effects in the data since the slope of the moderator 'year' was again indistinguishable from zero (**slope = `r round(estimates.publication.bias.model.r.all.se[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[2,3],2)`,`r round(estimates.publication.bias.model.r.all.se[2,4],2)`]**; Figure S4.5). Overall, the moderators included in this multi-moderator meta-regression explained a total of `r round(r2_ml(publication.bias.model.r.all.se)[[1]]*100,1)`% (i.e. *R<sup>2</sup><sub>marginal</sub>*) of the heterogeneity observed in the meta-analytic model (Table S4.1).
 
 ```{r}
 # to plot the 'sei' effect we are simply including the moderator 'CaptivityC' as a random effect for simplicity of plotting. Note that this does not substantially change the estimates of the moderators, and that alternative approaches could be used for this.
@@ -1342,96 +1342,153 @@ publication.bias.model.SMD.timelag.al.eN1 <- rma.mv(yi, vi,
 *R<sup>2</sup><sub>marginal</sub>* = `r round(R2(publication.bias.model.1.timelag.all.in)[1]*100,1)`%
 
 
-## Appendix S5: Avearging and sampling approches for publication bias
+## Appendix S5: Averaging and sampling approaches for publication bias
 
-Some intro - an overview 
+In this section, we use the two meta-analytic databases used in section S4 to provide worked examples of how to use alternative approaches to our suggested multilevel meta-regression method (see main text). The first step will be to deal with the non-independence in the data, which we will do by aggregating (averaging) effect sizes per study (section S5.1.2) or by sampling one effect size per study (section S5.1.1). However, keep in mind that neither averaging nor sampling are general solutions when we have a phylogenetic signal as in the data from Garamszegi et al. (2012) (Table S4.1) since none of those two approaches will eliminate the non-independence stemming from the phylogenetic relationships (see main text). Nonetheless, we will ignore this phylogenetic non-independence for the purposes of providing these worked examples. 
 
-1. averaging vs sampling?
-2. what is trim and fill methods?
-3. what is 3 PSM?
+The use of aggregating and sampling will allow us to make use of traditional publication bias tests (see section 3 from the main text) such as the trim-and-fill (section 5.1.1.1), selection model (section 5.1.1.2), and cumulative meta-analysis (section 5.1.1.3).
 
 ### S5.1: Correlation effect sizes (**Zr**)
 
 #### S5.1.1: Averaging 
 
-use aggregate
+To aggregate (average) effect sizes per study we will use the function `aggregate` from the R package `metafor` (Viechtbauer 2010) using a compound symmetric structure ('struct=CS') and value of 0.5 for rho, following Noble et al. (2017). That is, when averaging effect sizes per study we are not assuming that the effect sizes of a study are independent to each other, but instead that they are correlated and, since we do not know the real value of that correlation, we will make an educated guess and use 0.5. The function `aggregate` will then combine multiple estimates within the same study using inverse-variance weighting taking the 0.5 correlation into consideration. More information about the function `aggregate` can be found by typing `?metafor::aggregate`, including how `aggregate` deals with other variables in the dataset.
 
 ```{r}
 # rho = 0.5 is as in Noble et al (Mol Ecol)
 dataset.r <- escalc(yi=yi, vi=vi, data=dataset.r)
 dataset.r.agg <- aggregate(dataset.r, cluster=study, struct="CS", rho = 0.5)
-dataset.r.agg
-
 ```
 
 
-##### S5.1.1.2: Trim and fill test 
+##### S5.1.1.1: Trim and fill test 
 
-This may not work but do this anyways
+Using the aggregated data (see above), we will then use the trim-and-fill method (Duval and Tweedie 2000a,b). The trim-and-fill method is a non-parametric method that can be used to both detect and correct for publication bias and, although it can handle some heterogeneity, it performs worse as heterogeneity increases (Peters et al., 2007; Moreno et al., 2009; more in main text). Since we aggregated our data, we can know run a random-effects meta-analytic model rather than a multilevel model as used in section S.4, and we will run the trim-and-fill method using this model. 
 
 ```{r}
+# random/mixed-effects meta-analytic model
+meta.analysis.model.r.agg <- rma(yi, vi, test="knha",data=dataset.r)
 
-meta.analysis.model.r.agg <- rma(yi, vi, test="knha", # using t dist rather than z
-                                 data=dataset.r)
+# trim-and-fill method
 trimfill.r <- trimfill(meta.analysis.model.r.agg)
-funnel(trimfill.r, yaxis="seinv")
-
 ```
 
-##### S5.1.1.3: Selection model (3 PSM)
+The trim-and-fill method identified `r trimfill.r$k0` (SE = `r round(trimfill.r$se.k0,2)`) missing studies (Figure S5.1) and estimated an adjusted overall effect of `r round(trimfill.r$beta[[1]],2)` (95% CI = [`r round(trimfill.r$ci.lb[[1]],2)`,`r round(trimfill.r$ci.ub[[1]],2)`]), which is lower than the adjusted overall effect estimated by our suggested mulitlevel meta-regession method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
+
+##### Figure S5.1
+
+Funnel plot using precision (1/SE) as a measure of uncertainty and showing the adjusted meta-analytic mean (vertical line) and the  missing effect sizes (white points) estimated by the trim-and-fill method.
+
+```{r fig.align = "center"}
+funnel(trimfill.r, yaxis="seinv")
+```
+
+##### S5.1.1.2: Selection model (3 PSM)
+
+Using the aggregated data (see above), we will then use a selection model-based method (reviewed by Marks-Anglin & Chen, 2020). Although there are many selection models, all of them model how effect sizes are missing based on p values, effect sizes and/or sampling variance, and can provide a adjusted overall effect (e.g. Rodgers & Pustejovsky, 2020; more in main text). Contrary to other methods, selection models can deal with and model heterogeneity (e.g. Citkowicz and Vevea 2017), but not with non-independent effect sizes. We will run a step function selection model based on one cut-point (α = 0.05); this model is sometimes referred to as a 3 parameter selection model (more in the main text; Rodgers & Pustejovsky, 2020; more in `?metafor::selmodel`). 
 
 ```{r}
-# Note we need to set  method="ML",
-# withou modrators
-
-meta.regression.r.agg0 <- rma(yi, vi, 
-                              method="ML",
-                              test="knha", 
-                              data=dataset.r)
+# without moderators
+meta.analysis.r.agg0 <- rma(yi, vi, 
+                            method="ML", #method needs to set to "ML" rather than "REML" as in all models above
+                            test="knha", #knha is meant to be better than Z and t, but it is not implemented for multilevel models
+                            data=dataset.r)
 
 
-three.PSM.r0 <- selmodel(meta.regression.r.agg0, type="stepfun", steps=c(0.05, 1))
+three.PSM.r0 <- selmodel(meta.analysis.r.agg0, type="stepfun", steps=c(0.05,1)) #note that steps=c(0.05) would be give the same results
 
 # look at confidence intervals - not just point estimate
-summary(three.PSM.r0)
+# summary(three.PSM.r0)
 
 
 # with moderators 
 meta.regression.r.agg <- rma(yi, vi, 
-                             mod = ~ scale(year) 
-                             + CaptivityC - 1, 
-                             #+ Class-1,
+                             mod = ~ year.c + 
+                               CaptivityC - 1, 
                              method="ML",
                              test="knha", 
                              data=dataset.r)
 
 
-three.PSM.r <- selmodel(meta.regression.r.agg, type="stepfun", steps=c(0.05, 1))
+three.PSM.r <- selmodel(meta.regression.r.agg, type="stepfun", steps=c(0.05)) #note that steps=c(0.05,1) would be give the same results
 
-summary(three.PSM.r)
+# summary(three.PSM.r)
+
+# extracting the mean and 95% confidence intervals
+estimates.three.PSM.r <- estimates.CI(three.PSM.r)
+```
+
+The step function selection model based on one cut-point (α = 0.05) for the intercept-only model estimated an adjusted overall effect of `r round(three.PSM.r0$beta[[1]],2)` (95% CI = [`r round(three.PSM.r0$ci.lb[[1]],2)`,`r round(three.PSM.r0$ci.ub[[1]],2)`]; Figure S5.2), which is larger than the original overall effect estimated by the meta-analytic model (unadjusted effect = `r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]; more in section S4.1.4.3). In both cases, the selection model estimated adjusted overall effects that were either very similar or even slightly larger than the original unadjusted effect sizes (Table S5.1), which might indicate that the specific selection model that we fit (i.e. one cut-point (α = 0.05)) was not an adequate approximation for the underlying selection process.
+
+##### Figure S5.2
+
+Plots showing the results of a step function selection model based on one cut-point (α = 0.05) for a model without any moderators (left-hand figure) and a model including both 'year of publication' and 'captivity status' (right-hand figure).
+
+```{r fig.align = "center"}
+par(mfrow = c(1, 2))
+plot(three.PSM.r0, ylim = c(0,2),col="red", lty = 3)
+plot(three.PSM.r, ylim = c(0,2),col="red", lty = 3)
 ```
 
 
-##### S5.1.1.4: Cumlative meta-analysis 
-
-I guess we do not expect a decline effect - but we do this anyways
-
-Easy.....
 ```{r}
+
+# creating a table to show the results of the selection model
+table.comparing.captivity.levels.3PSM <- merge(estimates.three.PSM.r[c(2:6),],
+                                               estimates.publication.bias.model.r.v.3b,
+                                               by="estimate",
+                                               all.x=T)
+
+# rounding estimates
+table.comparing.captivity.levels.3PSM <- table.comparing.captivity.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
+
+
+table.comparing.captivity.levels.3PSM <- data.frame(captivity.level = table.comparing.captivity.levels.3PSM[,1],
+                                               adjusted.mean=table.comparing.captivity.levels.3PSM[,2],               adjusted.CI=paste0("[",table.comparing.captivity.levels.3PSM[,3],",",table.comparing.captivity.levels.3PSM[,4],"]"),
+                                               unadjusted.mean=table.comparing.captivity.levels.3PSM[,5],                                               unadjusted.CI=paste0("[",table.comparing.captivity.levels.3PSM[,6],",",table.comparing.captivity.levels.3PSM[,7],"]"))
+
+table.comparing.captivity.levels.3PSM[,1] <- c("FC","FW","WCT","WCT & FC", "WCT & FW")
+
+# creating a fancy table using the R package 'gt'
+table.model.r.captivity.gt.3PSM <- table.comparing.captivity.levels.3PSM %>% 
+  gt() %>% 
+  cols_label(captivity.level=md("**Captivity status**"),
+             adjusted.mean=md("**Adjusted mean**"),
+             adjusted.CI=md("**Adjusted 95% CI**"),
+             unadjusted.mean=md("**Unadjusted mean**"),
+             unadjusted.CI=md("**Unadjusted 95% CI**")) %>%
+  cols_align(align = "center")
+
+table.model.r.captivity.gt.3PSM
+```
+
+**Table S5.1.** Adjusted and unadjusted for publication bias results for all levels of the moderator 'captivity status' using a step function selection model based on one cut-point (α = 0.05). Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. **Zr**).
+
+##### S5.1.1.3: Cumulative meta-analysis 
+
+Last, using the aggregated data (see above), we could also perform a cumulative meta-analysis using the fuction `cumul` from the R package `metafor` (Viechtbauer 2010). By displaying the results of this cumulative meta-analysis as a forest plot, we can visually observe if there is evidence of decline effects (more in the text), which we do not seem to have for this data (Figure S5.3)
+
+##### Figure S5.3
+
+Forest plot showing the results of a cumulative meta-analysis with no evidence of decline effects.
+
+```{r fig.align = "center"}
 cum.meta.analysis.model.r.agg <- cumul(meta.analysis.model.r.agg)
 forest(cum.meta.analysis.model.r.agg, xlab = "Overall estimate (Zr)")
 ```
 
 #### S5.1.2: Sampling 
 
-##### S5.1.2.2: Trim and fill test 
+To sample one effect size per study we will make use of 'for loops' to select one effect size per study at a time, and we will use 1000 samplings. 
 
+*1.	For the sampling, we do 1000 samplings, and the we extract the number of missing studies and the estimate (from the trim and fill) and show a distribution (add the original values). 
+2.	For the selection model, we extract estimate and plot a distribution. Present the original estimate with a line.*
 
-I will leave this to Alfredo and Yefeng to solve (but discuss it with them to give some directions)
+##### S5.1.2.1: Trim and fill test 
 
-##### S5.1.2.3: Selection model (3 PSM)
+##### S5.1.2.2: Selection model (3 PSM)
 
-##### S5.1.2.4: Cumlative meta-analysis 
+##### S5.1.2.3: Cumulative meta-analysis 
 
 ### S5.2: Mean differences between two groups (lnRR and SMD)
 
@@ -1449,7 +1506,7 @@ dataset.smd.agg
 ```
 
 
-##### S5.2.1.2: Trim and fill test 
+##### S5.2.1.1: Trim and fill test 
 
 ```{r}
 
@@ -1473,7 +1530,7 @@ funnel(trimfill.smd, yaxis="seinv",
 
 ```
 
-##### S5.2.1.3: Selection model (3 PSM)
+##### S5.2.1.2: Selection model (3 PSM)
 
 ```{r}
 
@@ -1549,7 +1606,7 @@ summary(three.PSM.smd)
 ```
 
 
-##### S5.2.1.4: Cumlative meta-analysis 
+##### S5.2.1.3: Cumlative meta-analysis 
 
 ```{r, fig.height= 8, fig.width= 7}
 # lnRR
@@ -1566,11 +1623,11 @@ forest(cum.meta.analysis.model.smd.agg, xlab = "Overall estimate (SMD)")
 
 #### S5.2.2: Sampling 
 
-##### S5.2.2.2: Trim and fill test 
+##### S5.2.2.1: Trim and fill test 
 
-##### S5.2.2.3: Selection model (3 PSM)
+##### S5.2.2.2: Selection model (3 PSM)
 
-##### S5.2.2.4: Cumlative meta-analysis 
+##### S5.2.2.3: Cumlative meta-analysis 
 
 ## Appendix extra: Figure's R code
 
