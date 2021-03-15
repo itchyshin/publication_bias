@@ -1267,11 +1267,12 @@ lnRR with larger uncertainty (square root of inverse of effective sample size) i
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
+
 predict.publication.bias.model.rr.all.srin.plot.1 <- 
 predict(publication.bias.model.rr.all.srin.plot, newmods=cbind(seq(min(dataset.rr$sqrt_inv_n_tilda), max(dataset.rr$sqrt_inv_n_tilda), length.out=324), c(0)))
 
 
-newdat <- data.frame(sei= dataset.rr$sqrt_inv_n_tilda,
+newdat <- data.frame(sei= seq(min(dataset.rr$sqrt_inv_n_tilda), max(dataset.rr$sqrt_inv_n_tilda), length.out=324),
                      fit=predict.publication.bias.model.rr.all.srin.plot.1$pred,
                      upper=predict.publication.bias.model.rr.all.srin.plot.1$ci.ub,
                      lower=predict.publication.bias.model.rr.all.srin.plot.1$ci.lb,
@@ -1279,6 +1280,8 @@ newdat <- data.frame(sei= dataset.rr$sqrt_inv_n_tilda,
 
 xaxis <- dataset.rr$sqrt_inv_n_tilda
 yaxis <- dataset.rr$yi
+
+
 plot(xaxis,yaxis,
      type="n",
      ylab="",
@@ -1320,7 +1323,7 @@ SMD with larger uncertainty (square root of inverse of effective sample size) is
 predict.publication.bias.model.smd.all.srin.plot.1 <- predict(publication.bias.model.smd.all.srin.plot, newmods=cbind(seq(min(dataset.smd$sqrt_inv_n_tilda), max(dataset.smd$sqrt_inv_n_tilda), length.out=320), c(0)))
 
 
-newdat <- data.frame(sei= dataset.smd$sqrt_inv_n_tilda,
+newdat <- data.frame(sei= seq(min(dataset.smd$sqrt_inv_n_tilda), max(dataset.smd$sqrt_inv_n_tilda), length.out=320),
                      fit=predict.publication.bias.model.smd.all.srin.plot.1$pred,
                      upper=predict.publication.bias.model.smd.all.srin.plot.1$ci.ub,
                      lower=predict.publication.bias.model.smd.all.srin.plot.1$ci.lb,
@@ -1370,7 +1373,7 @@ predict.publication.bias.model.rr.all.srin.plot.2 <-
 predict(publication.bias.model.rr.all.srin.plot, newmods=cbind(mean(dataset.rr$sqrt_inv_n_tilda),seq(min(dataset.rr$year.c), max(dataset.rr$year.c), length.out=324)))
 
 
-newdat <- data.frame(sei= dataset.rr$sqrt_inv_n_tilda,
+newdat <- data.frame(year = seq(min(dataset.rr$year), max(dataset.rr$year), length.out=324),
                      fit=predict.publication.bias.model.rr.all.srin.plot.2$pred,
                      upper=predict.publication.bias.model.rr.all.srin.plot.2$ci.ub,
                      lower=predict.publication.bias.model.rr.all.srin.plot.2$ci.lb,
@@ -1393,7 +1396,7 @@ axis(1,at=seq(1989,2013,5),
 axis(2,
      at=round(seq(-3,2,0.5),1),
      cex.axis=0.8,las=2,tck=-0.02)
-title(xlab = "square root of inverse of effective sample size", 
+title(xlab = "year of publication", 
       ylab = "effect size (lnRR)",
       line = 2.75, cex.lab=1.4)
 points(xaxis,yaxis,
@@ -1401,8 +1404,8 @@ points(xaxis,yaxis,
        col=rgb(0,0,0, 0.2),
        pch=21,
        cex=1)
-lines(newdat$sei, newdat$fit, lwd=2.75,col="darkorchid4") 
-polygon(c(newdat$sei,rev(newdat$sei)),
+lines(newdat$year, newdat$fit, lwd=2.75,col="darkorchid4") 
+polygon(c(newdat$year,rev(newdat$year)),
         c(newdat$lower,rev(newdat$upper)),
         border=NA,col=rgb(104/255,34/255,139/255, 0.5))
 ```
@@ -1419,7 +1422,7 @@ predict.publication.bias.model.smd.all.srin.plot.2 <-
 predict(publication.bias.model.smd.all.srin.plot, newmods=cbind(mean(dataset.smd$sqrt_inv_n_tilda),seq(min(dataset.smd$year.c), max(dataset.smd$year.c), length.out=320)))
 
 
-newdat <- data.frame(sei= dataset.smd$sqrt_inv_n_tilda,
+newdat <- data.frame(year= seq(min(dataset.smd$year), max(dataset.smd$year), length.out=320),
                      fit=predict.publication.bias.model.smd.all.srin.plot.2$pred,
                      upper=predict.publication.bias.model.smd.all.srin.plot.2$ci.ub,
                      lower=predict.publication.bias.model.smd.all.srin.plot.2$ci.lb,
@@ -1442,7 +1445,7 @@ axis(1,at=seq(1989,2013,5),
 axis(2,
      at=round(seq(-8,4,2),1),
      cex.axis=0.8,las=2,tck=-0.02)
-title(xlab = "square root of inverse of effective sample size", 
+title(xlab = "year of publication", 
       ylab = "effect size (SMD)",
       line = 2.75, cex.lab=1.4)
 points(xaxis,yaxis,
@@ -1450,8 +1453,8 @@ points(xaxis,yaxis,
        col=rgb(0,0,0, 0.2),
        pch=21,
        cex=1)
-lines(newdat$sei, newdat$fit, lwd=2.75,col="darkorchid4") 
-polygon(c(newdat$sei,rev(newdat$sei)),
+lines(newdat$year, newdat$fit, lwd=2.75,col="darkorchid4") 
+polygon(c(newdat$year,rev(newdat$year)),
         c(newdat$lower,rev(newdat$upper)),
         border=NA,col=rgb(104/255,34/255,139/255, 0.5))
 ```
