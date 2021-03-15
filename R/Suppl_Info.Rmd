@@ -229,11 +229,13 @@ We use the function `fsn()` in the R package, `metafor`, as in this web page  ([
 dat <- escalc(measure="RR", ai=tpos, bi=tneg, ci=cpos, di=cneg, data=dat.bcg)
 fsn(yi, vi, data=dat, type="Rosenthal")
 # setting effect size targe as -0.1
-fsn(yi, data=dat, type="Orwin", target = 0.1)
+fsn(yi, vi,  data=dat, type="Orwin", target = 0.1)
 fsn(yi, vi, data=dat, type="Rosenberg")
 ```
 
 ## Appendix S4: Mulitlevel meta-regession method for publication bias
+
+<!--- We need to do reference properly -  --->
 
 In this section, we provide worked examples to show how to test for publication bias in meta-analytic datasets with high heterogeneity and several layers of non-independence, including phylogenetic non-independence, which are common features of meta-analytic datasets in ecology and evolution (Senior et al. 2016, Noble et al. 2017). We used two openly available meta-analytic datasets to show how to implement our suggested multilevel meta-regression method (see main text) on meta-analytic datasets with correlation effect sizes (*Zr*: section S4.1) and effect sizes based on mean differences between two groups (SMD, lnRR: section S4.2).
 
@@ -896,7 +898,7 @@ funnel(dataset.smd$yi, dataset.smd$vi, yaxis="seinv",
 ```
 
 
-By checking the dataset, We found the minimum lnRR and SMD were unsual: the minimum lnRR is -2.79 and SMD -11.3. We decided to taking the minimum values out. Then we checkd the funnel plots agian (Figure S4.7). This time, funnel plots seemd to be normal.
+By checking the dataset, We found the minimum lnRR and SMD were usual: the minimum lnRR is -2.79 and SMD -11.3. We decided to taking the minimum values out. Then we checked the funnel plots again (Figure S4.7). This time, funnel plots seemed to be normal.
 
 ##### Figure S4.7
 
@@ -2833,11 +2835,11 @@ f <- recordPlot()
 invisible(dev.off())
 
 # fig 3
-(ggdraw(a) + ggdraw(b)) /(ggdraw(c) + ggdraw(d))/ (plot_grid(e) + ggdraw(f)) + plot_annotation(tag_levels = 'a')
+fig3 <- (ggdraw(a) + ggdraw(b)) /(ggdraw(c) + ggdraw(d))/ (plot_grid(e) + ggdraw(f)) + plot_annotation(tag_levels = 'a')
 
+fig3
 ```
 
-Fig 3 - see the text
 
 ##### Code for Fig. 4
 
@@ -2946,9 +2948,9 @@ invisible(dev.off())
 # maybe use the same datasets as Fig 3
 
 # fig 4
-(plot_grid(p1) + plot_grid(p2)) /(ggdraw(p3) + plot_grid(p4))/(plot_grid(p5) + plot_grid(p6)) + plot_annotation(tag_levels = 'a')
+fig4 <- (plot_grid(p1) + plot_grid(p2)) /(ggdraw(p3) + plot_grid(p4))/(plot_grid(p5) + plot_grid(p6)) + plot_annotation(tag_levels = 'a')
 
-
+fig4
 ```
 
 
@@ -3024,8 +3026,9 @@ pC <- recordPlot()
 invisible(dev.off())
 
 # Fig 5
-pA /(ggdraw(pB) + ggdraw(pC)) + plot_annotation(tag_levels = 'a')
+fig5 <- pA /(ggdraw(pB) + ggdraw(pC)) + plot_annotation(tag_levels = 'a')
 
+fig5
 ```
 
 ##### Code for Fig. 6
@@ -3234,13 +3237,13 @@ pf <- ggplot(datB, aes(vi, yi)) + geom_point() +
   labs(x = "Sampling variance", y = "Effect size (Zr)")
 
 # fig6
-(ggdraw(pa) + ggdraw(pb)) /(ggdraw(pc) + ggdraw(pd))/(plot_grid(pe) + plot_grid(pf)) + plot_annotation(tag_levels = 'a')
+fig6 <- (ggdraw(pa) + ggdraw(pb)) /(ggdraw(pc) + ggdraw(pd))/(plot_grid(pe) + plot_grid(pf)) + plot_annotation(tag_levels = 'a')
 
+fig6
 ```
 ##### Code for Fig. 7
 
 There is no code for Fig. 7 (created in PowerPoint)
-
 
 ## R Session Information
 
