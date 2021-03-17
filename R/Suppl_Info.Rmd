@@ -1133,7 +1133,7 @@ estimates.publication.bias.model.smd.srin <- estimates.CI(publication.bias.model
 
 ```
 
-We found that there was a indication of small-study effects since the slopes of the moderator 'sqrt(inv_n_tilda)' is marginally statistically significant for lnRR (slope = `r round(estimates.publication.bias.model.rr.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.srin[2,3],2)`,`r round(estimates.publication.bias.model.rr.srin[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(estimates.publication.bias.model.rr.srin)[[1]]*100,1)`%) and statistically significant for SMD (slope = `r round(estimates.publication.bias.model.smd.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.srin[2,3],2)`,`r round(estimates.publication.bias.model.smd.srin[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(estimates.publication.bias.model.smd.srin)[[1]]*100,1)`%), which showed that effect sizes with larger uncertainty [larger sqrt(inv_n_tilda)] tend to be larger. Nonetheless, as mentioned above, we will confirm whether the small-study effects exist after accounting for some of the heterogeneity present in the data using the all-in publication bias test (multi-moderator meta-regression) described in section S4.2.4.3.
+We found that there was a indication of small-study effects since the slopes of the moderator 'sqrt(inv_n_tilda)' is marginally statistically significant for lnRR (slope = `r round(estimates.publication.bias.model.rr.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.srin[2,3],2)`,`r round(estimates.publication.bias.model.rr.srin[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.rr.srin)[[1]]*100,1)`%) and statistically significant for SMD (slope = `r round(estimates.publication.bias.model.smd.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.srin[2,3],2)`,`r round(estimates.publication.bias.model.smd.srin[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.smd.srin)[[1]]*100,1)`%), which showed that effect sizes with larger uncertainty [larger sqrt(inv_n_tilda)] tend to be larger. Nonetheless, as mentioned above, we will confirm whether the small-study effects exist after accounting for some of the heterogeneity present in the data using the all-in publication bias test (multi-moderator meta-regression) described in section S4.2.4.3.
 
 <br/><br/>
 
@@ -1288,9 +1288,7 @@ plot(xaxis,yaxis,
      ylab="",
      xlab="",
      xaxt="n",
-     yaxt="n",
-     #ylim=c(-2.25,2.25),
-     #xlim=c(0,1)
+     yaxt="n"
      )
 abline(a=0,b=0, lwd=1, lty=1)
 axis(1,at=seq(0,1.6,0.2),
@@ -1337,9 +1335,7 @@ plot(xaxis,yaxis,
      ylab="",
      xlab="",
      xaxt="n",
-     yaxt="n",
-     #ylim=c(-2.25,2.25),
-     #xlim=c(0,1)
+     yaxt="n"
      )
 abline(a=0,b=0, lwd=1, lty=1)
 axis(1,at=seq(0,1.2,0.2),
@@ -1387,9 +1383,7 @@ plot(xaxis,yaxis,
      ylab="",
      xlab="",
      xaxt="n",
-     yaxt="n",
-     #ylim=c(-2.25,2.25),
-     #xlim=c(0,1)
+     yaxt="n"
      )
 abline(a=0,b=0, lwd=1, lty=1)
 axis(1,at=seq(1989,2013,5),
@@ -1436,9 +1430,7 @@ plot(xaxis,yaxis,
      ylab="",
      xlab="",
      xaxt="n",
-     yaxt="n",
-     #ylim=c(-2.25,2.25),
-     #xlim=c(0,1)
+     yaxt="n"
      )
 abline(a=0,b=0, lwd=1, lty=1)
 axis(1,at=seq(1989,2013,5),
