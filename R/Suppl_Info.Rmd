@@ -2031,11 +2031,11 @@ ggplot(data=cumul.sampling.r.summarized, aes(x=order, y=median, ymin=lowCI, ymax
 # rho = 0.5 is as in Noble et al (Mol Ecol)
 dataset.rr <- escalc(yi=yi, vi=vi, data=dataset.rr)
 dataset.rr.agg <- aggregate(dataset.rr, cluster=paperID, struct="CS", rho = 0.5)
-dataset.rr.agg
+#dataset.rr.agg
 
 dataset.smd <- escalc(yi=yi, vi=vi, data=dataset.smd)
 dataset.smd.agg <- aggregate(dataset.smd, cluster=paperID, struct="CS", rho = 0.5)
-dataset.smd.agg
+#dataset.smd.agg
 
 ```
 
@@ -2612,41 +2612,41 @@ load(here("data","cumul_sampling_rr_1000s.RData"))
 # for loop to extract one single effect size per study and running cumulative meta-analysis
 n.randomization.smd.CM <- 1000 #number of samplings to be done
  # vector to collect the effects estimated over time
- cumul.vector.smd <- c()
- 
- for(i in 1:n.randomization.smd.CM){
-   
-   # creating a new dataframe to be filled
-   randomized.db.smd <- data.frame(study=factor(),
-                                 yi=numeric(),
-                                 vi=numeric(),
-                                 year=numeric(),
-                                 stringsAsFactors=FALSE)
-   
-   for (j in levels(as.factor(dataset.smd$study))){ #for each study do...
-#     
-     # creating a dataset for each study
-     tmp.smd <- dataset.smd[dataset.smd$study==j,c("study","yi","vi","year")]
-     
-     # randomly extracting one effect size per study
-     randomized.db.smd <- rbind(randomized.db.smd,tmp.smd[sample(seq(1,nrow(tmp.smd)),1),])
-     
-   }
-   
-   # running the model on the dataframe created in the for loop above
-   model.tmp.smd <- rma(yi, vi, test="knha",data=randomized.db.smd)
-   
-   # extracting the mean estimates estimated by the cumulative meta-analysis for each database
-   cumul.vector.smd <- c(cumul.vector.smd,as.vector(cumul(model.tmp.smd,order=order(randomized.db.smd$year))$estimate))
-   
- }
- 
- # creating a dataframe with the order and the mean estimate from each database
- cumul.sampling.smd <- data.frame(order=rep(seq(1,nrow(randomized.db.smd)),n.randomization.smd.CM),
-                                beta=cumul.vector.smd)
- 
- # saving data to avoid re-running for loop as that can take a few minutes if n.smdandomization.smd 1000 or more
-save(cumul.sampling.smd,file = here("data","cumul_sampling_smd_1000s.RData"))
+#  cumul.vector.smd <- c()
+#  
+#  for(i in 1:n.randomization.smd.CM){
+#    
+#    # creating a new dataframe to be filled
+#    randomized.db.smd <- data.frame(study=factor(),
+#                                  yi=numeric(),
+#                                  vi=numeric(),
+#                                  year=numeric(),
+#                                  stringsAsFactors=FALSE)
+#    
+#    for (j in levels(as.factor(dataset.smd$study))){ #for each study do...
+# #     
+#      # creating a dataset for each study
+#      tmp.smd <- dataset.smd[dataset.smd$study==j,c("study","yi","vi","year")]
+#      
+#      # randomly extracting one effect size per study
+#      randomized.db.smd <- rbind(randomized.db.smd,tmp.smd[sample(seq(1,nrow(tmp.smd)),1),])
+#      
+#    }
+#    
+#    # running the model on the dataframe created in the for loop above
+#    model.tmp.smd <- rma(yi, vi, test="knha",data=randomized.db.smd)
+#    
+#    # extracting the mean estimates estimated by the cumulative meta-analysis for each database
+#    cumul.vector.smd <- c(cumul.vector.smd,as.vector(cumul(model.tmp.smd,order=order(randomized.db.smd$year))$estimate))
+#    
+#  }
+#  
+#  # creating a dataframe with the order and the mean estimate from each database
+#  cumul.sampling.smd <- data.frame(order=rep(seq(1,nrow(randomized.db.smd)),n.randomization.smd.CM),
+#                                 beta=cumul.vector.smd)
+#  
+#  # saving data to avoid re-running for loop as that can take a few minutes if n.smdandomization.smd 1000 or more
+# save(cumul.sampling.smd,file = here("data","cumul_sampling_smd_1000s.RData"))
 # loading the data extracted from the for loop above to avoid re-running that for loop as that can take a few minutes if n.smdandomization.smd 1000 or more
 load(here("data","cumul_sampling_smd_1000s.RData"))
 ```
@@ -2707,7 +2707,7 @@ Rose??
 
 ##### Code for Fig. 3
 
-```{r, fig.height= 8, fig.width= 7}
+```{r, fig.height= 8, fig.width= 7, eval = FALSE}
 
 # creating data
 
@@ -2838,7 +2838,7 @@ fig3
 
 ##### Code for Fig. 4
 
-```{r, fig.height= 8, fig.width= 8}
+```{r, fig.height= 8, fig.width= 8, eval = FALSE}
 # creating data with publication bias
 
 dat2 <- dat[dat$col_point != "red", ]
@@ -2951,7 +2951,7 @@ fig4
 
 ##### Code for Fig. 5
 
-```{r, fig.height= 8, fig.width= 7, message = FALSE}
+```{r, fig.height= 8, fig.width= 7, message = FALSE, eval = FALSE}
 # dmetr
 
 #devtools::install_github("MathiasHarrer/dmetar")
@@ -3028,7 +3028,7 @@ fig5
 
 ##### Code for Fig. 6
 
-```{r, fig.height= 8, fig.width= 7, message = FALSE}
+```{r, fig.height= 8, fig.width= 7, message = FALSE, eval = FALSE}
 
 # Zr data creation
 set.seed(777)
