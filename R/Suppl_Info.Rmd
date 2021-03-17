@@ -105,8 +105,6 @@ estimates.CI <- function(model){
 
 ## Appendix S1: Survey of publication bias tests reported in ecology and evolution meta-analyses
 
-*Ask Rose to finish this off* - references are not done etc - need fixing - use  (ask Yefeng and Alfredo do help as well) -- e.g. [@viechtbauer2010conducting]
-
 ### S1.1: Survey method
 
 The main objective of the literature survey was to capture the types of publication bias methods recently used in the field of ecology and evolution. The survey reported here was conducted alongside a larger survey on reporting standards from the PRISMA-EcoEvo project (Preferred Reporting Items for Systematic reviews and Meta-Analyses in Ecology and Evolutionary Biology; full details and materials provided in O’Dea et al. (2019). The survey was based on 102 meta-analysis papers published between 1 January 2010 and 25 March 2019. We aimed for the sample of 102 meta-analyses to be representative of recently published meta-analyses in ecology and evolutionary biology journals.
