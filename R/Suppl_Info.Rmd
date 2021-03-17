@@ -40,7 +40,8 @@ options(digits=3)
 # install the orchaRd package
 install.packages("devtools")
 install.packages("tidyverse")
-install.packages("metafor")# for section S5, one has to install the developing version of metafor using: remotes::install_github("wviechtb/metafor")
+#install.packages("metafor")# for section S5, one has to install the developing version of metafor using: 
+remotes::install_github("wviechtb/metafor")
 install.packages("patchwork")
 install.packages("R.rsp")
 
@@ -108,7 +109,7 @@ estimates.CI <- function(model){
 
 ### S1.1: Survey method
 
-The main objective of the literature survey was to capture the types of publication bias methods recently used in the field of ecology and evolution. The survey reported here was conducted alongside a larger survey on reporting standards from the PRISMA-EcoEvo project (Preferred Reporting Items for Systematic reviews and Meta-Analyses in Ecology and Evolutionary Biology; full details and materials provided in {O’Dea, 2019 #28}). The survey was based on 102 meta-analysis papers published between 1 January 2010 and 25 March 2019. We aimed for the sample of 102 meta-analyses to be representative of recently published meta-analyses in ecology and evolutionary biology journals.
+The main objective of the literature survey was to capture the types of publication bias methods recently used in the field of ecology and evolution. The survey reported here was conducted alongside a larger survey on reporting standards from the PRISMA-EcoEvo project (Preferred Reporting Items for Systematic reviews and Meta-Analyses in Ecology and Evolutionary Biology; full details and materials provided in O’Dea et al. (2019). The survey was based on 102 meta-analysis papers published between 1 January 2010 and 25 March 2019. We aimed for the sample of 102 meta-analyses to be representative of recently published meta-analyses in ecology and evolutionary biology journals.
 
 #### S1.1.1 Representative Sample
 
@@ -132,11 +133,11 @@ The sample of 102 meta-analysis papers met the following four inclusion criteria
 
 
 #### S1.1.3 Assessing 102 meta-analysis papers
-Papers were independently assessed by seven authors (RO, DN, JK, MJ, ML, RO, SN, and TP) as part of a larger, time-consuming survey. The one survey question pertaining to this project was: “Which publication bias tests are reported in the paper? (Select all that apply)”. There were 11 possible choices for respondents to select: (A) Funnel plots (including contour-enhanced funnel plots); (B) Normal quantile (QQ) plots (Wang & Bushman); (C) Correlation-based tests (e.g. Begg & Manzumdar rank correlation); (D) Regression-based tests (e.g. Egger regression and its variants); (E) File drawer numbers or fail-safe N (Rosenthal, Orwin or Rosenberg method); (F) Trim-and-fill tests; (G) P-curve, P-uniform or its variants; (H) Selection (method) models (e.g. Copas, Hedges or lyengar & Greenhouse model); (I) Time-lag bias tests (e.g., regression or correlation on the relationship between effect sizes and time or cumulative meta-analysis); (J) None reported and (K) ‘Other’ methods. According to Sutton ({, 2009 #17}) (see also {Vevea, 2019 #16}), Methods A-D are tests detecting publication bias, whereas Methods E-F are assessing the impact of publication bias. 
+Papers were independently assessed by seven authors (RO, DN, JK, MJ, ML, RO, SN, and TP) as part of a larger, time-consuming survey. The one survey question pertaining to this project was: “Which publication bias tests are reported in the paper? (Select all that apply)”. There were 11 possible choices for respondents to select: (A) Funnel plots (including contour-enhanced funnel plots); (B) Normal quantile (QQ) plots (Wang & Bushman); (C) Correlation-based tests (e.g. Begg & Manzumdar rank correlation); (D) Regression-based tests (e.g. Egger regression and its variants); (E) File drawer numbers or fail-safe N (Rosenthal, Orwin or Rosenberg method); (F) Trim-and-fill tests; (G) P-curve, P-uniform or its variants; (H) Selection (method) models (e.g. Copas, Hedges or lyengar & Greenhouse model); (I) Time-lag bias tests (e.g., regression or correlation on the relationship between effect sizes and time or cumulative meta-analysis); (J) None reported and (K) ‘Other’ methods. According to Sutton (2009) (see also Vevea et al., 2019), Methods A-D are tests detecting publication bias, whereas Methods E-F are assessing the impact of publication bias. 
 
 ### S1.2 Results
 Among the 102 assessed papers, 17.8% did not report any tests of publication bias. 
-Most meta-analysis papers reported one or more tests of publication bias (17.8% of assessed papers did not include any assessment of publication bias). These results suggest tests of publication bias have become more common in recent year in ecology and evolutionary biology, as over half of older meta-analyses assessed by Nakagawa and Santos ({, 2012 #19}) and Koricheva and Gurevitch ({Koricheva, 2014 #18}) did not report any tests of publication bias (although our results are not directly comparable, due to different survey methods). Still, inferential tests of publication bias remain uncommon. By far the most popular test of publication bias were funnel plots (32.4%; Table S2), with all remaining methods represented by fewer than 15% of papers. All methods except ‘selection models’ were present in at least one paper (with ‘other’ being selected for a weighted histogram used by {Loydi, 2013 #70}; Table S2). The absence of selection model methods could be because these methods are comparatively technically challenging, or because ecologists and evolutionary biologists are not yet aware of the benefits of these methods.
+Most meta-analysis papers reported one or more tests of publication bias (17.8% of assessed papers did not include any assessment of publication bias). These results suggest tests of publication bias have become more common in recent year in ecology and evolutionary biology, as over half of older meta-analyses assessed by Nakagawa and Santos (2012) and Koricheva and Gurevitch (2014) did not report any tests of publication bias (although our results are not directly comparable, due to different survey methods). Still, inferential tests of publication bias remain uncommon. By far the most popular test of publication bias were funnel plots (32.4%; Table S2), with all remaining methods represented by fewer than 15% of papers. All methods except ‘selection models’ were present in at least one paper (with ‘other’ being selected for a weighted histogram used by Loydi et al. (2013; Table S2). The absence of selection model methods could be because these methods are comparatively technically challenging, or because ecologists and evolutionary biologists are not yet aware of the benefits of these methods.
 
 ##### Table S1.2
 Frequency with which publication bias tests were reported in the 102 meta-analysis publications, ranked in order of decreasing popularity. No tests were reported for 17.80% of papers.
@@ -2191,7 +2192,7 @@ table.comparing.Exp.or.Obs.levels.3PSM[,1] <- c("Experimental","Observational")
 # creating a fancy table using the R package 'gt'
 table.model.rr.Exp.or.Obs.gt.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% 
   gt() %>% 
-  cols_label(captivity.level=md("**Experimental.or.Observational.**"),
+  cols_label(Exp.or.Obs.level=md("**Experimental.or.Observational.**"),
              adjusted.mean=md("**Adjusted mean**"),
              adjusted.CI=md("**Adjusted 95% CI**"),
              unadjusted.mean=md("**Unadjusted mean**"),
@@ -2219,7 +2220,7 @@ table.comparing.Exp.or.Obs.levels.3PSM[,1] <- c("Experimental","Observational")
 # creating a fancy table using the R package 'gt'
 table.model.smd.Exp.or.Obs.gt.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% 
   gt() %>% 
-  cols_label(captivity.level=md("**Experimental.or.Observational.**"),
+  cols_label(Exp.or.Obs.level=md("**Experimental.or.Observational.**"),
              adjusted.mean=md("**Adjusted mean**"),
              adjusted.CI=md("**Adjusted 95% CI**"),
              unadjusted.mean=md("**Unadjusted mean**"),
