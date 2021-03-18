@@ -2675,7 +2675,75 @@ There is no code for Fig. 1 (created in PowerPoint)
 
 ##### Code for Fig. 2
 
-Rose??
+```{r}
+# loading data
+PB <- read.csv("./Survey/PubBias_tests.csv")
+Item16 <- read.csv("./Survey/Item16PRISMAEcoEvo.csv")
+
+# number of times each test was represented
+PB %>% group_by(PB_reported_in_paper) %>% tally() %>% ungroup %>% arrange(n) %>% 
+  mutate(percent = paste0(round(n/sum(n)*100,1), "%")) -> Ntests
+# selection methods were not reported in any papers
+Ntests <- rbind(Ntests,
+                data.frame(PB_reported_in_paper = "Selection (method) models (e.g. Copas, Hedges or Iyengar & Greenhouse model)",
+                           n = 0,
+                           percent = "0.0%"))
+
+# making label for graphs
+PB_labels <- Ntests$PB_reported_in_paper
+PB_labels <- case_when(PB_labels == "Funnel plots (including contour-enhanced funnel plots)" ~ "(A) Funnel plots",
+                       PB_labels == "Regression-based test (e.g. Egger regression and its variants)" ~ "(D) Regression-based methods",
+                       PB_labels == "Time-lag bias tests (e.g., regression or correlation on the relationship between effect size and time or cumulative meta-analysis)" ~ "(I) Time-lag bias tests",
+                       PB_labels == "File drawer numbers or fail safe N (Rosenthal, Orwin or Rosenberg method)" ~ "(E) Fail-safe N",
+                       PB_labels == "Trim-and-fill tests" ~ "(F) Trim-and-fill tests",
+                       PB_labels == "P-curve, P-uniform or its variants" ~ "(G) P-value-based methods",
+                       PB_labels == "Weighted histogram" ~ "(K) Other (weighted histogram)",
+                       PB_labels == "Correlation-based tests (e.g. Begg & Manzumdar rank correlation)" ~ "(C) Correlation-based methods",
+                       PB_labels == "Normal quantile (QQ) plots (Wang & Bushman)" ~ "(B) Normal quantile (QQ) plots",
+                       PB_labels == "None reported" ~ "(J) None reported",
+                       PB_labels == "Selection (method) models (e.g. Copas, Hedges or Iyengar & Greenhouse model)" ~ "(H) Selection models")
+
+# putting in same order as survey question
+Ntests$PB_label <- factor(PB_labels, levels = rev(sort(PB_labels)))
+
+# ggplot theme
+background.colour = "white"
+tm <- theme(panel.background = element_rect(fill = background.colour),
+            plot.background = element_rect(fill = background.colour),
+            panel.grid = element_blank(),
+            axis.line = element_line(size = 0.75, colour = "black"),
+            axis.ticks = element_line(size = 0.75, colour = "black"),
+            axis.ticks.length = unit(0.1,"cm"),
+            axis.text.x = element_text(size = 14, colour = "black"),
+            axis.title = element_text(size = 18, colour = "black"),
+            axis.text.y = element_text(hjust = 0, size = 16, colour = "black"),
+            axis.title.y = element_blank(),
+            axis.title.x = element_text(margin = margin(t=10,r=0,b=2,l=0)),
+           # axis.title.x = element_blank(),
+            plot.title = element_text(size = 18, colour = "black", face = "bold", hjust = 0.5, margin = margin(t=2,r=0,b=10,l=0)),
+            legend.background = element_rect(fill = background.colour),
+            legend.title = element_blank(),
+            legend.text = element_text(size = 16, margin = margin(2,0,2,0)),
+            legend.spacing.y = unit(1, "cm"),
+            legend.position = "bottom",
+            text =  element_text(family = "Arial"),
+            legend.key = element_blank(),
+            plot.margin = unit(c(0.3,1,0.3,0.3), "cm"))
+
+# colour to fill columns
+colcol = "#cad7ed"
+
+## Plot of the types of tests
+
+ggplot(Ntests) + tm + theme(plot.title = element_text(hjust = -1)) +
+  geom_col(aes(PB_label, n), fill = colcol, colour = "black", width = 0.75, size = 1) +
+  geom_text(aes(x = PB_label, y = n, label = percent), hjust = -0.1, size = 5, family = "Arial") +
+  scale_y_continuous(expand = c(0,0), lim = c(0, 80)) +
+  coord_flip() +
+  labs(x = "type of publication bias test",
+       y = "number of papers reporting test") 
+```
+
 
 ##### Code for Fig. 3
 
