@@ -145,7 +145,7 @@ where $e_{i} \sim \mathcal{N}(0, \sigma_e^2)$. We can rewrite this as:
 $$
 y_{i}/se_i = \beta_{0} + \beta_{1}(1/se_i) + e_i,\\
 $$
-If we multiple both side by $se_i$, we have:
+If we multiple both sides by $se_i$, we have:
 
 $$
 y_{i} = \beta_{0}se_i + \beta_{1} + e_{i}se_{i},
@@ -156,7 +156,7 @@ which is basically the same, if $\beta_0$ and $\beta_1$ are swapped, as:
 $$
 y_{i} = \beta_{0} + \beta_{1}se_i + \epsilon_i,
 $$
-where $\epsilon_i \sim \mathcal{N}(0, v_i\phi)$ as in Equation 9. We can show this using a simulated data as well (we use the data used for Figure 3 and 4). Below the first result is from Equation 8 and the second Equation 9:
+where $\epsilon_i \sim \mathcal{N}(0, v_i\phi)$ as in Equation 9. We can show this using simulated data as well (we use the data used for Figure 3 and 4). Below the first result is from Equation 8 and the second Equation 9:
 
 
 ```{r}
@@ -167,7 +167,7 @@ n.effect <- 100
 sigma2.s <- 0.05
 beta1 <- 0.2
 
-# using negative binomial we get good spread of sample size
+# using negative binomial we get a good spread of sample sizes
 n.sample <- rnbinom(n.effect, mu = 30, size = 0.7) + 4
 
 # variance for Zr
@@ -176,7 +176,7 @@ vi <- 1/(n.sample - 3)
 # moderator x 1
 xi <- rnorm(n.effect)
 
-# there is underling overall effect to r = 0.2 or Zr = 0.203
+# there is an overall effect of r = 0.2 (Zr = 0.203, which we get from the `atanh` function)
 Zr <- atanh(0.2) + beta1*xi + rnorm(n.effect, 0, sqrt(sigma2.s)) + rnorm(n.effect, 0, sqrt(vi))
 #qplot(Zr, 1/sqrt(vi))
 
@@ -201,10 +201,10 @@ summary(eq_8)
 summary(eq_9)
 ```
 
-As you can see above, Equation 8's intercept is identical the slope of Equation 9 whiile Equation 8's slope to Equation 9's intercept. Note that corresponding standard errors (SE) are also the same. 
+As you can see above, Equation 8's intercept is identical to the slope of Equation 9, while Equation 8's slope is identical to Equation 9's intercept. Note that corresponding standard errors (SE) are also the same. 
 
 
-## Appendix S3: Faile-safe *N* comparisions
+## Appendix S3: Fail-safe *N* comparisions
 
 We use the function `fsn()` in the R package, `metafor`, as in this web page  ([link](https://wviechtb.github.io/metafor/reference/fsn.html)).
 
