@@ -805,7 +805,7 @@ table.model.r.captivity.gt
 
 ### S4.2: Mean differences between two groups (lnRR and SMD)
 
-For our second worked example, we used the dataset provided by Murphy et al. 2013, who tested the effects of human-caused disturbances on changes in species richness across both terrestrial and aquatic biomes, using log response ratio (i.e., lnRR). Briefly, the authors found that human-mediated disturbances lead to an statistically significant 18.3% decline in species richness across five anthropogenic disturbances (e.g., species invasions, nutrient addition, temperature increase, habitat loss or fragmentation, and land-use change). Here, we reanalyse the data from Murphy et al. 2013 by: (1) conducting a **multilevel intercept-only** meta-analytic model using lnRR and SMD as dependent variables, respectively; (2) testing for evidence of publication bias following the approaches outlined in the main text (**meta-regression approach**); (3) obtaining an adjusted overall mean using the approaches outlined in the main text (**two-stage approach based on meta-regression approach**).
+For our second worked example, we used the dataset provided by Murphy et al. 2013, who tested whether human-caused disturbances were associated with a change in species richness across both terrestrial and aquatic biomes, using the log response ratio (i.e., lnRR). Briefly, the authors found that human-mediated disturbances lead to a statistically significant 18.3% decline in species richness across five anthropogenic disturbances (species invasions, nutrient addition, temperature increase, habitat loss or fragmentation, and land-use change). Here, we re-analyse the data from Murphy et al. 2013 by: (1) conducting **multilevel intercept-only** meta-analytic models using lnRR and SMD as dependent variables; (2) testing for evidence of publication bias following the approaches outlined in the main text (**meta-regression approach**); (3) obtaining an adjusted overall mean using the approaches outlined in the main text (**two-stage approach based on meta-regression approach**).
 
 ```{r, results="hide"}
 # importing dataset with mean differences
@@ -836,9 +836,8 @@ dataset.smd <- escalc(measure = "SMD",
                       data = dataset.original.mean.diff,
                       append = T)
 
-
-# metrics <- data.frame(RR = lnRR$yi, VRR = lnRR$vi, SMD = SMD$yi, VSMD = SMD$vi)
-# dataset.mean.diff <- cbind(dataset.original.mean.diff, metrics) # bind_cols()
+#Warning message:
+#Some 'yi' and/or 'vi' values equal to +-Inf. Recoded to NAs. 
 
 # clean NA
 dataset.rr <- dataset.rr[!is.na(dataset.rr$yi) & dataset.rr$vi != 0, ]
@@ -849,14 +848,14 @@ dataset.smd <- dataset.smd[!is.na(dataset.smd$yi) & dataset.smd$vi != 0, ]
 
 #### S4.2.1: Exploratory data analysis
 
-Before reanalysis, it is important to explore the meta-analytic dataset in search of potential outliers that might be caused by data extraction errors. To do so, we drew funnel plots showing the standard error and the inverse of the standard error (i.e. precision) in the y-axes (Figure S4.6). Figure S4.6 showed that outliers seemed to be present in this meta-analytic dataset. 
+Before analysis, it is important to explore the meta-analytic dataset. To identify outliers (which are sometimes caused by data extraction errors, or typos in the data source), Figure S4.6 shows funnel plots with the standard error and the inverse of the standard error (i.e. precision) in the y-axes (Figure S4.6).
 
 ##### Figure S4.6
 
-Funnel plots with 1/SE for lnRR (left-hand side) and SMD (right-hand side) as measures of uncertainty to explore the existence of outliers in the meta-analytic dataset.
+Funnel plots with 1/SE for lnRR (left-hand side) and SMD (right-hand side) as measures of uncertainty to visualise outliers in the meta-analytic dataset.
 
 ```{r, fig.width=7, fig.height= 8}
-# here it is OK - but we find some strange data in SMD and lnRR 
+# we find some strange data in SMD and lnRR 
 par(mfrow = c(1, 2))
 funnel(dataset.rr$yi, dataset.rr$vi, yaxis="seinv",
        #xlim = c(-3, 3),
@@ -869,14 +868,14 @@ funnel(dataset.smd$yi, dataset.smd$vi, yaxis="seinv",
 ```
 
 
-By checking the dataset, We found the minimum lnRR and SMD were usual. We decided to taking the minimum values out. Then we checked the funnel plots again (Figure S4.7). This time, funnel plots seemed to be normal.
+Data exploration found the minimum lnRR and SMD were usual outliers. For this example we have decided to take those minimum values out (but for a real meta-analysis, the source of those outliers should be investigated, and the decision about whether or not to remove unusual effect sizes should be justified and reported in the paper). Next, we checked the funnel plots again (Figure S4.7). This time, funnel plots seemed to be normal.
 
 ##### Figure S4.7
 
-Funnel plots with 1/SE as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side) when taking out outliers in the meta-analytic dataset.
+Funnel plots with 1/SE as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side) after removing outliers in the meta-analytic dataset.
 
 ```{r, fig.width=7, fig.height= 8}
-# taking outilers
+# removing outliers
 dataset.rr <- dataset.rr[dataset.rr$vi != min(dataset.rr$vi), ]
 
 dataset.smd <- dataset.smd[dataset.smd$yi != min(dataset.smd$yi),]
@@ -893,14 +892,11 @@ funnel(dataset.smd$yi, dataset.smd$vi, yaxis="seinv",
        xlab = "Effect size (SMD)") 
 ```
 
-To avoide ‘artefactual’ funnel asymmetry, we suggest using "effective sample size" rather than SE for mean difference effect sizes, such as lnRR and SMD. Let's check the funnel plots (Figure S4.8) which use effective sample size as y-axis.
-
+To avoid ‘artefactual’ funnel asymmetry, we suggest using "effective sample size" rather than SE for mean difference effect sizes, such as lnRR and SMD. Let's check the funnel plots (Figure S4.8) which use effective sample size on the y-axis.
 
 ##### Figure S4.8
 
-Funnel plots with effective sample size as the measure of uncertaintyfor lnRR (left-hand side) and SMD (right-hand side).
-
-<br/><br/>
+Funnel plots with effective sample size as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side).    
 
 ```{r, fig.width=7, fig.height= 8}
 # calculating "effective sample size" to account for unbalanced sampling, for SMD and lnRR (e_n, hereafter, see Equation 25 from the main manuscript)
@@ -908,7 +904,7 @@ Funnel plots with effective sample size as the measure of uncertaintyfor lnRR (l
 dataset.rr$e_n <- 4*(dataset.rr$C_N*dataset.rr$T_N) / (dataset.rr$C_N + dataset.rr$T_N)
 dataset.smd$e_n <- 4*(dataset.smd$C_N*dataset.smd$T_N) / (dataset.smd$C_N + dataset.smd$T_N)
 
-#using effecitve sampling size
+#using effective sampling size
 par(mfrow = c(1, 2))
 funnel(dataset.rr$yi, dataset.rr$vi, ni = dataset.rr$e_n, yaxis="ni",
        #xlim = c(-3, 3),
@@ -921,12 +917,11 @@ funnel(dataset.smd$yi, dataset.smd$vi, ni = dataset.smd$e_n, yaxis="ni",
 
 ```
 
-When comparing funnel plots with 1/SE (Figure 4.7) and funnel plots with effective sample size (Figure 4.8), it was obvious that data points in funnel plots with effective sample size looked more 'scattered', whereas data points in funnel plots with 1/SE looked more 'crowded'. This is because when using 1/SE as y-axis, that is, SE inherently correlate with effect size (e.g. lnRR and SMD). The SMD’s variance has the square of the point estimate (i.e. SMD; Equations 2), which leads to a correlation between SMDs and sampling SE, resulting in ‘artefactual’ funnel asymmetry. lnRR has the same issue (see Equation 4).
-
+Compare funnel plots with 1/SE (Figure 4.7) and funnel plots with effective sample size (Figure 4.8): data points in funnel plots with effective sample sizes looked more 'scattered', whereas data points in funnel plots with 1/SE looked more 'crowded'. This is because SE correlated more strongly with the effect size than effective sample size, owing to similarities between the effect size and sampling variance equations for both lnRR and SMR (i.e., compare equations 1 and 2, and equations 3 and 4, in the main text). For example, the SMD’s variance has the square of the point estimate (i.e. SMD), which leads to a correlation between SMDs and sampling SE, resulting in ‘artefactual’ funnel asymmetry.
 
 #### S4.2.2: Multilevel meta-analysis
 
-Next, we used the dataset from Murphy et al. 2013 to provide a worked example on how to test publication bias using the multilevel meta-regression method suggested in the main text. First, we reanalysed the dataset using a multilevel meta-analytic (intercept-only) model and corresponding funnel plot showing the overall effect or meta-analytic mean.
+Next, we used the dataset from Murphy et al. 2013 to provide a worked example on how to test for the presence of publication bias using the multilevel meta-regression method suggested in the main text. First, we re-analysed the dataset using a multilevel meta-analytic (intercept-only) model and corresponding funnel plot showing the overall effect or meta-analytic mean.
 
 ```{r}
 # creating a unit-level random effect to model residual variance in metafor
@@ -940,7 +935,7 @@ meta.analysis.model.rr <- rma.mv(yi, vi,
                                                ~ 1 | paperID, 
                                                ~ 1 | obsID),
                                  method = "REML",
-                                 test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                 test = "t", 
                                  data = dataset.rr)
 
 
@@ -950,22 +945,16 @@ meta.analysis.model.smd <- rma.mv(yi, vi,
                                                 ~ 1 | paperID, 
                                                 ~ 1 | obsID),
                                   method = "REML",
-                                  test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                  test = "t", 
                                   data = dataset.smd)
 
 # extracting the mean, 95% confidence intervals and 95% prediction intervals
-#print(meta.analysis.model.1, digits=3)
 metaanalytic.mean.model.rr <- predict(meta.analysis.model.rr, digits=3)
 metaanalytic.mean.model.smd <- predict(meta.analysis.model.smd, digits=3)
-#forest(meta.analysis.model.1)
 
 # estimating relative heterogeneity I2
 I2.model.rr <- i2_ml(meta.analysis.model.rr)*100
 I2.model.smd <- i2_ml(meta.analysis.model.smd)*100
-
-# and absolute heterogeneity Q
-#Q.model.RR <- c(meta.analysis.model.RR$QE)
-#Q.model.SMD <- c(meta.analysis.model.SMD$QE)
 
 # creating a table to show the heterogeneity estimates
 table.model.rr <- data.frame(n=length(unique(dataset.rr$paperID)),
@@ -997,9 +986,9 @@ rownames(table.model.smd) <- NULL
 
 #write.csv(table.model.SMD, "./table/table.model.SMD.csv", row.names = FALSE)
 
-# creating a fancy table using the R package 'gt'
+# creating a formatted table using the R package 'gt'
 table.model.rr.gt <- table.model.rr %>% 
-  gt() %>% 
+  gt::gt() %>% 
   cols_label(n=md("**n**"),
              k=md("**k**"),
              mean=md("**Meta-analytic mean**"),
@@ -1010,8 +999,7 @@ table.model.rr.gt <- table.model.rr %>%
              I2_Disturbance=md("***I*<sup>2</sup><sub>Disturbance</sub> (%)**"),
              I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**")) %>%
   cols_align(align = "center") %>%
-  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity")) #%>%
-#tab_options(table.width=775)
+  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity"))
 
 table.model.rr.gt
 
@@ -1028,19 +1016,18 @@ table.model.smd.gt <- table.model.smd %>%
              I2_Disturbance=md("***I*<sup>2</sup><sub>Disturbance</sub> (%)**"),
              I2_total=md("***I*<sup>2</sup><sub>total</sub> (%)**")) %>%
   cols_align(align = "center") %>%
-  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity"))  #%>%
-#tab_options(table.width=775)
+  tab_source_note(source_note = md("n = number of studies; k = number of effects; CI = confidence interval; PI = prediction interval; *I*<sup>2</sup> = heterogeneity"))  
 
 table.model.smd.gt
 ```
 
-**Table S4.2** Results of the multilevel intercept-only meta-analysis testing the effects of human-caused disturbances on changes in species richness across both terrestrial and aquatic biomes, using log response ratio (i.e. lnRR). Estimates are presented as standardized effect sizes using log transformed ratio of means (i.e. lnRR, top) and standardized mean difference (i.e. SMD, bottom)
+**Table S4.2** Results of the multilevel intercept-only meta-analysis testing the effects of human-caused disturbances on changes in species richness across both terrestrial and aquatic biomes. Estimates are presented as standardized effect sizes using the log response ratio (i.e. lnRR, top) and standardized mean difference (i.e. SMD, bottom).    
 
 <br/><br/>
 
 ##### Figure S4.9
 
-Funnel plot using effective sample size as a measure of uncertainty and showing the meta-analytic mean (vertical line) obtained in the multilevel intercept-only meta-analysis.
+Funnel plot using effective sample size as a measure of uncertainty, showing the meta-analytic mean obtained in the multilevel intercept-only meta-analysis as dashed vertical lines.
 
 ```{r}
 par(mfrow = c(1, 2))
@@ -1060,12 +1047,10 @@ funnel(dataset.smd$yi, dataset.smd$vi, yaxis="ni",
 
 ##### S4.2.3.1: Meta-regression with effective sampling size (uni-moderator)
 
-To test for publication bias (evidence of small-study effects), we first fitted a uni-moderator multilevel meta-regression including the square root of the inverse of effective sample size [sqrt(inv_n_tilda)] (Equation 26) as the only moderator (see Equation 27 from the main text). This meta-regression will provide some information about the existence of small-study effects (i.e. asymmetry in the distribution of effect sizes) after accounting for non-independence. However, high levels of heterogeneity also poses problems for publication bias tests in meta-analytic datasets in ecology and evolution. Therefore, the best evidence approach is to model both heterogeneity and non-independence, by using multi-moderator multilevel meta-regression which includes all the important moderators (see all-in publication bias test described in section S4.2.4.3).
-
+To test for publication bias (evidence of small-study effects), we first fitted a uni-moderator multilevel meta-regression including the square root of the inverse of effective sample size [sqrt(inv_n_tilda)] (Equation 26) as the only moderator (see Equation 27 from the main text). This meta-regression will provide some information about the existence of small-study effects (i.e. asymmetry in the distribution of effect sizes) after accounting for non-independence. However, high levels of heterogeneity also create problems for publication bias tests in meta-analytic datasets in ecology and evolution. Therefore, the best evidence approach is to model both heterogeneity and non-independence, by using a multi-moderator multilevel meta-regression model that includes all the important moderators (see all-in publication bias test described in section S4.2.4.3).
 
 ```{r}
-# calculating "effective sample size" to account for unbalanced sampling, for SMD and lnRR (see Equation 25 from the main manuscript)
-# getting the inverse of it
+# calculating the inverse of the "effective sample size" to account for unbalanced sampling, for SMD and lnRR (see Equation 25 from the main manuscript)
 
 dataset.rr$inv_n_tilda <-  (dataset.rr$C_N + dataset.rr$T_N)/(dataset.rr$C_N*dataset.rr$T_N)
 dataset.rr$sqrt_inv_n_tilda <- sqrt(dataset.rr$inv_n_tilda)
@@ -1080,9 +1065,8 @@ publication.bias.model.rr.srin <- rma.mv(yi, vi,
                                                      ~ 1 | obsID, 
                                                      ~ 1 | paperID),
                                          method="REML",
-                                         test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                         test = "t", 
                                          data=dataset.rr)
-#publication.bias.model.RR.srin
 
 publication.bias.model.smd.srin <- rma.mv(yi, vi,
                                           mods= ~ 1 + sqrt_inv_n_tilda,
@@ -1090,28 +1074,20 @@ publication.bias.model.smd.srin <- rma.mv(yi, vi,
                                                       ,~ 1 | obsID, 
                                                       ~ 1 | paperID),
                                           method="REML",
-                                          test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                          test = "t", 
                                           data=dataset.smd)
-
-#publication.bias.model.SMD.srin
-
-#print(publication.bias.model.1.se,digits=3)
 
 # extracting the mean and 95% confidence intervals
 estimates.publication.bias.model.rr.srin <- estimates.CI(publication.bias.model.rr.srin)
 
 estimates.publication.bias.model.smd.srin <- estimates.CI(publication.bias.model.smd.srin)
-
 ```
 
-We found that there was a indication of small-study effects since the slopes of the moderator 'sqrt(inv_n_tilda)' is statistically significant for lnRR (slope = `r round(estimates.publication.bias.model.rr.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.srin[2,3],2)`,`r round(estimates.publication.bias.model.rr.srin[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.rr.srin)[[1]]*100,1)`%) and marginally statistically significant for SMD (slope = `r round(estimates.publication.bias.model.smd.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.srin[2,3],2)`,`r round(estimates.publication.bias.model.smd.srin[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.smd.srin)[[1]]*100,1)`%), which showed that effect sizes with larger uncertainty [larger sqrt(inv_n_tilda)] tend to be larger. Nonetheless, as mentioned above, we will confirm whether the small-study effects exist after accounting for some of the heterogeneity present in the data using the all-in publication bias test (multi-moderator meta-regression) described in section S4.2.4.3.
-
-<br/><br/>
-
+Small-study effects are indicated because the slope of the moderator 'sqrt(inv_n_tilda)' is statistically significant for lnRR (slope = `r round(estimates.publication.bias.model.rr.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.srin[2,3],2)`,`r round(estimates.publication.bias.model.rr.srin[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.rr.srin)[[1]]*100,1)`%) and marginally statistically significant for SMD (slope = `r round(estimates.publication.bias.model.smd.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.srin[2,3],2)`,`r round(estimates.publication.bias.model.smd.srin[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.smd.srin)[[1]]*100,1)`%). Therefore, effect sizes with larger uncertainty [larger sqrt(inv_n_tilda)] tend to be larger. Below, in S4.2.3.3, we will see whether the small-study effects exist after accounting for some of the heterogeneity present in the data using the all-in publication bias test (multi-moderator meta-regression).   
 
 ##### S4.2.3.2: Time-lag bias test (uni-moderator)
 
-For Time-lag bias test, also called decline effects, we used the same approach described the above but including the year of publication (mean-centred) as the only moderator (see Equation 23 from the main text)。
+To test for time-lag bias (or the decline effect), we include the year of publication (mean-centred) as a single moderating variable (see Equation 23 from the main text).   
 
 ```{r}
 # mean-centring year of publication to help with interpretation, particularly in S4.1.4.3.
@@ -1125,7 +1101,7 @@ publication.bias.model.rr.timelag <- rma.mv(yi, vi,
                                                         ~ 1 | obsID, 
                                                         ~ 1 | paperID),
                                             method="REML",
-                                            test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                            test = "t", 
                                             data=dataset.rr)
 
 publication.bias.model.smd.timelag <- rma.mv(yi, vi,
@@ -1134,26 +1110,19 @@ publication.bias.model.smd.timelag <- rma.mv(yi, vi,
                                                          ~ 1 | obsID, 
                                                          ~ 1 | paperID),
                                              method="REML",
-                                             test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                             test = "t", 
                                              data=dataset.smd)
-
-#summary(publication.bias.model.1.timelag)
 
 # extracting the mean and 95% confidence intervals
 estimates.publication.bias.model.rr.timelag <- estimates.CI(publication.bias.model.rr.timelag)
 estimates.publication.bias.model.smd.timelag <- estimates.CI(publication.bias.model.smd.timelag)
 ```
 
-According to this uni-moderator meta-regression, there was a indication of decline effects since the slope of the moderator 'year of publication' is marginally statistically significant for lnRR (slope = `r round(estimates.publication.bias.model.rr.timelag[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.timelag[2,3],2)`,`r round(estimates.publication.bias.model.rr.timelag[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.rr.timelag)[[1]]*100,1)`%) and SMD (slope = `r round(estimates.publication.bias.model.smd.timelag[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.timelag[2,3],2)`,`r round(estimates.publication.bias.model.smd.timelag[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.smd.timelag)[[1]]*100,1)`%). Nonetheless, as mentioned above, we need to confirm this pattern after accounting for some of the heterogeneity present in the data using the all-in publication bias test (multi-moderator meta-regression) described in section S4.2.3.3.
+According to this uni-moderator meta-regression, there was a indication of decline effects since the slope of the moderator 'year of publication' is marginally statistically significant for lnRR (slope = `r round(estimates.publication.bias.model.rr.timelag[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.timelag[2,3],2)`,`r round(estimates.publication.bias.model.rr.timelag[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.rr.timelag)[[1]]*100,1)`%) and SMD (slope = `r round(estimates.publication.bias.model.smd.timelag[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.timelag[2,3],2)`,`r round(estimates.publication.bias.model.smd.timelag[2,4],2)`]; *R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.smd.timelag)[[1]]*100,1)`%). Next, in S4.2.3.3, we will see whether both the decline and small-study effects exist after accounting for some of the heterogeneity present in the data using the all-in publication bias test (multi-moderator meta-regression).   
 
-<br/><br/>
+##### S4.2.3.3:  All-in publication bias test (multiple moderators)      
 
-
-##### S4.2.3.3:  All-in publication bias test (mulit-moderators)
-
-The best evidence of small-study (publication bias) and decline effects (time-lag bias) comes from multi-moderator meta-regression. Therefore, we ombined Equations 27 and 23 with other moderators since those additional moderators generally explained or were predicted to explain some of the heterogeneity. For this example, we ran a multi-moderator meta-regression including the square of inverse of effective sample size, the year of publication (mean-centred) and a moderator originally included in Murphy et al. 2013, that is, the variable of study type: 'Experimental.or.Observational.'. 
-
-<br/><br/>
+The best evidence of small-study (publication bias) and decline effects (time-lag bias) comes from multi-moderator meta-regression. Therefore we combined Equations 27 and 23 with other moderators that were expected to explain some of the heterogeneity in effects. For this example, we ran a multi-moderator meta-regression including the square of inverse of effective sample size, the year of publication (mean-centred) and the type of study (either experimental of observational, which was a moderator originally included in Murphy et al. 2013).
 
 ```{r}
 # preparing the moderators that need to be included in a meta-regression that also contains a  moderator with the standard errors of the effect sizes and the year of publication
@@ -1168,7 +1137,7 @@ publication.bias.model.rr.all.srin <- rma.mv(yi, vi,
                                                    ~ 1 | obsID, 
                                                    ~ 1 | paperID),
                                                  method="REML",
-                                                 test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                                 test = "t", 
                                                  data=dataset.rr,
                                                  control=list(optimizer="optim", optmethod="Nelder-Mead"))
 
@@ -1183,7 +1152,7 @@ publication.bias.model.smd.all.srin <- rma.mv(yi, vi,
                                                    ~ 1 | obsID, 
                                                    ~ 1 | paperID),
                                                  method="REML",
-                                                 test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                                 test = "t", 
                                                  data=dataset.smd,
                                                  control=list(optimizer="optim", optmethod="Nelder-Mead"))
 
@@ -1195,12 +1164,14 @@ estimates.publication.bias.model.smd.all.srin <- estimates.CI(publication.bias.m
 ```
 
 
-The all-in publication bias test was not fully consistent with what we observed in the uni-moderator meta-regressions above (sections S4.2.4.1 and S4.2.4.2). First, the multi-moderator meta-regression showed a statistically significant slope for the moderator 'sqrt(inv_n_tilda)' (slope for lnRR = `r round(estimates.publication.bias.model.rr.all.srin[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.all.srin[1,3],2)`,`r round(estimates.publication.bias.model.rr.all.srin[1,4],2)`]; Figure S4.10 ) and (slope for SMD = `r round(estimates.publication.bias.model.smd.all.srin[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.all.srin[1,3],2)`,`r round(estimates.publication.bias.model.smd.all.srin[1,4],2)`]; Figure S4.11), confirming evidence of small-study effects. This result did not agree with the findings originally reported in Murphy et al. (2013). The authors found no evidence of publication bias using funnel plot with sample size which showed a clear funnel shape with a much greater spread of studies with small sample sizes and a decrease in this spread as sample size increases. Note that do not recommend to use this method for meta-analytic datasets with multiple levels of non-independence and high heterogeneity. Second, the all-in publication bias test showed that there no evidence of decline effects for lnRR since the moderator 'year of publication' was indistinguishable from zero (slope = `r round(estimates.publication.bias.model.rr.all.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.all.srin[2,3],2)`,`r round(estimates.publication.bias.model.rr.all.srin[2,4],2)`]; Figure S4.12). But the all-in publication bias test found a indication of decline effects for smd since the corresponding slope was marginally statsitically significant (slope = `r round(estimates.publication.bias.model.smd.all.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.all.srin[2,3],2)`,`r round(estimates.publication.bias.model.smd.all.srin[2,4],2)`]; Figure S4.13).
+The all-in publication bias test was similar to what we observed in the uni-moderator meta-regressions above for small-study effects (sections S4.2.4.1) but had some differences for time-lag effects (S4.2.4.2).  
 
+First, the multi-moderator meta-regression showed a statistically significant slope for the moderator 'sqrt(inv_n_tilda)' (slope for lnRR = `r round(estimates.publication.bias.model.rr.all.srin[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.all.srin[1,3],2)`,`r round(estimates.publication.bias.model.rr.all.srin[1,4],2)`]; Figure S4.10 ) and (slope for SMD = `r round(estimates.publication.bias.model.smd.all.srin[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.all.srin[1,3],2)`,`r round(estimates.publication.bias.model.smd.all.srin[1,4],2)`]; Figure S4.11), confirming evidence of small-study effects. Note that Murphy et al. (2013) originally reported no funnel asymmetry from visual inspection, but we do not recommend to use this method for meta-analytic datasets with multiple levels of non-independence and high heterogeneity.    
+
+Second, the all-in publication bias test showed that there no evidence of decline effects for lnRR since the moderator 'year of publication' was indistinguishable from zero (slope = `r round(estimates.publication.bias.model.rr.all.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.all.srin[2,3],2)`,`r round(estimates.publication.bias.model.rr.all.srin[2,4],2)`]; Figure S4.12). However, the effect size SMD showed some evidence of declining with time, as the slope of publication year was marginally statistically significant (slope = `r round(estimates.publication.bias.model.smd.all.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.all.srin[2,3],2)`,`r round(estimates.publication.bias.model.smd.all.srin[2,4],2)`]; Figure S4.13).
 
 ```{r}
 # to plot the 'sqrt(inv_n_tilda)' effect we are simply including the moderator 'Experimental.or.Observational.' as a random effect for simplicity of plotting. Note that this does not substantially change the estimates of the moderators, and that alternative approaches could be used for this.
-
 
 publication.bias.model.rr.all.srin.plot <- rma.mv(yi, vi,
                                                  mods= ~ -1 + sqrt_inv_n_tilda + 
@@ -1211,31 +1182,31 @@ publication.bias.model.rr.all.srin.plot <- rma.mv(yi, vi,
                                                    ~ 1 | obsID, 
                                                    ~ 1 | paperID),
                                                  method="REML",
-                                                 test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                                 test = "t", 
                                                  data=dataset.rr,
                                                  control=list(optimizer="optim", optmethod="Nelder-Mead"))
 
 
-
+# could not include the moderator 'Experimental.or.Observational.' as a random effect here due to convergence issues
 publication.bias.model.smd.all.srin.plot <- rma.mv(yi, vi,
                                                  mods= ~ -1 + sqrt_inv_n_tilda + 
                                                    year.c,
                                                  random=list(~1|
                                                    Experimental.or.Observational.,
-                                                   #~1 |Disturbance_category,
+                                                   #~1 |Disturbance_category, # convergence issue when incorporating as random effect
                                                    ~ 1 | obsID, 
                                                    ~ 1 | paperID),
                                                  method="REML",
-                                                 test = "t", # using t dist rather than z because t is a better, more conservative distribution than z
+                                                 test = "t", 
                                                  data=dataset.smd,
-                                                 control=list(optimizer="optim", optmethod="Nelder-Mead")) # convergence issue when incorporating as random effect
+                                                 control=list(optimizer="optim", optmethod="Nelder-Mead")) 
 
 ```
 
 
 ##### Figure S4.10
 
-lnRR with larger uncertainty (square root of inverse of effective sample size) is larger, showing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals.
+More negative estimates of lnRR are less certain (larger square root of inverse of effective sample size), showing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals.
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
@@ -1281,12 +1252,9 @@ polygon(c(newdat$sei,rev(newdat$sei)),
         border=NA,col=rgb(104/255,34/255,139/255, 0.5))
 ```
 
-<br/><br/>
-
-
 ##### Figure S4.11
 
-SMD with larger uncertainty (square root of inverse of effective sample size) is larger, showing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals.
+More negative estimates of SMD have smaller effective sample sizes (larger square root of inverse of effective sample size), showing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals.
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
 # predicting effect sizes for a range of SE from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
@@ -1333,7 +1301,7 @@ polygon(c(newdat$sei,rev(newdat$sei)),
 
 ##### Figure S4.12
 
-The averaged lnRR has remained seemingly unchanged over time since the first effect size was published. The solid line represents the model estimate, the shading shows its 95% confidence intervals.
+The average effect, as measured by lnRR, did not statistically significantly change with time. The solid line represents the model estimate, the shading shows its 95% confidence intervals.
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
@@ -1377,10 +1345,9 @@ polygon(c(newdat$year,rev(newdat$year)),
 ```
 
 
-
 ##### Figure S4.13
 
-The averaged SMD tended to decline over time since the first effect size was published. The solid line represents the model estimate, the shading shows its 95% confidence intervals.
+The average effect, as measured by SMD, has marginally declined over the timespan captured by this dataset. The solid line represents the model estimate, the shading shows its 95% confidence intervals.
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
@@ -1426,8 +1393,7 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 <br/><br/>
 
-
-We also provided a two-step approach to calculate the adjusted overall effect size, that is, the overall effect after we accounted for publication bias (see the main text). The rationale is that when no uncertainty (theoretically) exist, we can get the potential true effect from multiple-moderator multilevel-model (i.e. all-in publication bias test). Note that if the slope for the moderator 'sqrt_inv_n_tilda' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test. Otherwise, we should use inv_n_tilda instead of as moderator. We detailed the reasons in our main text. What moderators to include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect, but also keeping in mind that one of the purposes of including moderators in this all-in test is to explain as much heterogeneity as possible. We are going to fit three different models to showcase some of these possibilities. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017) and that none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published. The three models that we are going to fit are:
+In the main text we provided a two-step approach to calculate the adjusted overall effect size, that is, the overall effect after we accounted for publication bias. The rationale is that when no uncertainty exists (theoretically), we can get the potential true effect from multiple-moderator multilevel-model (i.e. all-in publication bias test). Note that if the slope for the moderator 'sqrt_inv_n_tilda' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test. Otherwise, we should use inv_n_tilda instead of as moderator. We detailed the reasons in our main text. What moderators to include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect, but also keeping in mind that one of the purposes of including moderators in this all-in test is to explain as much heterogeneity as possible. We are going to fit three different models to showcase some of these possibilities. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017) and that none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published. The three models that we are going to fit are:
 
 1. Multi-moderator meta-regression only including the inverse of  effective sample size and year of publication (mean-centred) as moderators. The intercept of this meta-regression will represent the adjusted overall effect size. 
 
