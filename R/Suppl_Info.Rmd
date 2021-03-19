@@ -1865,47 +1865,33 @@ ggplot(data=threePSM.sampling.r,aes(x=beta)) +
 For an introduction to cumulative meta-analysis see section S5.1.1.3 and the main text. Here, we will perform a sampling procedure where we run a cumulative meta-analysis test for each dataset and extract the mean effects estimated by the cumulative meta-analysis. We will then plot the median and 95% quantiles of those mean effects at each step. As before, the forest plot does not show any clear evidence of decline effects in this dataset (Figure S5.6).
 
 ```{r fig.align = "center"}
-# for loop to extract one single effect size per study and running cumulative meta-analysis
-n.randomization.r.CM <- 1000 #number of samplings to be done
+func_S5.1.2.3 <- function(sim = 1){
+  # arranging by study year
+  dat_ordered <- dataset.r[order(dataset.r$year),c("study","yi","vi","year")]
+  
+  # splitting dataframe into each study
+  study_list <- split(dat_ordered, dat_ordered$study)
+  
+  # randomly extracting one effect size per study
+  SingleStudyES_dataset.r <- dplyr::bind_rows(lapply(study_list, function(x) 
+    x[sample(1:nrow(x), 1),]))
+  
+  # running MA
+   model.tmp.r <- rma(yi, vi, test="knha",data=SingleStudyES_dataset.r) 
+   
+   # cumulative meta-analysis
+   CMA <- cumul(model.tmp.r,order=order(SingleStudyES_dataset.r$year))
+   
+   # dataframe with meta-analytic mean
+    df <- data.frame(sim, beta = CMA$estimate)
+  return(df)
+}
 
-# # vector to collect the effects estimated over time
-# cumul.vector.r <- c()
-# 
-# for(i in 1:n.randomization.r.CM){
-#   
-#   # creating a new dataframe to be filled
-#   randomized.db.r <- data.frame(study=factor(),
-#                                 yi=numeric(),
-#                                 vi=numeric(),
-#                                 year=numeric(),
-#                                 stringsAsFactors=FALSE)
-#   
-#   for (j in levels(as.factor(dataset.r$study))){ #for each study do...
-#     
-#     # creating a dataset for each study
-#     tmp.r <- dataset.r[dataset.r$study==j,c("study","yi","vi","year")]
-#     
-#     # randomly extracting one effect size per study
-#     randomized.db.r <- rbind(randomized.db.r,tmp.r[sample(seq(1,nrow(tmp.r)),1),])
-#     
-#   }
-#   
-#   # running the model on the dataframe created in the for loop above
-#   model.tmp.r <- rma(yi, vi, test="knha",data=randomized.db.r)
-#   
-#   # extracting the mean estimates estimated by the cumulative meta-analysis for each database
-#   cumul.vector.r <- c(cumul.vector.r,as.vector(cumul(model.tmp.r,order=order(randomized.db.r$year))$estimate))
-#   
-# }
-# 
-# # creating a dataframe with the order and the mean estimate from each database
-# cumul.sampling.r <- data.frame(order=rep(seq(1,nrow(randomized.db.r)),n.randomization.r.CM),
-#                                beta=cumul.vector.r)
-# 
-# # saving data to avoid re-running for loop as that can take a few minutes if n.randomization.r 1000 or more
-# save(cumul.sampling.r,file = here("data","cumul_sampling_r_1000s.RData"))
+# applying the function 1000 times
+#threePSM.sampling.r <- dplyr::bind_rows(lapply(1:1000, function(x) func_S5.1.2.3(x)))
+# save(threePSM.sampling.r,file = here("data","3PSM_sampling_r_1000s.RData"))
 
-# loading the data extracted from the for loop above to avoid re-running that for loop as that can take a few minutes if n.randomization.r 1000 or more
+# loading the saved data
 load(here("data","cumul_sampling_r_1000s.RData"))
 ```
 
