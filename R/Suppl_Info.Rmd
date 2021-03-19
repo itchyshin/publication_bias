@@ -1756,7 +1756,7 @@ func_S5.1.2.1 <- function(sim = 1){
     x[sample(1:nrow(x), 1),c("study","yi","vi")]))
   
   # running the model on the dataframe now each study only has a single effect size
-  model.tmp.r <- rma(yi, vi, test="knha",data=SingleStudyES_dataset.r)
+  model.tmp.r <- rma(yi, vi, test="knha",data=SingleStudyES_dataset.r) #@TO-DO: should the method be ML here?
   
   # applying trim-and-fill method
   TAF <- trimfill(model.tmp.r)
@@ -1773,7 +1773,6 @@ func_S5.1.2.1 <- function(sim = 1){
 
 # applying the function 1000 times
 #trimfill.sampling.r <- dplyr::bind_rows(lapply(1:1000, function(x) func_S5.1.2.1(x)))
-trimfill.sampling.r <- new 
 # saving data to save time 
 # save(trimfill.sampling.r,file = here("data","trimfill_sampling_r_1000s.RData"))
 
@@ -1811,50 +1810,35 @@ ggarrange(n.r, betas.r,
 
 ##### S5.1.2.2: Selection model (3 PSM)
 
-For an introduction to selection models see section S5.1.1.2 and the main text. As before, we will run a step function selection model based on one cut-point (α = 0.05); this model is sometimes referred to as a 3 parameter selection model. For simplicity, we will only run the selection model for the intercept-only model (but see section S5.1.1.2 for how to run a selection model for a meta-regression). Below are the summary results of the 3 parameter selection model after running 1000 randomizations.
+For an introduction to selection models see section S5.1.1.2 and the main text. As before, we will run a step function selection model based on one cut-point ($\alpha = 0.05$); this model is sometimes referred to as a 3 parameter selection model. For simplicity, we will only run the selection model for the intercept-only model (but see section S5.1.1.2 for how to run a selection model for a meta-regression). Below are the summary results of the 3 parameter selection model after running 1000 randomizations.
 
 ```{r}
-# for loop to extract one single effect size per study and running selection model
-n.randomization.r.3PSM <- 1000
+func_S5.1.2.2 <- function(sim = 1){
+  
+  # splitting dataframe into each study
+  study_list <- split(dataset.r, dataset.r$study)
+  
+  # randomly extracting one effect size per study
+  SingleStudyES_dataset.r <- dplyr::bind_rows(lapply(study_list, function(x) 
+    x[sample(1:nrow(x), 1),c("study","yi","vi")]))
+  
+  # running the model on the dataframe now each study only has a single effect size
+  model.tmp.r.agg0 <- rma(yi, vi, method="ML", test="knha",data=SingleStudyES_dataset.r)
+  
+  #extracting the adjusted overall effect according to the selection model for each database
+  threePSM.vector.r <- selmodel(model.tmp.r.agg0, type="stepfun", steps=c(0.05))$beta[[1]]
+  
+  #creating a dataframe with the n.randomization.r of estimated number of missing studies and adjusted overall effects
+  df <- data.frame(sim, beta=threePSM.vector.r)
 
-# # vector to collect the ajusted effect for each database
-# threePSM.vector.r <- c()
-# 
-# for(i in 1:n.randomization.r.3PSM){
-#   
-#   # creating a new dataframe to be filled
-#   randomized.db.r <- data.frame(study=factor(),
-#                                 yi=numeric(),
-#                                 vi=numeric(),
-#                                 year.c=numeric(),
-#                                 CaptivityC=character(),
-#                                 stringsAsFactors=FALSE)
-#   
-#   for (j in levels(as.factor(dataset.r$study))){ #for each study do...
-#     
-#     # creating a dataset for each study
-#     tmp.r <- dataset.r[dataset.r$study==j,c("study","yi","vi","year.c","CaptivityC")]
-#     
-#     # randomly extracting one effect size per study
-#     randomized.db.r <- rbind(randomized.db.r,tmp.r[sample(seq(1,nrow(tmp.r)),1),])
-#     
-#   }
-#   
-#   # running the model on the dataframe created in the for loop above
-#   model.tmp.r.agg0<- rma(yi, vi, method="ML", test="knha",data=randomized.db.r)
-#   
-#   # extracting the adjusted overall effect according to the selection model for each database
-#   threePSM.vector.r <- c(threePSM.vector.r,selmodel(model.tmp.r.agg0, type="stepfun", steps=c(0.05))$beta[[1]])
-#   
-# }
-#
-# # creating a dataframe with the n.randomization.r of estimated number of missing studies and adjusted overall effects
-# threePSM.sampling.r <- data.frame(beta=threePSM.vector.r)
-# 
-# # saving data to avoid re-running for loop as that can take a couple of minutes if n.randomization.r 1000 or more
+  return(df)
+}
+
+# applying the function 1000 times
+#threePSM.sampling.r <- dplyr::bind_rows(lapply(1:1000, function(x) func_S5.1.2.2(x)))
 # save(threePSM.sampling.r,file = here("data","3PSM_sampling_r_1000s.RData"))
 
-# loading the data extracted from the for loop above to avoid re-running that for loop as that can take a couple of minutes if n.randomization.r 1000 or more
+# loading the data extracted from the 1000 iterations above
 load(here("data","3PSM_sampling_r_1000s.RData"))
 ```
 
