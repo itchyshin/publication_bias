@@ -116,11 +116,11 @@ The sample of 102 meta-analysis papers met the following four inclusion criteria
 
 
 #### S1.1.3 Assessing 102 meta-analysis papers
-Papers were independently assessed by seven authors (RO, DN, JK, MJ, ML, RO, SN, and TP) as part of a larger, time-consuming survey. The one survey question pertaining to this publication bias project was: “Which publication bias tests are reported in the paper? (Select all that apply)”. There were 11 possible choices for respondents to select: (A) Funnel plots (including contour-enhanced funnel plots); (B) Normal quantile (QQ) plots (Wang & Bushman); (C) Correlation-based tests (e.g. Begg & Manzumdar rank correlation); (D) Regression-based tests (e.g. Egger regression and its variants); (E) File drawer numbers or fail-safe N (Rosenthal, Orwin or Rosenberg method); (F) Trim-and-fill tests; (G) P-curve, P-uniform or its variants; (H) Selection (method) models (e.g. Copas, Hedges or Iyengar & Greenhouse model); (I) Time-lag bias tests (e.g., regression or correlation on the relationship between effect sizes and time or cumulative meta-analysis); (J) None reported and (K) ‘Other’ methods. According to Sutton (2009) (see also Vevea et al., 2019), Methods A-D are tests detecting publication bias, whereas Methods E-F are assessing the impact of publication bias. 
+Papers were independently assessed by seven authors (RO, DN, JK, MJ, ML, RO, SN, and TP) as part of a larger survey. The one survey question pertaining to this publication bias project was: “Which publication bias tests are reported in the paper? (Select all that apply)”. There were 11 possible choices for respondents to select: (A) Funnel plots (including contour-enhanced funnel plots); (B) Normal quantile (QQ) plots (Wang & Bushman); (C) Correlation-based tests (e.g. Begg & Manzumdar rank correlation); (D) Regression-based tests (e.g. Egger regression and its variants); (E) File drawer numbers or fail-safe N (Rosenthal, Orwin or Rosenberg method); (F) Trim-and-fill tests; (G) P-curve, P-uniform or its variants; (H) Selection (method) models (e.g. Copas, Hedges or Iyengar & Greenhouse model); (I) Time-lag bias tests (e.g., regression or correlation on the relationship between effect sizes and time or cumulative meta-analysis); (J) None reported and (K) ‘Other’ methods. According to Sutton (2009) (see also Vevea et al., 2019), Methods A-D are tests detecting publication bias, whereas Methods E-F are assessing the impact of publication bias. 
 
 ### S1.2 Results
 Among the 102 assessed papers, 17.8% did not report any tests of publication bias. 
-Most meta-analysis papers reported one or more tests of publication bias (17.8% of assessed papers did not include any assessment of publication bias). These results suggest tests of publication bias have become more common in recent year in ecology and evolutionary biology, as over half of older meta-analyses assessed by Nakagawa and Santos (2012) and Koricheva and Gurevitch (2014) did not report any tests of publication bias (although our results are not directly comparable, due to different survey methods). Still, inferential tests of publication bias remain uncommon. By far the most popular test of publication bias were funnel plots (32.4%; Table S2), with all remaining methods represented by fewer than 15% of papers. All methods except ‘selection models’ were present in at least one paper (with ‘other’ being selected for a weighted histogram used by Loydi et al. (2013; Table S2). The absence of selection model methods could be because these methods are comparatively technically challenging, or because ecologists and evolutionary biologists are not yet aware of the benefits of these methods.
+Most meta-analysis papers reported one or more tests of publication bias (17.8% of assessed papers did not include any assessment of publication bias). These results suggest tests of publication bias have become more common in recent years in ecology and evolutionary biology, as over half of older meta-analyses assessed by Nakagawa and Santos (2012) and Koricheva and Gurevitch (2014) did not report any tests of publication bias (although our results are not directly comparable, due to the different survey methods). Still, inferential tests of publication bias remain uncommon. By far the most popular test of publication bias were funnel plots (32.4%; Table S2), with all remaining methods represented by fewer than 15% of papers. All methods except ‘selection models’ were present in at least one paper (with ‘other’ being selected for a weighted histogram used by Loydi et al. (2013; Table S2). The absence of selection model methods could be because these methods are comparatively technically challenging, or because ecologists and evolutionary biologists are not yet aware of the benefits of these methods.
 
 ##### Table S1.2
 Frequency with which publication bias tests were reported in the 102 meta-analysis publications, ranked in order of decreasing popularity. No tests were reported for 17.80% of papers.
@@ -156,7 +156,7 @@ which is basically the same, if $\beta_0$ and $\beta_1$ are swapped, as:
 $$
 y_{i} = \beta_{0} + \beta_{1}se_i + \epsilon_i,
 $$
-where $\epsilon_i \sim \mathcal{N}(0, v_i\phi)$ as in Equation 9. We can show this using simulated data as well (we use the data used for Figure 3 and 4). Below the first result is from Equation 8 and the second Equation 9:
+where $\epsilon_i \sim \mathcal{N}(0, v_i\phi)$ as in Equation 9. We can show this using simulated data as well (we use the data for Figure 3 and 4). Below the first result is from Equation 8 and the second Equation 9:
 
 
 ```{r}
@@ -165,7 +165,7 @@ set.seed(77777)
 # setting parameters
 n.effect <- 100
 sigma2.s <- 0.05
-beta1 <- 0.2
+   beta1 <- 0.2
 
 # using negative binomial we get a good spread of sample sizes
 n.sample <- rnbinom(n.effect, mu = 30, size = 0.7) + 4
@@ -182,16 +182,16 @@ Zr <- atanh(0.2) + beta1*xi + rnorm(n.effect, 0, sqrt(sigma2.s)) + rnorm(n.effec
 
 # data frame
 dat <- data.frame(yi = Zr, vi = vi, sei = sqrt(vi), xi = xi, ni = n.sample, prec = 1 / sqrt(vi), wi = 1/vi, zi = Zr/sqrt(vi))
-rows <- 1:nrow(dat)
-expected <- which(1/dat$sei < 5 & dat$yi < 0.25)
+      rows <- 1:nrow(dat)
+  expected <- which(1/dat$sei < 5 & dat$yi < 0.25)
 unexpected <- which(1/dat$sei > 4.7 & dat$yi > 0.25)
-col_point <- ifelse(rows %in% expected, "red", ifelse(rows %in% unexpected, "blue", "black"))
+ col_point <- ifelse(rows %in% expected, "red", ifelse(rows %in% unexpected, "blue", "black"))
 dat$col_point <- col_point
 
 # data with "publication bias"
 dat2 <- dat[dat$col_point != "red", ]
 
-# they are the same
+# demonstration that they are the same
 eq_8 <- lm(zi ~ prec, data = dat2)
 eq_9 <- lm(yi ~ sei, weight = wi, data = dat2)
 ```
@@ -217,7 +217,7 @@ fsn(yi, vi,  data=dat, type="Orwin", target = 0.1)
 fsn(yi, vi, data=dat, type="Rosenberg")
 ```
 
-## Appendix S4: Mulitlevel meta-regession method for publication bias
+## Appendix S4: Multilevel meta-regression method for publication bias
 
 In this section, we provide worked examples to show how to test for publication bias in meta-analytic datasets with high heterogeneity and several layers of non-independence, including phylogenetic non-independence (a common feature of meta-analytic datasets in ecology and evolution; Senior et al. 2016, Noble et al. 2017). We used two openly available meta-analytic datasets to show how to implement our suggested multilevel meta-regression method (see main text) on meta-analytic datasets with correlation effect sizes (*Zr*: section S4.1) and effect sizes based on mean differences between two groups (SMD, lnRR: section S4.2).
 
@@ -380,10 +380,10 @@ Funnel plots with SE (left-hand side) and precision (1/SE; right-hand side) as m
 par(mfrow = c(1, 2))
 funnel(dataset.r$yi, dataset.r$vi, yaxis="sei",
        #xlim = c(-3, 3),
-       xlab = "Effect size (Zr)") 
+       xlab = "Effect size (Zr)", digits = 2, las = 1) 
 funnel(dataset.r$yi, dataset.r$vi, yaxis="seinv",
        #xlim = c(-3, 3),
-       xlab = "Effect size (Zr)") 
+       xlab = "Effect size (Zr)",  digits = 2, las = 1) 
 ```
 
 <br/><br/>
@@ -534,7 +534,7 @@ When heterogeneity exists (which is normally the case in ecology and evolution; 
 ```{r}
 # Application of Equation 24 from the main manuscript
 
-# Note that we are removing the intercept in this model (using '-1') just because the intercept is not of interest at this point and instead we prefer to see the slopes of the continues moderators and the estimates of all the levels of the categorical moderator 'CaptivityC'. Note that whether or not the intercept is removed, it does not change the conclusions of the small-study effects test or the decline effects test.
+# Note that we are removing the intercept in this model (using '-1') because the intercept is not of interest at this point. Instead we prefer to see the slopes of the continues moderators and the estimates of all the levels of the categorical moderator 'CaptivityC'. Note that whether or not the intercept is removed, it does not change the conclusions of the small-study effects test or the decline effects test.
 publication.bias.model.r.all.se <- rma.mv(yi, vi,
                                           mods=~-1+ # -1 removes the intercept
                                             sei+
@@ -577,9 +577,7 @@ publication.bias.model.r.all.se.plot <- rma.mv(yi, vi,
 
 ##### Figure S4.4
 
-Effect sizes with larger standard errors tend to be larger, providing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals.
-
-```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
+```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.cap="Effect sizes with larger standard errors tend to be larger, providing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of SE from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
 predict.publication.bias.model.r.all.se.plot.1 <- predict(publication.bias.model.r.all.se.plot,
                                                           newmods=cbind(seq(min(dataset.r$sei),
@@ -635,11 +633,10 @@ polygon(c(newdat$sei,rev(newdat$sei)),
 
 <br/><br/>
 
+
 ##### Figure S4.5
 
-The overall effect size has not changed over time. The solid line represents the model estimate, the shading shows its 95% confidence intervals and individual effect sizes are scaled by their precision (1/SE).
-
-```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center"}
+```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.cap="The overall effect size has not changed over time. The solid line represents the model estimate, the shading shows its 95% confidence intervals and individual effect sizes are scaled by their precision (1/SE)."}
 # predicting effect sizes for a range of years from the minimum observed in the data to the maximum observed in data, while SE is kept at its mean value. Keep in mind that alternative ways could be used, for example, one could use median-centring rather than mean-centring.
 predict.publication.bias.model.r.all.se.plot.2 <- predict(publication.bias.model.r.all.se.plot,
                                                           newmods=cbind(mean(dataset.r$sei),
@@ -696,9 +693,13 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 <br/><br/>
 
-Once we have confirmed that there is evidence of small-study effects (see above), the next step in our suggested two-step approach is to calculate the adjusted overall effect size, that is, the overall effect once we account for publication bias (see the main text). Bear in mind that, if the slope for the moderator 'SE' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test (i.e. the one with SE; Stanley and Doucouliagos 2012, 2014; more in the main text). Since the slope for the moderator 'SE' was statistically significant in this dataset, the approach to estimate the adjusted overall effect is to fit a similar multi-moderator regression to the one above but including the effect sizes' sampling variances (SV or vi) instead of their standard errors as a moderator. The reason for using sampling variance instead of standard errors when calculating the adjusted overall effect when the slope for 'SE' is statistically significant is because in that scenario using 'SV' leads to an adjusted overall effect that is less downwardly biased than when using 'SE' (more in the main text; Stanley and Doucouliagos 2012, 2014).
+##### Adjusting for small study effects
 
-What moderators to include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect, while keeping in mind that one of the purposes of including moderators in this all-in test is to explain as much heterogeneity as possible. We are going to fit three different models to showcase some of these possibilities. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017) and that none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published. The three models that we are going to fit are:
+Once we have confirmed that there is evidence of small-study effects (see above), the next step in our suggested two-step approach is to calculate the adjusted overall effect size, that is, the overall effect once we account for publication bias (see the main text). 
+
+If the slope for the moderator 'SE' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test (i.e. the one with SE; Stanley and Doucouliagos 2012, 2014; more in the main text). Since the slope for the moderator 'SE' was statistically significant in this dataset, the approach to estimate the adjusted overall effect is to fit a similar multi-moderator regression to the one above but including the effect sizes' sampling variances (SV or vi) instead of their standard errors as a moderator. The reason for using sampling variance instead of standard errors when calculating the adjusted overall effect when the slope for 'SE' is statistically significant is because in that scenario using 'SV' leads to an adjusted overall effect that is less downwardly biased than when using 'SE' (more in the main text; Stanley and Doucouliagos 2012, 2014).
+
+What moderators one should include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect. Keep in mind that one of the purposes of including moderators in this all-in test is to explain as much heterogeneity as possible. We are going to fit three different models to showcase some of these possibilities. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017). Importantly, none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published. The three models that we are going to fit are:
 
 1. Multi-moderator meta-regression only including sampling variance and year of publication (mean-centred) as moderators. The intercept of this meta-regression will represent the adjusted overall effect size. 
 
