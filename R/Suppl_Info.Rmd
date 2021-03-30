@@ -43,7 +43,14 @@ options(digits=3)
 # devtools::install_github("itchyshin/orchard_plot", subdir = "orchaRd", force = TRUE, build_vignettes = TRUE)
 # devtools::install_github("MathiasHarrer/dmetar")
 # devtools::install_github("daniel1noble/metaAidR")
-# 
+#remotes::install_github("rlesur/klippy")
+```
+
+```{r klippy, echo=FALSE, include=TRUE}
+klippy::klippy(tooltip_message = 'Click to Copy Code', tooltip_success = 'Done', position = 'right', color = "red")
+
+```
+
 # # need pacman to install the rest
 # install.packages("pacman")
 ```
@@ -76,7 +83,8 @@ pacman::p_load(R.rsp,
                dmetar,
                viridis,
                metaAidR,
-               ggpubr
+               ggpubr,
+               klippy
 )
 
 # custom function for extracting mean and CI from each metafor model
@@ -721,7 +729,7 @@ publication.bias.model.r.v.1 <- rma.mv(yi, vi,
                                        test="t", # using t dist rather than z
                                        data=dataset.r)
 
-# model 2: adding CaptivityC as a random effect to provide an adjusted overall effect across levels
+# model 2: adding CaptivityC as a random effect to provide an adjusted overall effect across levels. @DanCOMMENT: Ok to include captivity as random effect when only 5 levels? I note in text below that variance = 0, but marginal R2 is 2.3%, which is not high, but some at least. Expect downward bias when treated as random effect, but especially so with so few levels.
 publication.bias.model.r.v.2 <- rma.mv(yi, vi,
                                        mods=~1+vi +
                                          year.c, # take Class - that is already a part of phylo
@@ -735,7 +743,7 @@ publication.bias.model.r.v.2 <- rma.mv(yi, vi,
                                        test="t", # using t dist rather than z
                                        data=dataset.r)
 
-# model 3: providing an adjusted effect for each level of CaptivityC
+# model 3: providing an adjusted effect for each level of CaptivityC, @DanCOMMENT: Need to marginalise over each level?
 publication.bias.model.r.v.3 <- rma.mv(yi, vi,
                                        mods=~-1+vi + 
                                          year.c +
@@ -798,10 +806,11 @@ table.model.r.captivity.gt <- table.comparing.captivity.levels %>%
              unadjusted.CI=md("**Unadjusted 95% CI**")) %>%
   cols_align(align = "center")
 
-table.model.r.captivity.gt
+knitr::kable(table.model.r.captivity.gt, caption = "Results for all levels of the moderator 'captivity status', both adjusted and unadjusted for publication bias using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*). @DanCOMMENT: Can you provide what models these are all from base don 3 points above within this table? It will be more clear. ALso, why WCT & FC so high relative to others?")
 ```
 
-**Table S4.2.** Results for all levels of the moderator 'captivity status', both adjusted and unadjusted for publication bias using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*).
+@DanComment: Note you can add table legends with Kable. This is useful for keeping all the figure and table legends together as currently they are disjointed at times.
+**Table S4.2.** 
 
 <br/><br/>
 
@@ -854,9 +863,9 @@ Before analysis, it is important to explore the meta-analytic dataset. To identi
 
 ##### Figure S4.6
 
-Funnel plots with 1/SE for lnRR (left-hand side) and SMD (right-hand side) as measures of uncertainty to visualise outliers in the meta-analytic dataset.
 
-```{r, fig.width=7, fig.height= 8}
+
+```{r, fig.width=7, fig.height= 8, fig.caption="Funnel plots with 1/SE for lnRR (left-hand side) and SMD (right-hand side) as measures of uncertainty to visualise outliers in the meta-analytic dataset."}
 # we find some strange data in SMD and lnRR 
 par(mfrow = c(1, 2))
 funnel(dataset.rr$yi, dataset.rr$vi, yaxis="seinv",
@@ -870,13 +879,13 @@ funnel(dataset.smd$yi, dataset.smd$vi, yaxis="seinv",
 ```
 
 
-Data exploration found the minimum lnRR and SMD were usual outliers. For this example we have decided to take those minimum values out (but for a real meta-analysis, the source of those outliers should be investigated, and the decision about whether or not to remove unusual effect sizes should be justified and reported in the paper). Next, we checked the funnel plots again (Figure S4.7). This time, funnel plots seemed to be normal.
+Data exploration found usual outliers in both the lnRR and SMD data. For this example we have removed these outliers. However, for a real meta-analysis, the source of those outliers should be investigated, and the decision about whether or not to remove unusual effect sizes should be justified and reported in the paper. Next, we checked the funnel plots again (Figure S4.7). This time, the funnel plots seemed to be more normal.
 
 ##### Figure S4.7
 
 Funnel plots with 1/SE as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side) after removing outliers in the meta-analytic dataset.
 
-```{r, fig.width=7, fig.height= 8}
+```{r, fig.width=7, fig.height= 8, fig.caption="Funnel plots with effective sample size as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side)."}
 # removing outliers
 dataset.rr <- dataset.rr[dataset.rr$vi != min(dataset.rr$vi), ]
 
@@ -894,17 +903,17 @@ funnel(dataset.smd$yi, dataset.smd$vi, yaxis="seinv",
        xlab = "Effect size (SMD)") 
 ```
 
-To avoid ‘artefactual’ funnel asymmetry, we suggest using "effective sample size" rather than SE for mean difference effect sizes, such as lnRR and SMD. Let's check the funnel plots (Figure S4.8) which use effective sample size on the y-axis.
+To avoid ‘artefactual’ funnel asymmetry, we suggest using the "effective sample size" rather than SE for mean difference effect sizes, such as lnRR and SMD. Let's check the funnel plots (Figure S4.8) which use effective sample size on the y-axis.
 
 ##### Figure S4.8
 
-Funnel plots with effective sample size as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side).    
+    
 
 ```{r, fig.width=7, fig.height= 8}
 # calculating "effective sample size" to account for unbalanced sampling, for SMD and lnRR (e_n, hereafter, see Equation 25 from the main manuscript)
 
-dataset.rr$e_n <- 4*(dataset.rr$C_N*dataset.rr$T_N) / (dataset.rr$C_N + dataset.rr$T_N)
-dataset.smd$e_n <- 4*(dataset.smd$C_N*dataset.smd$T_N) / (dataset.smd$C_N + dataset.smd$T_N)
+ dataset.rr$e_n <- with(dataset.rr, (4*(C_N*T_N)) / (C_N + T_N))
+dataset.smd$e_n <- with(dataset.smd, (4*(C_N*T_N)) / (C_N + T_N)
 
 #using effective sampling size
 par(mfrow = c(1, 2))
@@ -919,7 +928,7 @@ funnel(dataset.smd$yi, dataset.smd$vi, ni = dataset.smd$e_n, yaxis="ni",
 
 ```
 
-Compare funnel plots with 1/SE (Figure 4.7) and funnel plots with effective sample size (Figure 4.8): data points in funnel plots with effective sample sizes looked more 'scattered', whereas data points in funnel plots with 1/SE looked more 'crowded'. This is because SE correlated more strongly with the effect size than effective sample size, owing to similarities between the effect size and sampling variance equations for both lnRR and SMR (i.e., compare equations 1 and 2, and equations 3 and 4, in the main text). For example, the SMD’s variance has the square of the point estimate (i.e. SMD), which leads to a correlation between SMDs and sampling SE, resulting in ‘artefactual’ funnel asymmetry.
+Comparing the funnel plots using effective sample size (Figure 4.8) with 1/SE (Figure 4.7) we notice that data points in funnel plots with effective sample sizes looked more 'scattered', whereas data points in funnel plots with 1/SE looked more 'crowded'. This is because SE is correlated more strongly with the effect size than effective sample size, owing to similarities between the effect size and sampling variance equations for both lnRR and SMR (i.e., compare equations 1 and 2, and equations 3 and 4, in the main text). For example, the SMD’s variance has the square of the point estimate (i.e. SMD) in its equation, which leads to a correlation between SMDs and sampling SE. This can result in ‘artefactual’ funnel asymmetry.
 
 #### S4.2.2: Multilevel meta-analysis
 
@@ -927,13 +936,13 @@ Next, we used the dataset from Murphy et al. 2013 to provide a worked example on
 
 ```{r}
 # creating a unit-level random effect to model residual variance in metafor
-dataset.rr$obsID <- 1:nrow(dataset.rr)
+ dataset.rr$obsID <- 1:nrow(dataset.rr)
 dataset.smd$obsID <- 1:nrow(dataset.smd)
 
 # running multilevel intercept-only meta-analytic model
 meta.analysis.model.rr <- rma.mv(yi, vi,
                                  mods = ~ 1,
-                                 random = list(~1 |Disturbance_category,
+                                 random = list(~1  | Disturbance_category,
                                                ~ 1 | paperID, 
                                                ~ 1 | obsID),
                                  method = "REML",
@@ -943,7 +952,7 @@ meta.analysis.model.rr <- rma.mv(yi, vi,
 
 meta.analysis.model.smd <- rma.mv(yi, vi,
                                   mods = ~ 1,
-                                  random = list(~1 |Disturbance_category,
+                                  random = list(~1  | Disturbance_category,
                                                 ~ 1 | paperID, 
                                                 ~ 1 | obsID),
                                   method = "REML",
@@ -951,11 +960,11 @@ meta.analysis.model.smd <- rma.mv(yi, vi,
                                   data = dataset.smd)
 
 # extracting the mean, 95% confidence intervals and 95% prediction intervals
-metaanalytic.mean.model.rr <- predict(meta.analysis.model.rr, digits=3)
+ metaanalytic.mean.model.rr <- predict(meta.analysis.model.rr, digits=3)
 metaanalytic.mean.model.smd <- predict(meta.analysis.model.smd, digits=3)
 
 # estimating relative heterogeneity I2
-I2.model.rr <- i2_ml(meta.analysis.model.rr)*100
+ I2.model.rr <- i2_ml(meta.analysis.model.rr)*100
 I2.model.smd <- i2_ml(meta.analysis.model.smd)*100
 
 # creating a table to show the heterogeneity estimates
@@ -1029,7 +1038,7 @@ table.model.smd.gt
 
 ##### Figure S4.9
 
-Funnel plot using effective sample size as a measure of uncertainty, showing the meta-analytic mean obtained in the multilevel intercept-only meta-analysis as dashed vertical lines.
+Funnel plot using effective sample size as a measure of uncertainty, showing the meta-analytic mean obtained in the multilevel intercept-only meta-analysis as dashed vertical lines. @DanCOMMENT: Don't we have this figure already??? Duplicated?
 
 ```{r}
 par(mfrow = c(1, 2))
