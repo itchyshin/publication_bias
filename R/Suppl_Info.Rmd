@@ -367,9 +367,7 @@ phylo_cor <- vcv(phylo_branch, cor = T)
 
 ##### Figure S4.1
 
-Phylogenetic tree of all species included in the meta-analytic dataset. Notice that some of the names shown in the tree correspond to the most updated synonyms according to the Open Tree Taxonomy (Rees and Cranston 2017) of those originally avialable in the dataset of Garamszegi et al. (2012).
-
-```{r, fig.height = 9, fig.width = 9.5, fig.align = "center"}
+```{r, fig.height = 9, fig.width = 9.5, fig.align = "center", fig.caption="Phylogenetic tree of all species included in the meta-analytic dataset. Notice that some of the names shown in the tree correspond to the most updated synonyms according to the Open Tree Taxonomy (Rees and Cranston 2017) of those originally avialable in the dataset of Garamszegi et al. (2012)."}
 plot(tree, type = "fan", cex=0.65, label.offset =.05, no.margin = TRUE) #check: https://www.rdocumentation.org/packages/ape/versions/5.3/topics/plot.phylo
 ```
 
@@ -381,9 +379,7 @@ Before running any meta-analytic model, it is important to explore the meta-anal
 
 ##### Figure S4.2     
 
-Funnel plots with SE (left-hand side) and precision (1/SE; right-hand side) as measures of uncertainty to explore the existence of outliers in the meta-analytic dataset.
-
-```{r}
+```{r, fig.caption="Funnel plots with SE (left-hand side) and precision (1/SE; right-hand side) as measures of uncertainty to explore the existence of outliers in the meta-analytic dataset."}
 par(mfrow = c(1, 2))
 funnel(dataset.r$yi, dataset.r$vi, yaxis="sei",
        #xlim = c(-3, 3),
@@ -464,9 +460,7 @@ table.model.r.gt
 
 ##### Figure S4.3
 
-Funnel plot, using precision (1/SE) as a measure of uncertainty, showing the meta-analytic mean obtained in the phylogenetic multilevel intercept-only meta-analysis as a dotted vertical line.
-
-```{r}
+```{r, fig.caption="Funnel plot, using precision (1/SE) as a measure of uncertainty, showing the meta-analytic mean obtained in the phylogenetic multilevel intercept-only meta-analysis as a dotted vertical line."}
 funnel(meta.analysis.model.r, yaxis="seinv",
        xlab = "Effect size (Zr)")
 ```
@@ -1951,9 +1945,7 @@ The trim-and-fill method identified `r trimfill.rr$k0` (SE = `r round(trimfill.r
 
 ##### Figure S5.7
 
-Funnel plot using precision (1/SE) as a measure of uncertainty and showing the adjusted meta-analytic mean (vertical line) and the  missing effect sizes (white points) according to the trim-and-fill method.
-
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.caption="Funnel plot using precision (1/SE) as a measure of uncertainty and showing the adjusted meta-analytic mean (vertical line) and the  missing effect sizes (white points) according to the trim-and-fill method."}
 par(mfrow = c(1,2))
 funnel(trimfill.rr, yaxis="seinv",
        ylab = "Precision (1/SE)",
@@ -2036,7 +2028,7 @@ The step function selection model based on one cut-point ($\alpha = 0.05$) for t
 
 Results of a step function selection model based on one cut-point ($\alpha = 0.05$) for a model without any moderators (left-hand figure, top panel for lnRR, bottom for SMD) and a model including both 'year of publication' and 'Experimental.or.Observational.' as moderators (right-hand figure, top panel for lnRR, bottom for SMD).
 
-```{r fig.align = "center"}
+```{r fig.align = "center",fig.caption=}
 par(mfrow = c(1, 2))
 plot(three.PSM.rr0, col="red", lty = 3)
 plot(three.PSM.rr, col="red", lty = 3)
@@ -2178,16 +2170,13 @@ load(here("data","trimfill_sampling_rr_1000s.RData"))
 load(here("data","trimfill_sampling_rr_1000s.RData"))
 ```
 
-
 The median number of missing studies for lnRR was `r median(trimfill.sampling.rr$n)` (range = `r min(trimfill.sampling.rr$n)` - `r max(trimfill.sampling.rr$n)`; Figure S5.9A). Additionally, the median adjusted overall lnRR according to the trim-and-fill method was `r round(median(trimfill.sampling.rr$beta),2)` (range = `r round(min(trimfill.sampling.rr$beta),2)` - `r round(max(trimfill.sampling.rr$beta),2)`; Figure S5.9B), which is larger than the adjusted overall lnRR estimated by our suggested multilevel meta-regession method (`r round(estimates.publication.bias.model.rr.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.v.1[1,3],2)`,`r round(estimates.publication.bias.model.rr.v.1[1,4],2)`]; more in section S4.2.4.3).
 
 <br/><br/>
 
 ##### Figure S5.9
 
-Distribution of `r n.randomization.rr.TAF` (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall lnRR according to the trim-and-fill method. The dashed line shows the median value.
-
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.caption="Distribution of `r n.randomization.rr.TAF` (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall lnRR according to the trim-and-fill method. The dashed line shows the median value."}
 # plotting the distribution of the number of missing studies according to the trim-and-fill method
 n.rr <- ggplot(data=trimfill.sampling.rr,aes(x=n)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -2211,9 +2200,7 @@ The median number of missing studies for SMD was `r median(trimfill.sampling.smd
 
 ##### Figure S5.10
 
-Distribution of `r n.randomization.smd.TAF` (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall SMD according to the trim-and-fill method. The dashed line shows the median value.
-
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.caption="Distribution of `r n.randomization.smd.TAF` (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall SMD according to the trim-and-fill method. The dashed line shows the median value."}
 # plotting the distribution of the number of missing studies according to the trim-and-fill method
 n.smd <- ggplot(data=trimfill.sampling.smd,aes(x=n)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -2287,9 +2274,7 @@ The median adjusted overall lnRR according to the 3 parameter selection model wa
 
 ##### Figure S5.11
 
-Distribution of `r n.randomization.rr.3PSM` adjusted overall lnRR according to the 3 parameter selection model. The dashed line shows the median value.
-
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.caption="Distribution of `r n.randomization.rr.3PSM` adjusted overall lnRR according to the 3 parameter selection model. The dashed line shows the median value."}
 # plotting the distribution of adjusted overall effect sizes according to the 3 parameter selection model
 ggplot(data=threePSM.sampling.rr,aes(x=beta)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -2351,9 +2336,7 @@ The median adjusted overall SMD according to the 3 parameter selection model was
 
 ##### Figure S5.12
 
-Distribution of `r n.randomization.smd.3PSM` adjusted overall SMD according to the 3 parameter selection model. The dashed line shows the median value.
-
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.caption="Distribution of `r n.randomization.smd.3PSM` adjusted overall SMD according to the 3 parameter selection model. The dashed line shows the median value."}
 # plotting the distribution of adjusted overall effect sizes according to the 3 parameter selection model
 ggplot(data=threePSM.sampling.smd,aes(x=beta)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -2365,9 +2348,7 @@ ggplot(data=threePSM.sampling.smd,aes(x=beta)) +
 
 ##### S5.2.2.3: Cumlative meta-analysis 
 
-For an introduction to cumulative meta-analysis see section S5.2.1.3 and the main text. Here, we performed a sampling procedure where we ran a cumulative meta-analysis test for each dataset and extracted the mean effects estimated by the cumulative meta-analysis. We then ploted the median and 95% quantiles of those mean effects at each step. As before, the forest plot does not show any clear evidence of decline effects in this dataset (Figure S5.6).
-
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.caption="For an introduction to cumulative meta-analysis see section S5.2.1.3 and the main text. Here, we performed a sampling procedure where we ran a cumulative meta-analysis test for each dataset and extracted the mean effects estimated by the cumulative meta-analysis. We then ploted the median and 95% quantiles of those mean effects at each step. As before, the forest plot does not show any clear evidence of decline effects in this dataset (Figure S5.6)."}
 # lnRR
 # for loop to extract one single effect size per study and running cumulative meta-analysis
 n.randomization.rr.CM <- 1000 #number of samplings to be done
@@ -2456,9 +2437,7 @@ load(here("data","cumul_sampling_smd_1000s.RData"))
 
 ##### Figure S5.13
 
-Median and 95% quantiles of `r n.randomization.rr.CM` lnRR estimated according to cumulative meta-analysis showing evidence of decline effects.
-
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.caption="Median and 95% quantiles of `r n.randomization.rr.CM` lnRR estimated according to cumulative meta-analysis showing evidence of decline effects."}
 cumul.sampling.rr.summarized <- as.data.frame(cumul.sampling.rr 
                                              %>% group_by(order) %>% 
                                                summarise(median = median(beta), 
@@ -2479,9 +2458,7 @@ ggplot(data=cumul.sampling.rr.summarized, aes(x=order, y=median, ymin=lowCI, yma
 
 ##### Figure S5.13
 
-Median and 95% quantiles of `r n.randomization.smd.CM` SMD estimated according to cumulative meta-analysis showing evidence of decline effects.
-
-```{r fig.align = "center"}
+```{r fig.align = "center", fig.caption="Median and 95% quantiles of `r n.randomization.smd.CM` SMD estimated according to cumulative meta-analysis showing evidence of decline effects."}
 cumul.sampling.smd.summarized <- as.data.frame(cumul.sampling.smd 
                                              %>% group_by(order) %>% 
                                                summarise(median = median(beta), 
