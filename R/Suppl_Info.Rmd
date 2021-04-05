@@ -795,7 +795,7 @@ table.comparing.captivity.levels <- data.frame(captivity.level = table.comparing
 
 table.comparing.captivity.levels[,1] <- c("FC","FW","WCT","WCT & FC", "WCT & FW")
 
-# creating a fancy table using the R package 'gt'
+# creating a formatted table using the R package 'gt'
 table.model.r.captivity.gt <- table.comparing.captivity.levels %>% 
   gt() %>% 
   cols_label(captivity.level=md("**Captivity status**"),
@@ -912,7 +912,7 @@ To avoid ‘artefactual’ funnel asymmetry, we suggest using the "effective sam
 # calculating "effective sample size" to account for unbalanced sampling, for SMD and lnRR (e_n, hereafter, see Equation 25 from the main manuscript)
 
  dataset.rr$e_n <- with(dataset.rr, (4*(C_N*T_N)) / (C_N + T_N))
-dataset.smd$e_n <- with(dataset.smd, (4*(C_N*T_N)) / (C_N + T_N)
+dataset.smd$e_n <- with(dataset.smd, (4*(C_N*T_N)) / (C_N + T_N))
 
 #using effective sampling size
 par(mfrow = c(1, 2))
@@ -1557,7 +1557,7 @@ table.comparing.Exp.or.Obs.levels <- data.frame(Exp.or.Obs.level = table.compari
                                                adjusted.mean=table.comparing.Exp.or.Obs.levels[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",table.comparing.Exp.or.Obs.levels[,4],"]"),
                                                unadjusted.mean=table.comparing.Exp.or.Obs.levels[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,6],",",table.comparing.Exp.or.Obs.levels[,7],"]"))
 table.comparing.Exp.or.Obs.levels[,1] <- c("Experimental","Observational")
-# creating a fancy table using the R package 'gt'
+# creating a formatted table using the R package 'gt'
 table.comparing.Exp.or.Obs.levels.gt <- table.comparing.Exp.or.Obs.levels %>% 
   gt() %>% 
   cols_label(Exp.or.Obs.level=md("**Experimental.or.Observational.**"),
@@ -1585,7 +1585,7 @@ table.comparing.Exp.or.Obs.levels <- data.frame(Exp.or.Obs.level = table.compari
                                                adjusted.mean=table.comparing.Exp.or.Obs.levels[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",table.comparing.Exp.or.Obs.levels[,4],"]"),
                                                unadjusted.mean=table.comparing.Exp.or.Obs.levels[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,6],",",table.comparing.Exp.or.Obs.levels[,7],"]"))
 table.comparing.Exp.or.Obs.levels[,1] <- c("Experimental","Observational")
-# creating a fancy table using the R package 'gt'
+# creating a formatted table using the R package 'gt'
 table.comparing.Exp.or.Obs.levels.gt <- table.comparing.Exp.or.Obs.levels %>% 
   gt() %>% 
   cols_label(Exp.or.Obs.level=md("**Experimental.or.Observational.**"),
@@ -1642,8 +1642,8 @@ Using the aggregated data (see above), we will also fit a selection model-based 
 ```{r}
 # without moderators
 meta.analysis.r.agg0 <- rma(yi, vi, 
-                            method="ML", #method needs to set to "ML" rather than "REML" as in all models above
-                            test="knha", #knha is meant to be better than Z and t, but it is not implemented for multilevel models
+                            method="ML", #method needs to set to "ML" rather than "REML" as in all models above @TO-DO: this isn't clear, not all models above use ML
+                            test="knha", #knha is meant to be better than Z and t, but it is not implemented for multilevel models @TO-DO: explain why knha is meant to be better, or else delete
                             data=dataset.r)
 
 
@@ -1661,7 +1661,7 @@ meta.regression.r.agg <- rma(yi, vi,
                              data=dataset.r)
 
 
-three.PSM.r <- selmodel(meta.regression.r.agg, type="stepfun", steps=c(0.05)) #note that steps=c(0.05,1) would be give the same results
+three.PSM.r <- selmodel(meta.regression.r.agg, type="stepfun", steps=c(0.05))
 
 # summary(three.PSM.r)
 
@@ -1719,7 +1719,7 @@ table.model.r.captivity.gt.3PSM
 
 ##### S5.1.1.3: Cumulative meta-analysis 
 
-Last, using the aggregated data (see above), we will also perform a cumulative meta-analysis using the function `cumul()` from the R package `metafor` (Viechtbauer 2010). By displaying the results of this cumulative meta-analysis as a forest plot, we can visually observe if there is evidence of decline effects (more in the text), which we do not seem to have for this data (Figure S5.3).
+Last, using the aggregated data (see above), we will also perform a cumulative meta-analysis using the function `cumul()` from the R package `metafor` (Viechtbauer 2010). By displaying the results of this cumulative meta-analysis as a forest plot, we can see if there is evidence of decline effects (more in the text), which we do not seem to have for this data (Figure S5.3).
 
 <br/><br/>
 
@@ -1734,9 +1734,7 @@ forest(cum.meta.analysis.model.r.agg, xlab = "Overall estimate (Zr)",digits=c(2,
 
 #### S5.1.2: Sampling 
 
-To sample one effect size per study we will make use of `for loops`. These `for loops` will (i) select one effect size per study at a time to generate a meta-analytic dataset, (ii) fit the publication bias test of interest, and (iii) extract estimates from the publication bias test output. This process will be repeated 1000 times (i.e. 1000 samplings). Notice that we are going to create a `for loop` for each of the sections below (S5.1.2.1-S5.1.2.3), but authors may want to use a single `for loop` to make the process more efficient (and comparable).
-
-To sample one effect size per study we will write a custom function that, for each simulation: (i) randomly selects one effect size per study to generate a meta-analytic dataset; (ii) fits the publication bias test of interest; and (iii) extracts estimates from the publication bias test output. This process will be repeated 1000 times (i.e. 1000 samplings). Notice that we are going to create a `for loop` for each of the sections below (S5.1.2.1-S5.1.2.3), but authors may want to use a single `for loop` to make the process more efficient (and comparable).
+To sample one effect size per study we will write a custom function that, for each simulation: (i) randomly selects one effect size per study to generate a meta-analytic dataset; (ii) fits the publication bias test of interest; and (iii) extracts estimates from the publication bias test output. This process will be repeated 1000 times (i.e. 1000 samplings).
 
 <br/><br/>
 
@@ -1780,12 +1778,11 @@ func_S5.1.2.1 <- function(sim = 1){
 load(here("data","trimfill_sampling_r_1000s.RData"))
 ```
 
-The median number of missing studies was `r median(trimfill.sampling.r$n)` (range = `r min(trimfill.sampling.r$n)` - `r max(trimfill.sampling.r$n)`; Figure S5.4A), which is seemingly lower than the number of missing studies estimated using the aggregated data (n = `r trimfill.r$k0`; more in section S5.1.1.1). Additionally, the median adjusted overall effect according to the trim-and-fill method was `r round(median(trimfill.sampling.r$beta),2)` (range = `r round(min(trimfill.sampling.r$beta),2)` - `r round(max(trimfill.sampling.r$beta),2)`; Figure S5.4B), which is very similar to the ajdusted overall effect estimated using the aggreated data (`r round(trimfill.r$b[[1]],2)`; more in section S5.1.1.1), but still lower than the adjusted overall effect estimated by our suggested multilevel meta-regession method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
+The median number of missing studies was `r median(trimfill.sampling.r$n)` (range = `r min(trimfill.sampling.r$n)` - `r max(trimfill.sampling.r$n)`; Figure S5.4A), which is seemingly lower than the number of missing studies estimated using the aggregated data (n = `r trimfill.r$k0`; more in section S5.1.1.1). Additionally, the median adjusted overall effect according to the trim-and-fill method was `r round(median(trimfill.sampling.r$beta),2)` (range = `r round(min(trimfill.sampling.r$beta),2)` - `r round(max(trimfill.sampling.r$beta),2)`; Figure S5.4B), which is very similar to the adjusted overall effect estimated using the aggregated data (`r round(trimfill.r$b[[1]],2)`; more in section S5.1.1.1), but still lower than the adjusted overall effect estimated by our suggested multilevel meta-regression method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
 
 <br/><br/>
 
 ##### Figure S5.4
-
 
 
 ```{r fig.align = "center", fig.caption="Distribution of 1000 (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall effect sizes according to the trim-and-fill method. The dashed line shows the median value."}
@@ -1842,7 +1839,9 @@ func_S5.1.2.2 <- function(sim = 1){
 load(here("data","3PSM_sampling_r_1000s.RData"))
 ```
 
-The median adjusted overall effect according to the 3 parameter selection model was `r round(median(threePSM.sampling.r$beta),2)` (range = `r round(min(threePSM.sampling.r$beta),2)` - `r round(max(threePSM.sampling.r$beta),2)`; Figure S5.4B), which is slightly smaller than the adjusted overall effect estimated using the aggreated data (`r round(three.PSM.r0$beta[[1]],2)`; 95% CI = [`r round(three.PSM.r0$ci.lb[[1]],2)`,`r round(three.PSM.r0$ci.ub[[1]],2)`]; more in section S5.1.1.2), but still slightly larger than the adjusted overall effect estimated by our suggested mulitlevel meta-regession method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
+@TO-DO: here and throughout, the numbers from the different methods seem so similar that contrasting them seems misleading? "slightly smaller than...", and "slightly larger than..." but the confidence intervals suggest they're pretty much the same?
+
+The median adjusted overall effect according to the 3 parameter selection model was `r round(median(threePSM.sampling.r$beta),2)` (range = `r round(min(threePSM.sampling.r$beta),2)` - `r round(max(threePSM.sampling.r$beta),2)`; Figure S5.4B), which is slightly smaller than the adjusted overall effect estimated using the aggregated data (`r round(three.PSM.r0$beta[[1]],2)`; 95% CI = [`r round(three.PSM.r0$ci.lb[[1]],2)`,`r round(three.PSM.r0$ci.ub[[1]],2)`]; more in section S5.1.1.2), but still slightly larger than the adjusted overall effect estimated by our suggested multilevel meta-regession method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
 
 <br/><br/>
 
@@ -1932,10 +1931,9 @@ dataset.smd.agg <- aggregate(dataset.smd, cluster=paperID, struct="CS", rho = 0.
 
 ##### S5.2.1.1: Trim and fill test 
 
-Using the aggregated data (see Equation 30 in main text), we will then fit the trim-and-fill method (Duval and Tweedie 2000a,b). The trim-and-fill method is a non-parametric method that can be used to both detect and correct for publication bias and, although it can handle some heterogeneity, it performs worse as heterogeneity increases (Peters et al., 2007; Moreno et al., 2009; more in the main text). Since we aggregated our data, we can know run a random-effects meta-analytic model rather than a multilevel model as used in section S.4, and we will run the trim-and-fill method using this model. 
+Using the aggregated data (see Equation 30 in main text), we will then fit the trim-and-fill method (Duval and Tweedie 2000a,b). The trim-and-fill method is a non-parametric method that can be used to both detect and correct for publication bias and, although it can handle some heterogeneity, it performs worse as heterogeneity increases (Peters et al., 2007; Moreno et al., 2009; more in the main text). We will apply the trim-and-fill method to meta-analytic models with no random effects (since we aggregated our data we no longer need to fit a multilevel model to account for non-independent effect sizes).
 
 ```{r}
-
 # lnRR
 meta.analysis.model.rr.agg <- rma(yi, vi, test="knha", # using t dist rather than z
                                   data=dataset.rr.agg)
@@ -1945,9 +1943,6 @@ trimfill.rr <- trimfill(meta.analysis.model.rr.agg)
 meta.analysis.model.smd.agg <- rma(yi, vi, test="knha", # using t dist rather than z
                                    data=dataset.smd.agg)
 trimfill.smd <- trimfill(meta.analysis.model.smd.agg)
-
-
-
 ```
 
 The trim-and-fill method identified `r trimfill.rr$k0` (SE = `r round(trimfill.rr$se.k0,2)`) missing studies (Figure S5.7) and estimated an adjusted overall effect of `r round(trimfill.rr$beta[[1]],2)` (95% CI = [`r round(trimfill.rr$ci.lb[[1]],2)`,`r round(trimfill.rr$ci.ub[[1]],2)`]).
@@ -1969,7 +1964,7 @@ funnel(trimfill.smd, yaxis="seinv",
 ```
 
 
-Using the aggregated data (see above), we will also fit a selection model-based method (reviewed by Marks-Anglin & Chen, 2020). Although there are many selection models, all of them model how effect sizes are missing based on p values, effect sizes and/or sampling variance, and can provide an adjusted overall effect (e.g. Rodgers & Pustejovsky, 2020; more in the main text). Contrary to other methods, selection models can deal with and model heterogeneity (e.g. Citkowicz and Vevea 2017), but cannot deal with non-independent effect sizes. We will run a step function selection model based on one cut-point (α = 0.05); this model is sometimes referred to as a 3 parameter selection model (3PM; more in the main text; Rodgers & Pustejovsky, 2020). 
+Using the aggregated data (see above), we will also fit a selection model-based method (reviewed by Marks-Anglin & Chen, 2020). Although there are many selection models, all of them model how effect sizes are missing based on p values, effect sizes and/or sampling variance, and can provide an adjusted overall effect (e.g. Rodgers & Pustejovsky, 2020; more in the main text). Contrary to other methods, selection models can deal with and model heterogeneity (e.g. Citkowicz and Vevea 2017), but cannot deal with non-independent effect sizes. We will run a step function selection model based on one cut-point ($\alpha = 0.05$); this model is sometimes referred to as a 3 parameter selection model (3PM; more in the main text; Rodgers & Pustejovsky, 2020). 
 
 
 ##### S5.2.1.2: Selection model (3 PSM)
@@ -1980,7 +1975,6 @@ Using the aggregated data (see above), we will also fit a selection model-based 
 
 # moderator
 meta.regression.rr.agg0 <- rma(yi, vi, 
-                               #mod = ~ scale(year),
                                method="ML",
                                test="knha", 
                                data=dataset.rr)
@@ -1995,7 +1989,6 @@ three.PSM.rr0 <- selmodel(meta.regression.rr.agg0, type="stepfun", steps=c(0.05,
 meta.regression.rr.agg <- rma(yi, vi, 
                               mod = ~ year.c 
                               + Experimental.or.Observational. - 1, 
-                              #+ Class-1,
                               method="ML",
                               test="knha", 
                               data=dataset.rr)
@@ -2021,7 +2014,6 @@ three.PSM.smd0 <- selmodel(meta.regression.smd.agg0, type="stepfun", steps=c(0.0
 meta.regression.smd.agg <- rma(yi, vi, 
                                mod = ~ year.c 
                                + Experimental.or.Observational. - 1, 
-                               #+ Class-1,
                                method="ML",
                                test="knha", 
                                data=dataset.smd)
@@ -2036,13 +2028,13 @@ estimates.three.PSM.smd <- estimates.CI(three.PSM.smd)
 ```
 
 
-The step function selection model based on one cut-point (α = 0.05) for the intercept-only model estimated an adjusted overall lnRR of `r round(three.PSM.rr0$beta[[1]],2)` (95% CI = [`r round(three.PSM.rr0$ci.lb[[1]],2)`,`r round(three.PSM.rr0$ci.ub[[1]],2)`]; Figure S5.8), which is smaller than the original overall effect estimated by the meta-analytic model (`r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]; more in section S4.2.3.3). SMD showed the same pattern. Overall, the selection model estimated adjusted overall effects that were either very similar or even slightly larger than the original unadjusted effect sizes (Table S5.2), which might indicate that the specific selection model that we used (i.e. one cut-point (α = 0.05)) was not an adequate approximation for the underlying selection process.
+The step function selection model based on one cut-point ($\alpha = 0.05$) for the intercept-only model estimated an adjusted overall lnRR of `r round(three.PSM.rr0$beta[[1]],2)` (95% CI = [`r round(three.PSM.rr0$ci.lb[[1]],2)`,`r round(three.PSM.rr0$ci.ub[[1]],2)`]; Figure S5.8), which is smaller than the original overall effect estimated by the meta-analytic model (`r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]; more in section S4.2.3.3). SMD showed the same pattern. Overall, the selection model estimated adjusted overall effects that were either very similar or even slightly larger than the original unadjusted effect sizes (Table S5.2), which might indicate that the specific selection model that we used (i.e. one cut-point of $\alpha = 0.05$) was not an adequate approximation for the underlying selection process.
 
 <br/><br/>
 
 ##### Figure S5.8
 
-Results of a step function selection model based on one cut-point (α = 0.05) for a model without any moderators (left-hand figure, top panel for lnRR, bottom for SMD) and a model including both 'year of publication' and 'Experimental.or.Observational.' as moderators (right-hand figure, top panel for lnRR, bottom for SMD).
+Results of a step function selection model based on one cut-point ($\alpha = 0.05$) for a model without any moderators (left-hand figure, top panel for lnRR, bottom for SMD) and a model including both 'year of publication' and 'Experimental.or.Observational.' as moderators (right-hand figure, top panel for lnRR, bottom for SMD).
 
 ```{r fig.align = "center"}
 par(mfrow = c(1, 2))
@@ -2072,7 +2064,7 @@ table.comparing.Exp.or.Obs.levels.3PSM <- data.frame(Exp.or.Obs.level = table.co
                                                     adjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,3],",",table.comparing.Exp.or.Obs.levels.3PSM[,4],"]"),
                                                     unadjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,6],",",table.comparing.Exp.or.Obs.levels.3PSM[,7],"]"))
 table.comparing.Exp.or.Obs.levels.3PSM[,1] <- c("Experimental","Observational")
-# creating a fancy table using the R package 'gt'
+# creating a formatted table using the R package 'gt'
 table.model.rr.Exp.or.Obs.gt.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% 
   gt() %>% 
   cols_label(Exp.or.Obs.level=md("**Experimental.or.Observational.**"),
@@ -2084,7 +2076,7 @@ table.model.rr.Exp.or.Obs.gt.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>%
 table.model.rr.Exp.or.Obs.gt.3PSM 
 ```
 
-**Table S5.2.** Adjusted and unadjusted for publication bias results for all levels of the moderator 'Experimental.or.Observational.' using a step function selection model based on one cut-point (α = 0.05). Estimates are presented as standardized effect sizes using lnRR.
+**Table S5.2.** Adjusted and unadjusted for publication bias results for all levels of the moderator 'Experimental.or.Observational.' using a step function selection model based on one cut-point ($\alpha = 0.05$). Estimates are presented as standardized effect sizes using lnRR.
 
 <br/><br/>
 
@@ -2100,7 +2092,7 @@ table.comparing.Exp.or.Obs.levels.3PSM <- data.frame(Exp.or.Obs.level = table.co
                                                     adjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,3],",",table.comparing.Exp.or.Obs.levels.3PSM[,4],"]"),
                                                     unadjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,6],",",table.comparing.Exp.or.Obs.levels.3PSM[,7],"]"))
 table.comparing.Exp.or.Obs.levels.3PSM[,1] <- c("Experimental","Observational")
-# creating a fancy table using the R package 'gt'
+# creating a formatted table using the R package 'gt'
 table.model.smd.Exp.or.Obs.gt.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% 
   gt() %>% 
   cols_label(Exp.or.Obs.level=md("**Experimental.or.Observational.**"),
@@ -2112,13 +2104,13 @@ table.model.smd.Exp.or.Obs.gt.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>%
 table.model.smd.Exp.or.Obs.gt.3PSM
 ```
 
-**Table S5.3.** Adjusted and unadjusted for publication bias results for all levels of the moderator 'Experimental.or.Observational.' using a step function selection model based on one cut-point (α = 0.05). Estimates are presented as standardized effect sizes using SMD.
+**Table S5.3.** Adjusted and unadjusted for publication bias results for all levels of the moderator 'Experimental.or.Observational.' using a step function selection model based on one cut-point ($\alpha = 0.05$). Estimates are presented as standardized effect sizes using SMD.
 
 <br/><br/>
 
 ##### S5.2.1.3: Cumlative meta-analysis 
 
-Last, using the aggregated data (see above), we will also perform a cumulative meta-analysis using the fuction 'cumul()' from the R package `metafor` (Viechtbauer 2010). By displaying the results of this cumulative meta-analysis as a forest plot, we can visually observe if there is evidence of decline effects (more in the text), which we do not seem to have for lnRR (Figure S5.9, left-hand) and SMD (Figure S5.10, left-hand).
+Last, using the aggregated data (see above), we will also perform a cumulative meta-analysis using the function `cumul()` from the R package `metafor` (Viechtbauer 2010). By displaying the results of this cumulative meta-analysis as a forest plot, we can see if there is evidence of decline effects (more in the text), which we do not seem to have for lnRR (Figure S5.9, left-hand) and SMD (Figure S5.10, left-hand).
 
 <br/><br/>
 
@@ -2138,7 +2130,7 @@ forest(cum.meta.analysis.model.smd.agg, xlab = "Overall estimate (SMD)")
 
 #### S5.2.2: Sampling 
 
-To sample one effect size per study we will make use of `for loops`. These `for loops` will (i) select one effect size per study at a time to generate a meta-analytic dataset, (ii) fit the publication bias test of interest, and (iii) extract estimates from the publication bias test output. This process will be repeated 1000 times (i.e. 1000 samplings). Notice that we are going to create a `for loop` for each of the sections below (S5.2.2.1-S5.1.2.3), but authors may want to use a single `for loop` to make the process more efficient (and comparable).
+As in S5.1.2, we will run the trim-and-fill test on 1000 datasets, each with only 1 effect size per study (sampled randomly).
 
 <br/><br/>
 
@@ -2147,122 +2139,43 @@ To sample one effect size per study we will make use of `for loops`. These `for 
 For an introduction to the trim-and-fill method see section S5.2.1.1 and the main text. Below are the summary results of the trim-and-fill method after running 1000 randomizations.
 
 ```{r}
+# function for randomly selecting 1 effect size from each study
+func_S5.2.2.1 <- function(sim = 1, df){
+  
+  # splitting dataframe into each study
+  study_list <- split(df, df$paperID)
+  
+  # randomly extracting one effect size per study
+  SingleStudyES_df <- dplyr::bind_rows(lapply(study_list, function(x) 
+    x[sample(1:nrow(x), 1),c("paperID","yi","vi")]))
+  
+  # running the model on the dataframe now each study only has a single effect size
+  model.tmp <- rma(yi, vi, test="knha",data=SingleStudyES_df) 
+  
+  # applying trim-and-fill method
+  TAF <- trimfill(model.tmp)
+ 
+  # creating a dataframe with results from the trim-and-fill methods, with:
+  #n = number of missing studies
+  #beta = adjusted overall effect
+  df <- data.frame(sim,
+                   n=TAF$k0,
+                   beta=TAF$beta[[1]])
+  
+  return(df)
+}
 
-## lnRR
-# for loop to extract one single effect size per study and running trim-and-fill
-n.randomization.rr.TAF <- 1000 #number of samplings to be done
-
-
- # # vector to collect the estimated number of missing studies for each database
- # trimfill.n.vector.rr <- c()
- # 
- # 
- # 
- # # vector to collect the ajusted effect for each database
- # trimfill.b.vector.rr <- c()
- # 
- #  names(dataset.rr)[3] <- "study" # rename the column for study
- # for(i in 1:n.randomization.rr.TAF){
- #  
- #   # creating a new dataframe to be filled
- #   randomized.db.rr <- data.frame(study=factor(),
- #                                 yi=numeric(),
- #                                 vi=numeric(),
- #                                 stringsAsFactors=FALSE)
- #   
- #   for (j in levels(as.factor(dataset.rr$study))){ #for each study do...
- #     
- #     # creating a dataset for each study
- #     tmp.rr <- dataset.rr[dataset.rr$study==j,c("study","yi","vi")]
- #     
- #     # randomly extracting one effect size per study
- #     randomized.db.rr <- rbind(randomized.db.rr,tmp.rr[sample(seq(1,nrow(tmp.rr)),1),])
- #     
- #   }
- #   
- #   # running the model on the dataframe created in the for loop above
- #   model.tmp.rr <- rma(yi, vi, test="knha",data=randomized.db.rr)
- #   
- #   # extracting the number of missing studies according to the trim-and-fill method for each database
- #   trimfill.n.vector.rr <- c(trimfill.n.vector.rr,trimfill(model.tmp.rr)$k0)
- #   
- #   # extracting the adjusted overall effect according to the trim-and-fill method for each database
- #   trimfill.b.vector.rr <- c(trimfill.b.vector.rr,trimfill(model.tmp.rr)$beta[[1]])
- #   
- # }
- # 
- # # creating a dataframe with the n.rrandomization.rr of estimated number of missing studies and adjusted overall effects
- # trimfill.sampling.rr <- data.frame(n=trimfill.n.vector.rr,
- #                                    beta=trimfill.b.vector.rr)
- # 
- # # saving data to avoid re-running for loop as that can take a couple of minutes if n.rrandomization.rr 1000 or more
- # save(trimfill.sampling.rr,file = here("data","trimfill_sampling_rr_1000s.RData"))
-
-
-
-
-
-# loading the data extracted from the for loop above to avoid re-running that for loop as that can take a couple of minutes if n.randomization.r 1000 or more
+# applying the function 1000 times for lnRR
+#trimfill.sampling.rr <- dplyr::bind_rows(lapply(1:1000, function(x) func_S5.2.2.1(sim = x, df = dataset.rr)))
+# saving data to save time 
+# save(trimfill.sampling.rr,file = here("data","trimfill_sampling_rr_1000s.RData"))
 load(here("data","trimfill_sampling_rr_1000s.RData"))
 
-
-
-
-
-## SMD
-# for loop to extract one single effect size per study and running trim-and-fill
-n.randomization.smd.TAF <- 1000 #number of samplings to be done
-
-
- # # vector to collect the estimated number of missing studies for each database
- # trimfill.n.vector.smd <- c()
- # 
- # 
- # 
- # # vector to collect the ajusted effect for each database
- # trimfill.b.vector.smd <- c()
- # 
- #  names(dataset.smd)[3] <- "study" # rename the column for study
- # for(i in 1:n.randomization.smd.TAF){
- #  
- #   # creating a new dataframe to be filled
- #   randomized.db.smd <- data.frame(study=factor(),
- #                                 yi=numeric(),
- #                                 vi=numeric(),
- #                                 stringsAsFactors=FALSE)
- #   
- #   for (j in levels(as.factor(dataset.smd$study))){ #for each study do...
- #     
- #     # creating a dataset for each study
- #     tmp.smd <- dataset.smd[dataset.smd$study==j,c("study","yi","vi")]
- #     
- #     # randomly extracting one effect size per study
- #     randomized.db.smd <- rbind(randomized.db.smd,tmp.smd[sample(seq(1,nrow(tmp.smd)),1),])
- #     
- #   }
- #   
- #   # running the model on the dataframe created in the for loop above
- #   model.tmp.smd <- rma(yi, vi, test="knha",data=randomized.db.smd)
- #   
- #   # extracting the number of missing studies according to the trim-and-fill method for each database
- #   trimfill.n.vector.smd <- c(trimfill.n.vector.smd,trimfill(model.tmp.smd)$k0)
- #   
- #   # extracting the adjusted overall effect according to the trim-and-fill method for each database
- #   trimfill.b.vector.smd <- c(trimfill.b.vector.smd,trimfill(model.tmp.smd)$beta[[1]])
- #   
- # }
- # 
- # # creating a dataframe with the n.smdandomization.smd of estimated number of missing studies and adjusted overall effects
- # trimfill.sampling.smd <- data.frame(n=trimfill.n.vector.smd,
- #                                    beta=trimfill.b.vector.smd)
- # 
- # # saving data to avoid re-running for loop as that can take a couple of minutes if n.smdandomization.smd 1000 or more
- # save(trimfill.sampling.smd,file = here("data","trimfill_sampling_smd_1000s.RData"))
-
-
-
-# loading the data extracted from the for loop above to avoid re-running that for loop as that can take a couple of minutes if n.randomization.r 1000 or more
-load(here("data","trimfill_sampling_smd_1000s.RData"))
+# applying the function 1000 times for SMR
+#trimfill.sampling.smd <- dplyr::bind_rows(lapply(1:1000, function(x) func_S5.2.2.1(sim = x, df = dataset.smd)))
+# saving data to save time 
+# save(trimfill.sampling.smd,file = here("data","trimfill_sampling_smd_1000s.RData"))
+load(here("data","trimfill_sampling_rr_1000s.RData"))
 ```
 
 
@@ -2320,7 +2233,7 @@ ggarrange(n.smd, betas.smd,
 
 ##### S5.2.2.2: Selection model (3 PSM)
 
-For an introduction to selection models see section S5.2.1.2 and the main text. As before, we ran a step function selection model based on one cut-point (α = 0.05); this model is sometimes referred to as a 3 parameter selection model. For simplicity, we only ran the selection model for the intercept-only model (but see section S5.2.1.2 for how to run a selection model for a meta-regression). Below are the summary results of the 3 parameter selection model after running 1000 randomizations.
+For an introduction to selection models see section S5.2.1.2 and the main text. As before, we ran a step function selection model based on one cut-point ($\alpha = 0.05$); this model is sometimes referred to as a 3 parameter selection model. For simplicity, we only ran the selection model for the intercept-only model (but see section S5.2.1.2 for how to run a selection model for a meta-regression). Below are the summary results of the 3 parameter selection model after running 1000 randomizations.
 
 
 ```{r}
