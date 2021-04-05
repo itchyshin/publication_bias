@@ -1546,6 +1546,19 @@ table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.rr.v
                                           all.x=T)
 # rounding estimates
 table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
+#@TO-DO:
+# Warning message:
+# `funs()` is deprecated as of dplyr 0.8.0.
+# Please use a list of either functions or lambdas: 
+# 
+#   # Simple named list: 
+#   list(mean = mean, median = median)
+# 
+#   # Auto named with `tibble::lst()`: 
+#   tibble::lst(mean, median)
+# 
+#   # Using lambdas
+#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
 
 table.comparing.Exp.or.Obs.levels <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels[,1],
                                                adjusted.mean=table.comparing.Exp.or.Obs.levels[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",table.comparing.Exp.or.Obs.levels[,4],"]"),
@@ -1574,6 +1587,19 @@ table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.smd.
                                           all.x=T)
 # rounding estimates
 table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
+#@TO-DO:
+# Warning message:
+# `funs()` is deprecated as of dplyr 0.8.0.
+# Please use a list of either functions or lambdas: 
+# 
+#   # Simple named list: 
+#   list(mean = mean, median = median)
+# 
+#   # Auto named with `tibble::lst()`: 
+#   tibble::lst(mean, median)
+# 
+#   # Using lambdas
+#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
 
 table.comparing.Exp.or.Obs.levels <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels[,1],
                                                adjusted.mean=table.comparing.Exp.or.Obs.levels[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",table.comparing.Exp.or.Obs.levels[,4],"]"),
@@ -1686,6 +1712,19 @@ table.comparing.captivity.levels.3PSM <- merge(estimates.three.PSM.r[c(2:6),],
 
 # rounding estimates
 table.comparing.captivity.levels.3PSM <- table.comparing.captivity.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
+#@TO-DO:
+# Warning message:
+# `funs()` is deprecated as of dplyr 0.8.0.
+# Please use a list of either functions or lambdas: 
+# 
+#   # Simple named list: 
+#   list(mean = mean, median = median)
+# 
+#   # Auto named with `tibble::lst()`: 
+#   tibble::lst(mean, median)
+# 
+#   # Using lambdas
+#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
 
 
 table.comparing.captivity.levels.3PSM <- data.frame(captivity.level = table.comparing.captivity.levels.3PSM[,1],
@@ -2052,6 +2091,19 @@ table.comparing.Exp.or.Obs.levels.3PSM <- merge(estimates.three.PSM.rr[c(2:3),],
                                                all.x=T)
 # rounding estimates
 table.comparing.Exp.or.Obs.levels.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
+#@TO-DO:
+# Warning message:
+# `funs()` is deprecated as of dplyr 0.8.0.
+# Please use a list of either functions or lambdas: 
+# 
+#   # Simple named list: 
+#   list(mean = mean, median = median)
+# 
+#   # Auto named with `tibble::lst()`: 
+#   tibble::lst(mean, median)
+# 
+#   # Using lambdas
+#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
 table.comparing.Exp.or.Obs.levels.3PSM <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels.3PSM[,1],
                                                     adjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,3],",",table.comparing.Exp.or.Obs.levels.3PSM[,4],"]"),
                                                     unadjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,6],",",table.comparing.Exp.or.Obs.levels.3PSM[,7],"]"))
@@ -2080,6 +2132,19 @@ table.comparing.Exp.or.Obs.levels.3PSM <- merge(estimates.three.PSM.smd[c(2:3),]
                                                all.x=T)
 # rounding estimates
 table.comparing.Exp.or.Obs.levels.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
+#@TO-DO:
+# Warning message:
+# `funs()` is deprecated as of dplyr 0.8.0.
+# Please use a list of either functions or lambdas: 
+# 
+#   # Simple named list: 
+#   list(mean = mean, median = median)
+# 
+#   # Auto named with `tibble::lst()`: 
+#   tibble::lst(mean, median)
+# 
+#   # Using lambdas
+#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
 table.comparing.Exp.or.Obs.levels.3PSM <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels.3PSM[,1],
                                                     adjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,3],",",table.comparing.Exp.or.Obs.levels.3PSM[,4],"]"),
                                                     unadjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,6],",",table.comparing.Exp.or.Obs.levels.3PSM[,7],"]"))
@@ -2167,7 +2232,7 @@ load(here("data","trimfill_sampling_rr_1000s.RData"))
 #trimfill.sampling.smd <- dplyr::bind_rows(lapply(1:1000, function(x) func_S5.2.2.1(sim = x, df = dataset.smd)))
 # saving data to save time 
 # save(trimfill.sampling.smd,file = here("data","trimfill_sampling_smd_1000s.RData"))
-load(here("data","trimfill_sampling_rr_1000s.RData"))
+load(here("data","trimfill_sampling_smd_1000s.RData"))
 ```
 
 The median number of missing studies for lnRR was `r median(trimfill.sampling.rr$n)` (range = `r min(trimfill.sampling.rr$n)` - `r max(trimfill.sampling.rr$n)`; Figure S5.9A). Additionally, the median adjusted overall lnRR according to the trim-and-fill method was `r round(median(trimfill.sampling.rr$beta),2)` (range = `r round(min(trimfill.sampling.rr$beta),2)` - `r round(max(trimfill.sampling.rr$beta),2)`; Figure S5.9B), which is larger than the adjusted overall lnRR estimated by our suggested multilevel meta-regession method (`r round(estimates.publication.bias.model.rr.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.v.1[1,3],2)`,`r round(estimates.publication.bias.model.rr.v.1[1,4],2)`]; more in section S4.2.4.3).
@@ -2194,7 +2259,7 @@ ggarrange(n.rr, betas.rr,
 
 <br/><br/>
 
-The median number of missing studies for SMD was `r median(trimfill.sampling.smd$n)` (range = `r min(trimfill.sampling.smd$n)` - `r max(trimfill.sampling.smd$n)`; Figure S5.10A). Additionally, the median adjusted overall SMD according to the trim-and-fill method was `r round(median(trimfill.sampling.smd$beta),2)` (range = `r round(min(trimfill.sampling.smd$beta),2)` - `r round(max(trimfill.sampling.smd$beta),2)`; Figure S5.10B), which is larger than the adjusted overall SMD estimated by our suggested multilevel meta-regession method (`r round(estimates.publication.bias.model.smd.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.v.1[1,3],2)`,`r round(estimates.publication.bias.model.smd.v.1[1,4],2)`]; more in section S4.2.4.3).
+The median number of missing studies for SMD was `r median(trimfill.sampling.smd$n)` (range = `r min(trimfill.sampling.smd$n)` - `r max(trimfill.sampling.smd$n)`; Figure S5.10A). Additionally, the median adjusted overall SMD according to the trim-and-fill method was `r round(median(trimfill.sampling.smd$beta),2)` (range = `r round(min(trimfill.sampling.smd$beta),2)` - `r round(max(trimfill.sampling.smd$beta),2)`; Figure S5.10B), which is larger than the adjusted overall SMD estimated by our suggested multilevel meta-regression method (`r round(estimates.publication.bias.model.smd.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.v.1[1,3],2)`,`r round(estimates.publication.bias.model.smd.v.1[1,4],2)`]; more in section S4.2.4.3).
 
 <br/><br/>
 
@@ -2224,51 +2289,38 @@ For an introduction to selection models see section S5.2.1.2 and the main text. 
 
 
 ```{r}
-# lnRR
-# for loop to extract one single effect size per study and running selection model
-n.randomization.rr.3PSM <- 1000
-#  # vector to collect the ajusted effect for each database
-#  threePSM.vector.rr <- c()
-#  
-#  for(i in 1:n.randomization.rr.3PSM){
-#    
-#    # creating a new dataframe to be filled
-#    randomized.db.rr <- data.frame(study=factor(),
-#                                  yi=numeric(),
-#                                  vi=numeric(),
-#                                  year.c=numeric(),
-#                                   Experimental.or.Observational.=character(),
-#                                  stringsAsFactors=FALSE)
-#    
-#    for (j in levels(as.factor(dataset.rr$study))){ #for each study do...
-#      
-#      # creating a dataset for each study
-#      tmp.rr <- dataset.rr[dataset.rr$study==j,c("study","yi","vi","year.c","Experimental.or.Observational.")]
-#      
-#      # randomly extracting one effect size per study
-#      randomized.db.rr <- rbind(randomized.db.rr,tmp.rr[sample(seq(1,nrow(tmp.rr)),1),])
-#      
-#    }
-#    
-#    # running the model on the dataframe created in the for loop above
-#    model.tmp.rr.agg0<- rma(yi, vi, method="ML", test="knha",data=randomized.db.rr)
-#    
-#    # extracting the adjusted overall effect according to the selection model for each database
-#    threePSM.vector.rr <- c(threePSM.vector.rr,selmodel(model.tmp.rr.agg0, type="stepfun", steps=c(0.05))$beta[[1]])
-#    
-#  }
-# 
-#  # creating a dataframe with the n.randomization.r of estimated number of missing studies and adjusted overall effects
-#  threePSM.sampling.rr <- data.frame(beta=threePSM.vector.rr)
-# # 
-#  # saving data to avoid re-running for loop as that can take a couple of minutes if n.randomization.r 1000 or more
-#  save(threePSM.sampling.rr,file = here("data","3PSM_sampling_rr_1000s.RData"))
-# loading the data extracted from the for loop above to avoid re-running that for loop as that can take a couple of minutes if n.randomization.r 1000 or more
+# function for randomly selecting 1 effect size from each study
+func_S5.2.2.2 <- function(sim = 1, df){
+  
+  # splitting dataframe into each study
+  study_list <- split(df, df$paperID)
+  
+  # randomly extracting one effect size per study
+  SingleStudyES_df <- dplyr::bind_rows(lapply(study_list, function(x) 
+    x[sample(1:nrow(x), 1),c("paperID","yi","vi")]))
+  
+  # running the model on the dataframe now each study only has a single effect size
+  model.tmp <- rma(yi, vi, method="ML", test="knha",data=SingleStudyES_df )
+  
+  # extracting the adjusted overall effect according to the selection model 
+  threePSM.vector <- selmodel(model.tmp, type="stepfun", steps=c(0.05))$beta[[1]]
+  
+  # creating a dataframe with the n.randomization.r of estimated number 
+  # of missing studies and adjusted overall effects
+  threePSM.sampling <- data.frame(sim, beta=threePSM.vector)
+  
+  return(threePSM.sampling)
+}
+
+# applying the function 1000 times for lnRR
+#threePSM.sampling.rr <- dplyr::bind_rows(lapply(1:1000, function(x) func_S5.2.2.2(sim = x, df = dataset.rr)))
+# saving data to save time 
+# save(threePSM.sampling.rr,file = here("data","3PSM_sampling_rr_1000s.RData"))
 load(here("data","3PSM_sampling_rr_1000s.RData"))
 ```
 
 
-The median adjusted overall lnRR according to the 3 parameter selection model was `r round(median(threePSM.sampling.rr$beta),2)` (range = `r round(min(threePSM.sampling.rr$beta),2)` - `r round(max(threePSM.sampling.rr$beta),2)`; Figure S5.4B), which is smaller than the adjusted overall lnRR estimated by our suggested mulitlevel meta-regession method (`r round(estimates.publication.bias.model.rr.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.v.1[1,3],2)`,`r round(estimates.publication.bias.model.rr.v.1[1,4],2)`]; more in section S4.2.4.3).
+The median adjusted overall lnRR according to the 3 parameter selection model was `r round(median(threePSM.sampling.rr$beta),2)` (range = `r round(min(threePSM.sampling.rr$beta),2)` - `r round(max(threePSM.sampling.rr$beta),2)`; Figure S5.4B), which is smaller than the adjusted overall lnRR estimated by our suggested multilevel meta-regression method (`r round(estimates.publication.bias.model.rr.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.v.1[1,3],2)`,`r round(estimates.publication.bias.model.rr.v.1[1,4],2)`]; more in section S4.2.4.3).
 
 <br/><br/>
 
@@ -2286,46 +2338,10 @@ ggplot(data=threePSM.sampling.rr,aes(x=beta)) +
 
 
 ```{r}
-# lnRR
-# for loop to extract one single effect size per study and running selection model
-n.randomization.smd.3PSM <- 1000
-#  # vector to collect the ajusted effect for each database
-#  threePSM.vector.smd <- c()
-#  
-#  for(i in 1:n.randomization.smd.3PSM){
-#    
-#    # creating a new dataframe to be filled
-#    randomized.db.smd <- data.frame(study=factor(),
-#                                  yi=numeric(),
-#                                  vi=numeric(),
-#                                  year.c=numeric(),
-#                                   Experimental.or.Observational.=character(),
-#                                  stringsAsFactors=FALSE)
-#    
-#    for (j in levels(as.factor(dataset.smd$study))){ #for each study do...
-#      
-#      # creating a dataset for each study
-#      tmp.smd <- dataset.smd[dataset.smd$study==j,c("study","yi","vi","year.c","Experimental.or.Observational.")]
-#      
-#      # randomly extracting one effect size per study
-#      randomized.db.smd <- rbind(randomized.db.smd,tmp.smd[sample(seq(1,nrow(tmp.smd)),1),])
-#      
-#    }
-#    
-#    # running the model on the dataframe created in the for loop above
-#    model.tmp.smd.agg0<- rma(yi, vi, method="ML", test="knha",data=randomized.db.smd)
-#    
-#    # extracting the adjusted overall effect according to the selection model for each database
-#    threePSM.vector.smd <- c(threePSM.vector.smd,selmodel(model.tmp.smd.agg0, type="stepfun", steps=c(0.05))$beta[[1]])
-#    
-#  }
-# 
-#  # creating a dataframe with the n.randomization.r of estimated number of missing studies and adjusted overall effects
-#  threePSM.sampling.smd <- data.frame(beta=threePSM.vector.smd)
-# # 
-#  # saving data to avoid re-running for loop as that can take a couple of minutes if n.randomization.r 1000 or more
-#  save(threePSM.sampling.smd,file = here("data","3PSM_sampling_smd_1000s.RData"))
-# loading the data extracted from the for loop above to avoid re-running that for loop as that can take a couple of minutes if n.randomization.r 1000 or more
+# applying the function 1000 times for SMD
+#threePSM.sampling.smd <- dplyr::bind_rows(lapply(1:1000, function(x) func_S5.2.2.2(sim = x, df = dataset.smd)))
+# saving data to save time 
+# save(threePSM.sampling.smd,file = here("data","3PSM_sampling_smd_1000s.RData"))
 load(here("data","3PSM_sampling_smd_1000s.RData"))
 ```
 
