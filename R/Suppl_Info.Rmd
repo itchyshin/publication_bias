@@ -47,8 +47,8 @@ options(digits=3)
 ```
 
 ```{r klippy, echo=FALSE, include=TRUE}
-klippy::klippy(tooltip_message = 'Click to Copy Code', tooltip_success = 'Done', position = 'right', color = "red")
-
+#TO-DO: package ‘klippy’ is not available (for R version 4.0.2)
+#klippy::klippy(tooltip_message = 'Click to Copy Code', tooltip_success = 'Done', position = 'right', color = "red")
 ```
 
 # # need pacman to install the rest
@@ -1407,6 +1407,7 @@ The three models that we are going to fit are:
 
 3. Multi-moderator meta-regression including the inverse of effective sample size, year of publication (mean-centred) and the binary factor 'Experimental.or.Observational.' as moderators. In this meta-regression, we are going to remove the intercept so that we obtain an adjusted overall effect for each of the levels of the factor 'captivity status'.
 
+@TO-DO: problem in the below chunk when knitting to html (`object obsID not found`), not sure why because the chunks run fine one-byone.
 ```{r}
 # lnRR
 # model 1: ignoring additional moderators - Experimental.or.Observational.
@@ -2518,7 +2519,7 @@ colcol = "#cad7ed"
 ggplot(Ntests) + tm + theme(plot.title = element_text(hjust = -1)) +
   geom_col(aes(PB_label, n), fill = colcol, colour = "black", width = 0.75, size = 1) +
   geom_text(aes(x = PB_label, y = n, label = percent), hjust = -0.1, size = 5, family = "Arial") +
-  scale_y_continuous(expand = c(0,0), lim = c(0, 80)) +
+  scale_y_continuous(expand = c(0,0), limits = c(0, 80)) +
   coord_flip() +
   labs(x = "type of publication bias test",
        y = "number of papers reporting test") 
@@ -2559,7 +2560,7 @@ col_point <- ifelse(rows %in% expected, "red", ifelse(rows %in% unexpected, "blu
 dat$col_point <- col_point
 
 #https://stackoverflow.com/questions/50012553/combining-plots-created-by-r-base-lattice-and-ggplot2
-# saving base plot as an object!!! https://www.andrewheiss.com/blog/2016/12/08/save-base-graphics-as-pseudo-objects-in-r/
+# saving base plot as an object https://www.andrewheiss.com/blog/2016/12/08/save-base-graphics-as-pseudo-objects-in-r/
 
 mod_ra <- rma(yi, vi, data = dat)
 mod_fe <- rma(yi, vi, data = dat, method = "FE")
@@ -2567,7 +2568,7 @@ mod_fe <- rma(yi, vi, data = dat, method = "FE")
 # margin controlling
 #par(mar=c(5,4,0,0) + 0.1)
 
-# - done TODO - DL for sunset plot and enhanced counter - making it - 0.01 < p < 0.05 
+# DL for sunset plot and enhanced counter - making it - 0.01 < p < 0.05 
 
 # a
 pdf(NULL)
@@ -3063,7 +3064,7 @@ There is no code for Fig. 7 (created in PowerPoint)
 ## R Session Information
 
 ```{r}
-sessionInfo() %>% pander()
+sessionInfo() %>% pander::pander()
 ```
 
 ## References
