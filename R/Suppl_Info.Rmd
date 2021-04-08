@@ -16,7 +16,9 @@ subtitle: Supplementary Information - Appendix S1-S5 including figure code
 bibliography: references.bib
 biblio-style: "apalike"
 csl: jane.csl
-link-citations: yes
+#link-citations: yes
+nocite: | 
+  @viechtbauer2010conducting, @nakagawa2012methodological, @senior2016heterogeneity, @michonneau2016rotl, @paradis2019ape, @nakagawa2019orchard,  @senior2020revisiting, @noble2017nonindependence, @garamszegi2012meta, @cinar2020phylogenetic, @chamberlain2012does, @hinchliff2015synthesis, @rees2017automated, @begg1994operating, @duval2000trim, @duval2000nonparametric, @stanley2014meta, @peters2007performance, @marks2020historical, @citkowicz2017parsimonious, @murphy2014meta, @odea2021prisma, @wang_using_1998, @hedges_estimation_1984, @rosenthal_file_1979, @begg_operating_1994, @iyengar_selection_1988, @rosenberg_file-drawer_2005, @copas_inference_1997, @orwin_fail-safe_1983, @vivea_publication_2019, @sutton_publication_2009 , @sutton_publication_2009, @knapp2003improved
 ---
 
 ```{r setup, include = FALSE}
@@ -39,11 +41,14 @@ options(digits=3)
 # # install the orchaRd package
 # install.packages("devtools")
 # install.packages("remotes")
-# remotes::install_github("wviechtb/metafor")
 # devtools::install_github("itchyshin/orchard_plot", subdir = "orchaRd", force = TRUE, build_vignettes = TRUE)
 # devtools::install_github("MathiasHarrer/dmetar")
 # devtools::install_github("daniel1noble/metaAidR")
 #remotes::install_github("rlesur/klippy")
+
+# these packages need be obtained from github not from cran
+#remotes::install_github("rvlenth/emmeans", dependencies = TRUE, build_opts = "")
+# remotes::install_github("wviechtb/metafor")
 ```
 
 ```{r klippy, echo=FALSE, include=TRUE}
@@ -51,10 +56,10 @@ options(digits=3)
 #klippy::klippy(tooltip_message = 'Click to Copy Code', tooltip_success = 'Done', position = 'right', color = "red")
 ```
 
-# # need pacman to install the rest
+```{r loading packages, echo = FALSE, eval = TRUE}
+# need pacman to install the rest
 # install.packages("pacman")
 
-```{r loading packages, echo = FALSE, eval = TRUE}
 # required packages
 pacman::p_load(R.rsp,
                tidyverse,
@@ -82,13 +87,22 @@ pacman::p_load(R.rsp,
                viridis,
                metaAidR,
                ggpubr,
-               klippy
+               klippy,
+               emmeans
 )
 
 # custom function for extracting mean and CI from each metafor model
 estimates.CI <- function(model){
   db.mf <- data.frame(model$b,row.names = 1:nrow(model$b))
   db.mf <- cbind(db.mf,model$ci.lb,model$ci.ub,row.names(model$b))
+  names(db.mf) <- c("mean","lower","upper","estimate")
+  return(db.mf[,c("estimate","mean","lower","upper")])
+}
+
+# custom function for extracting mean and CI for emmeans (marginalized means) 
+estimates.CI2 <- function(res){
+    db.mf <- data.frame(summary(res)[,2],row.names = 1:length( summary(res)[,2]))
+  db.mf <- cbind(db.mf,summary(res)[,5],summary(res)[,6],paste0(names(res@levels),summary(res)[,1] ))
   names(db.mf) <- c("mean","lower","upper","estimate")
   return(db.mf[,c("estimate","mean","lower","upper")])
 }
@@ -537,7 +551,7 @@ When heterogeneity exists (which is normally the case in ecology and evolution; 
 
 # Note that we are removing the intercept in this model (using '-1') because the intercept is not of interest at this point. Instead we prefer to see the slopes of the continues moderators and the estimates of all the levels of the categorical moderator 'CaptivityC'. Note that whether or not the intercept is removed, it does not change the conclusions of the small-study effects test or the decline effects test.
 publication.bias.model.r.all.se <- rma.mv(yi, vi,
-                                          mods=~-1+ # -1 removes the intercept
+                                          mods=~1+ # -1 removes the intercept
                                             sei+
                                             year.c+
                                             CaptivityC,   
@@ -558,33 +572,16 @@ estimates.publication.bias.model.r.all.se <- estimates.CI(publication.bias.model
 
 The all-in publication bias test agrees with what we observed in the uni-moderator meta-regressions above (sections S4.1.4.1 and S4.1.4.2). First, the multi-moderator meta-regression shows a statistically significant slope for the moderator 'SE' (slope = `r round(estimates.publication.bias.model.r.all.se[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[1,3],2)`,`r round(estimates.publication.bias.model.r.all.se[1,4],2)`]; Figure S4.4), showing evidence of small-study effects. In other words, the largest effect sizes in the dataset tend to be those with the lowest precision (i.e. larger uncertainty; Figure S4.4). This result agrees with the findings originally reported in Garamszegi et al. (2012), where the authors found evidence of publication bias after applying a simple correlation method proposed by Begg and Mazumdar (1994) and the trim-and-fill method (Duval and Tweedie 2000a,b) - although bear in mind that we do not recommend to use those simpler methods for meta-analytic datasets with multiple levels of non-independence and high heterogeneity (more in the main text; see alternative in section S5). Second, the all-in publication bias test also confirms that there is no evidence of decline effects in the data since the slope of the moderator 'year of publication' was again indistinguishable from zero (slope = `r round(estimates.publication.bias.model.r.all.se[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.all.se[2,3],2)`,`r round(estimates.publication.bias.model.r.all.se[2,4],2)`]; Figure S4.5). Overall, the moderators included in this multi-moderator meta-regression explained a total of `r round(orchaRd::r2_ml(publication.bias.model.r.all.se)[[1]]*100,1)`% (i.e. *R<sup>2</sup><sub>marginal</sub>*) of the heterogeneity observed in the meta-analytic model (see Table S4.1).
 
-```{r}
-# to plot the 'sei' effect we are simply including the moderator 'CaptivityC' as a random effect for simplicity of plotting. Note that this does not substantially change the estimates of the moderators, and that alternative approaches could be used for this. @TODO: Shinichi says this does not make sense as a random effect, we should get a marginal mean with it as a fixed effect or report the level separately. 
-
-publication.bias.model.r.all.se.plot <- rma.mv(yi, vi,
-                                               mods=~1+
-                                                 sei+
-                                                 year.c,
-                                               random=list(~1 | CaptivityC,
-                                                           ~ 1 | Species.updated, # phylo effect
-                                                           ~ 1 | Species, # non-phylo effect
-                                                           ~ 1 | study, 
-                                                           ~ 1 | obsID), 
-                                               R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-                                               method="REML",
-                                               test="t", # using t dist rather than z because t is a better, more conservative distribution than z
-                                               data=dataset.r)
-```
-
 ##### Figure S4.4
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.cap="Effect sizes with larger standard errors tend to be larger, providing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of SE from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
-predict.publication.bias.model.r.all.se.plot.1 <- predict(publication.bias.model.r.all.se.plot,
+# condition on FC
+predict.publication.bias.model.r.all.se.plot.1 <- predict(publication.bias.model.r.all.se,
                                                           newmods=cbind(seq(min(dataset.r$sei),
                                                                             max(dataset.r$sei),
                                                                             0.005),
-                                                                        c(0)))
+                                                                        c(0), 0, 0, 0, 0))
 
 newdat <- data.frame(sei=seq(min(dataset.r$sei),
                              max(dataset.r$sei),
@@ -639,11 +636,15 @@ polygon(c(newdat$sei,rev(newdat$sei)),
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.cap="The overall effect size has not changed over time. The solid line represents the model estimate, the shading shows its 95% confidence intervals and individual effect sizes are scaled by their precision (1/SE)."}
 # predicting effect sizes for a range of years from the minimum observed in the data to the maximum observed in data, while SE is kept at its mean value. Keep in mind that alternative ways could be used, for example, one could use median-centring rather than mean-centring.
-predict.publication.bias.model.r.all.se.plot.2 <- predict(publication.bias.model.r.all.se.plot,
+# conditioned on FC
+predict.publication.bias.model.r.all.se.plot.2 <- predict(publication.bias.model.r.all.se,
                                                           newmods=cbind(mean(dataset.r$sei),
                                                                         seq(min(dataset.r$year.c),
                                                                             max(dataset.r$year.c),
-                                                                            0.25)))
+                                                                            0.25),0, 0,0,0))
+
+
+
 
 newdat <- data.frame(year=seq(min(dataset.r$year),
                               max(dataset.r$year),
@@ -700,45 +701,12 @@ Once we have confirmed that there is evidence of small-study effects (see above)
 
 If the slope for the moderator 'SE' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test (i.e. the one with SE; Stanley and Doucouliagos 2012, 2014; more in the main text). Since the slope for the moderator 'SE' was statistically significant in this dataset, the approach to estimate the adjusted overall effect is to fit a similar multi-moderator regression to the one above but including the effect sizes' sampling variances (SV or vi) instead of their standard errors as a moderator. The reason for using sampling variance instead of standard errors when calculating the adjusted overall effect when the slope for 'SE' is statistically significant is because in that scenario using 'SV' leads to an adjusted overall effect that is less downwardly biased than when using 'SE' (more in the main text; Stanley and Doucouliagos 2012, 2014).
 
-What moderators one should include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect. Keep in mind that one of the purposes of including moderators in this all-in test is to explain as much heterogeneity as possible. We are going to fit three different models to showcase some of these possibilities. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017). Importantly, none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published. The three models that we are going to fit are:
-
-1. Multi-moderator meta-regression only including sampling variance and year of publication (mean-centred) as moderators. The intercept of this meta-regression will represent the adjusted overall effect size. 
-
-2. Multi-moderator meta-regression including sampling variance and year of publication (mean-centred) as moderators, and 'captivity status', which has five levels, as a random effect. The goal of this meta-regression is to provide an adjusted overall effect size after accounting for the variance explained by 'captivity status'. Bear in mind that other alternative approaches might be used (e.g. mean-centring the categorical factor following Schielzeth 2010), but results should not change substantially.
-
-3. Multi-moderator meta-regression including sampling variance, year of publication (mean-centred) and the categorical factor 'captivity status', which has five levels, as moderators. In this meta-regression, we are going to remove the intercept so that we obtain an adjusted overall effect for each of the levels of the factor 'captivity status'.
+What moderators one should include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect. Keep in mind that one of the purposes of including moderators in this all-in test is to explain as much heterogeneity as possible. We are going to add one more moderator `CaptivityC` which has 5 levels (we refer it as the full model). We will obtain marginalized means, using the R package `emmeans`. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017). Importantly, none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published.
 
 ```{r}
-# model 1: ignoring CaptivityC
+# full model
 publication.bias.model.r.v.1 <- rma.mv(yi, vi,
-                                       mods=~1+vi + 
-                                         year.c,
-                                       random=list(~ 1 | Species.updated, # phylo effect
-                                                   ~ 1 | Species, # non-phylo effect
-                                                   ~ 1 | study, 
-                                                   ~ 1 | obsID), 
-                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-                                       method="REML",
-                                       test="t", # using t dist rather than z
-                                       data=dataset.r)
-
-# model 2: adding CaptivityC as a random effect to provide an adjusted overall effect across levels. @DanCOMMENT: Ok to include captivity as random effect when only 5 levels? I note in text below that variance = 0, but marginal R2 is 2.3%, which is not high, but some at least. Expect downward bias when treated as random effect, but especially so with so few levels.
-publication.bias.model.r.v.2 <- rma.mv(yi, vi,
-                                       mods=~1+vi +
-                                         year.c, # take Class - that is already a part of phylo
-                                       random=list(~ 1 | Species.updated, # phylo effect
-                                                   ~ 1 | Species, # non-phylo effect
-                                                   ~ 1 | study,
-                                                   ~ 1 | obsID,
-                                                   ~ 1 | CaptivityC),
-                                       R = list(Species.updated = phylo_cor), #phylogenetic relatedness
-                                       method="REML",
-                                       test="t", # using t dist rather than z
-                                       data=dataset.r)
-
-# model 3: providing an adjusted effect for each level of CaptivityC, @DanCOMMENT: Need to marginalise over each level?
-publication.bias.model.r.v.3 <- rma.mv(yi, vi,
-                                       mods=~-1+vi + 
+                                       mods=~ 1 + vi + 
                                          year.c +
                                          CaptivityC, # take Class - that is already a part of phylo   
                                        random=list(~ 1 | Species.updated, # phylo effect
@@ -750,9 +718,16 @@ publication.bias.model.r.v.3 <- rma.mv(yi, vi,
                                        test="t", # using t dist rather than z
                                        data=dataset.r)
 
-# model 3b: comparing results without correcting for publication bias
-publication.bias.model.r.v.3b <- rma.mv(yi, vi,
-                                        mods=~-1+
+# preparation to get marginalized mean (when vi = 0 and year.c = 0)
+res.publication.bias.model.r.v.1 <- qdrg(object = publication.bias.model.r.v.1, data = dataset.r, at = list(vi = 0, year.c = 0))
+# marginalized overall mean at vi = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
+overall.res.publication.bias.model.r.v.1 <- emmeans(res.publication.bias.model.r.v.1, specs = ~1, df = 104 - 7, weights = "prop") # using effect size - 7 
+# marginalised means for different levels for CaptivityC
+mm.publication.bias.model.r.v.1 <- emmeans(res.publication.bias.model.r.v.1, specs = "CaptivityC", df = 104 - 7)
+
+# comparing results without correcting for publication bias
+publication.bias.model.r.v.1b <- rma.mv(yi, vi,
+                                        mods=~ -1 +
                                           CaptivityC, # take Class - that is already a part of phylo   
                                         random=list(~ 1 | Species.updated, # phylo effect
                                                     ~ 1 | Species, # non-phylo effect
@@ -764,18 +739,16 @@ publication.bias.model.r.v.3b <- rma.mv(yi, vi,
                                         data=dataset.r)
 
 # extracting the mean and 95% confidence intervals
-estimates.publication.bias.model.r.v.1 <- estimates.CI(publication.bias.model.r.v.1)
-estimates.publication.bias.model.r.v.2 <- estimates.CI(publication.bias.model.r.v.2)
-estimates.publication.bias.model.r.v.3 <- estimates.CI(publication.bias.model.r.v.3)
-estimates.publication.bias.model.r.v.3b <- estimates.CI(publication.bias.model.r.v.3b)
+estimates.publication.bias.model.r.v.1 <- estimates.CI2(mm.publication.bias.model.r.v.1)
+estimates.publication.bias.model.r.v.1b <- estimates.CI(publication.bias.model.r.v.1b)
 ```
 
-Model 1 estimated an adjusted overall effect size that was slightly smaller (adjusted effect = `r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]; more in section S4.1.3), highlighting the downward correction of the overall effect after accounting for publication bias. For our worked example, model 2 provides the same exact adjusted overall effect (adjusted effect<sub>captivity</sub>  = `r round(estimates.publication.bias.model.r.v.2[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.2[1,3],2)`,`r round(estimates.publication.bias.model.r.v.2[1,4],2)`]) than model 1 since the variance explained by the random effect 'captivity status' is zero. The latter result agrees with the low variance explained by 'captivity status' when included as a moderator (*R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.r.v.3b)[[1]]*100,1)`%). Ideally, the moderators included in the all-in publication bias test would explain more variance, but this will depend on the specific meta-analytic dataset being analyzed. Last, model 3 also showed slightly smaller effects for all levels of the categorical factor 'captivity status' that the unadjusted model (Table S4.2). 
+The full model provided an adjusted overall effect size that was slightly smaller (adjusted effect = `r round(summary(overall.res.publication.bias.model.r.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.r.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.r.v.1)[,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]; more in section S4.1.3), highlighting the downward correction of the overall effect after accounting for publication bias. The full model also showed slightly smaller effects for all levels of the categorical factor 'captivity status' that the unadjusted model (Table S4.2). 
 
 ```{r}
 # creating a table to show the results of model 2
-table.comparing.captivity.levels <- merge(estimates.publication.bias.model.r.v.3[c(3:7),],
-                                          estimates.publication.bias.model.r.v.3b,
+table.comparing.captivity.levels <- merge(estimates.publication.bias.model.r.v.1,
+                                          estimates.publication.bias.model.r.v.1b,
                                           by="estimate",
                                           all.x=T)
 
@@ -799,11 +772,11 @@ table.model.r.captivity.gt <- table.comparing.captivity.levels %>%
              unadjusted.CI=md("**Unadjusted 95% CI**")) %>%
   cols_align(align = "center")
 
-knitr::kable(table.model.r.captivity.gt, caption = "Results for all levels of the moderator 'captivity status', both adjusted and unadjusted for publication bias using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*). @DanCOMMENT: Can you provide what models these are all from base don 3 points above within this table? It will be more clear. ALso, why WCT & FC so high relative to others?")
+table.model.r.captivity.gt
 ```
 
-@DanComment: Note you can add table legends with Kable. This is useful for keeping all the figure and table legends together as currently they are disjointed at times.
-**Table S4.2.** 
+<!-- @DanComment: Note you can add table legends with Kable. This is useful for keeping all the figure and table legends together as currently they are disjointed at times. --->
+**Table S4.2.** Results for all levels of the moderator 'captivity status', both adjusted and unadjusted for publication bias using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*).
 
 <br/><br/>
 
@@ -1029,24 +1002,6 @@ table.model.smd.gt
 
 <br/><br/>
 
-##### Figure S4.9
-
-Funnel plot using effective sample size as a measure of uncertainty, showing the meta-analytic mean obtained in the multilevel intercept-only meta-analysis as dashed vertical lines. @DanCOMMENT: Don't we have this figure already??? Duplicated?
-
-```{r}
-par(mfrow = c(1, 2))
-funnel(meta.analysis.model.rr, yaxis="ni",
-       #xlim = c(-3, 3),
-       ylab = "Effective sample size",
-       xlab = "Effect size (lnRR)") 
-funnel(dataset.smd$yi, dataset.smd$vi, yaxis="ni",
-       #xlim = c(-3, 3),
-       ylab = "Effective sample size",
-       xlab = "Effect size (SMD)") 
-
-```
-
-
 #### S4.2.3: Publication bias tests with mulitlevel meta-regression
 
 ##### S4.2.3.1: Meta-regression with effective sampling size (uni-moderator)
@@ -1056,7 +1011,6 @@ To test for publication bias (evidence of small-study effects), we first fitted 
 ```{r}
 # calculating the inverse of the "effective sample size" to account for unbalanced sampling, for SMD and lnRR (see Equation 25 from the main manuscript)
 
-# @DanCOMMENT: Question for Shin. I understand the inverse, but what happened to 4* in the equation? Not clear why this should "go away". I know you say reduces to 2n when n1=n2, but this won't always be the case. So, should we stick with 4*? More of a clarification.
      dataset.rr$inv_n_tilda <-  with(dataset.rr, (C_N + T_N)/(C_N*T_N))
 dataset.rr$sqrt_inv_n_tilda <-  with(dataset.rr, sqrt(inv_n_tilda))
 
@@ -1171,52 +1125,19 @@ estimates.publication.bias.model.smd.all.srin <- estimates.CI(publication.bias.m
 
 The all-in publication bias test was similar to what we observed in the uni-moderator meta-regressions above for small-study effects (sections S4.2.4.1) but had some differences for time-lag effects (S4.2.4.2).  
 
-First, the multi-moderator meta-regression showed a statistically significant slope for the moderator 'sqrt_inv_n_tilda' (slope for lnRR = `r round(estimates.publication.bias.model.rr.all.srin[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.all.srin[1,3],2)`,`r round(estimates.publication.bias.model.rr.all.srin[1,4],2)`]; Figure S4.10 ) and (slope for SMD = `r round(estimates.publication.bias.model.smd.all.srin[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.all.srin[1,3],2)`,`r round(estimates.publication.bias.model.smd.all.srin[1,4],2)`]; Figure S4.11), confirming evidence of small-study effects. Note that Murphy et al. (2013) originally reported no funnel asymmetry from visual inspection, however, we do not recommend using this method for meta-analytic datasets with multiple levels of non-independence and high heterogeneity.    
+First, the multi-moderator meta-regression showed a statistically significant slope for the moderator 'sqrt_inv_n_tilda' (slope for lnRR = `r round(estimates.publication.bias.model.rr.all.srin[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.all.srin[1,3],2)`,`r round(estimates.publication.bias.model.rr.all.srin[1,4],2)`]; Figure S4.9) and (slope for SMD = `r round(estimates.publication.bias.model.smd.all.srin[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.all.srin[1,3],2)`,`r round(estimates.publication.bias.model.smd.all.srin[1,4],2)`]; Figure S4.10), confirming evidence of small-study effects. Note that Murphy et al. (2013) originally reported no funnel asymmetry from visual inspection, however, we do not recommend using this method for meta-analytic datasets with multiple levels of non-independence and high heterogeneity.    
 
 Second, the all-in publication bias test showed no evidence of decline effects for lnRR since the moderator 'year of publication' was indistinguishable from zero (slope = `r round(estimates.publication.bias.model.rr.all.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.all.srin[2,3],2)`,`r round(estimates.publication.bias.model.rr.all.srin[2,4],2)`]; Figure S4.12). However, the effect size SMD showed some evidence of declining with time, as the slope of publication year was marginally statistically significant (slope = `r round(estimates.publication.bias.model.smd.all.srin[2,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.all.srin[2,3],2)`,`r round(estimates.publication.bias.model.smd.all.srin[2,4],2)`]; Figure S4.13).
 
-```{r}
-# to plot the 'sqrt(inv_n_tilda)' effect we are simply including the moderator 'Experimental.or.Observational.' as a random effect for simplicity of plotting. Note that this does not substantially change the estimates of the moderators, and that alternative approaches could be used for this. @TODO: Shinichi says this does not make sense as a random effect, we should get a marginal mean with it as a fixed effect or report the level separately. 
 
-publication.bias.model.rr.all.srin.plot <- rma.mv(yi, vi,
-                                                 mods= ~ -1 + sqrt_inv_n_tilda + 
-                                                   year.c,
-                                                 random=list(~1 |  + 
-                                                   Experimental.or.Observational.,
-                                                   ~1 |Disturbance_category,
-                                                   ~ 1 | obsID, 
-                                                   ~ 1 | paperID),
-                                                 method="REML",
-                                                 test = "t", 
-                                                 data=dataset.rr,
-                                                 control=list(optimizer="optim", optmethod="Nelder-Mead"))
-
-
-# could not include the moderator 'Experimental.or.Observational.' as a random effect here due to convergence issues
-publication.bias.model.smd.all.srin.plot <- rma.mv(yi, vi,
-                                                 mods= ~ -1 + sqrt_inv_n_tilda + 
-                                                   year.c,
-                                                 random=list(~1|
-                                                   Experimental.or.Observational.,
-                                                   #~1 |Disturbance_category, # convergence issue when incorporating as random effect
-                                                   ~ 1 | obsID, 
-                                                   ~ 1 | paperID),
-                                                 method="REML",
-                                                 test = "t", 
-                                                 data=dataset.smd,
-                                                 control=list(optimizer="optim", optmethod="Nelder-Mead")) 
-
-```
-
-
-##### Figure S4.10
+##### Figure S4.9
 
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.caption="More negative estimates of lnRR are less certain (larger square root of inverse of effective sample size), showing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
-
+# conditioned on observational studies
 predict.publication.bias.model.rr.all.srin.plot.1 <- 
-predict(publication.bias.model.rr.all.srin.plot, newmods=cbind(seq(min(dataset.rr$sqrt_inv_n_tilda), max(dataset.rr$sqrt_inv_n_tilda), length.out=324), c(0)))
+predict(publication.bias.model.rr.all.srin, newmods=cbind(seq(min(dataset.rr$sqrt_inv_n_tilda), max(dataset.rr$sqrt_inv_n_tilda), length.out=324), c(0), c(0), 1))
 
 
 newdat <- data.frame(sei= seq(min(dataset.rr$sqrt_inv_n_tilda), max(dataset.rr$sqrt_inv_n_tilda), length.out=324),
@@ -1256,11 +1177,12 @@ polygon(c(newdat$sei,rev(newdat$sei)),
         border=NA,col=rgb(104/255,34/255,139/255, 0.5))
 ```
 
-##### Figure S4.11
+##### Figure S4.10
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fog.caption = "More negative estimates of SMD have smaller effective sample sizes (larger square root of inverse of effective sample size), showing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of SE from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
-predict.publication.bias.model.smd.all.srin.plot.1 <- predict(publication.bias.model.smd.all.srin.plot, newmods=cbind(seq(min(dataset.smd$sqrt_inv_n_tilda), max(dataset.smd$sqrt_inv_n_tilda), length.out=320), c(0)))
+#conditioned on observational studies
+predict.publication.bias.model.smd.all.srin.plot.1 <- predict(publication.bias.model.smd.all.srin, newmods=cbind(seq(min(dataset.smd$sqrt_inv_n_tilda), max(dataset.smd$sqrt_inv_n_tilda), length.out=320), c(0), c(0), 1))
 
 
 newdat <- data.frame(sei= seq(min(dataset.smd$sqrt_inv_n_tilda), max(dataset.smd$sqrt_inv_n_tilda), length.out=320),
@@ -1301,14 +1223,15 @@ polygon(c(newdat$sei,rev(newdat$sei)),
 <br/><br/>
 
 
-##### Figure S4.12
+##### Figure S4.11
 
 
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.caption="The average effect, as measured by lnRR, did not statistically significantly change with time. The solid line represents the model estimate, the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
+#conditioned on observational studies
 predict.publication.bias.model.rr.all.srin.plot.2 <- 
-predict(publication.bias.model.rr.all.srin.plot, newmods=cbind(mean(dataset.rr$sqrt_inv_n_tilda),seq(min(dataset.rr$year.c), max(dataset.rr$year.c), length.out=324)))
+predict(publication.bias.model.rr.all.srin, newmods=cbind(mean(dataset.rr$sqrt_inv_n_tilda),seq(min(dataset.rr$year.c), max(dataset.rr$year.c), length.out=324), c(0), 1))
 
 
 newdat <- data.frame(year = seq(min(dataset.rr$year), max(dataset.rr$year), length.out=324),
@@ -1347,12 +1270,13 @@ polygon(c(newdat$year,rev(newdat$year)),
 ```
 
 
-##### Figure S4.13
+##### Figure S4.12
 
 ```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.caption="The average effect, as measured by SMD, has marginally declined over the timespan captured by this dataset. The solid line represents the model estimate, the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
+# conditioned observational studies
 predict.publication.bias.model.smd.all.srin.plot.2 <- 
-predict(publication.bias.model.smd.all.srin.plot, newmods=cbind(mean(dataset.smd$sqrt_inv_n_tilda),seq(min(dataset.smd$year.c), max(dataset.smd$year.c), length.out=320)))
+predict(publication.bias.model.smd.all.srin, newmods=cbind(mean(dataset.smd$sqrt_inv_n_tilda),seq(min(dataset.smd$year.c), max(dataset.smd$year.c), length.out=320), c(0), 1))
 
 
 newdat <- data.frame(year= seq(min(dataset.smd$year), max(dataset.smd$year), length.out=320),
@@ -1395,56 +1319,17 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 ##### Adjusting overall effect size estimates for lnRR and SMD
 
-In the main text we provided a two-step approach to calculate the adjusted overall effect size, that is, the overall effect after we account for publication bias. The rationale is that, when no uncertainty exists (theoretically), we can get the potential true effect from a multiple-moderator multilevel-model (i.e. all-in publication bias test, where the inclusion of moderator variables reduces heterogeneity). Note that, if the slope for the moderator 'sqrt_inv_n_tilda' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test. Otherwise, we should use inv_n_tilda instead as moderator (detailed in the main text). 
+In the main text we provided a two-step approach to calculate the adjusted overall effect size, that is, the overall effect after we account for publication bias. The rationale is that, when no uncertainty exists (theoretically), we can get the potential true effect from a multiple-moderator multilevel-model (i.e. all-in publication bias test, where the inclusion of moderator variables reduces heterogeneity). We add two more moderators `Experimental.or.Observational.` (2 levels) and `Disturbance_category` (10 levels; we refer to this model as the full model). Note that, if the slope for the moderator 'sqrt_inv_n_tilda' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test. Otherwise, we should use inv_n_tilda instead as moderator (detailed in the main text). 
 
-Determining what moderators to include in the multilevel-model will depend on what we want the adjusted overall effect size to reflect. We are going to fit three different models to showcase some of these possibilities. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017). None of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published. 
-
-The three models that we are going to fit are:
-@TO-DO: Shinichi to go through this section.
-1. Multi-moderator meta-regression only including the inverse of the effective sample size and year of publication (mean-centred) as moderators. The intercept of this meta-regression will represent the adjusted overall effect size. 
-
-2. Multi-moderator meta-regression including the inverse of effective sample size and year of publication (mean-centred) as moderators, and 'Experimental.or.Observational.' as a random effect. The goal of this meta-regression is to provide an adjusted overall effect size after accounting for the variance explained by 'Experimental.or.Observational.'. Bear in mind that other alternative approaches might be used (e.g. mean-centring the categorical factor following Schielzeth 2010), but results should not change substantially.
-
-3. Multi-moderator meta-regression including the inverse of effective sample size, year of publication (mean-centred) and the binary factor 'Experimental.or.Observational.' as moderators. In this meta-regression, we are going to remove the intercept so that we obtain an adjusted overall effect for each of the levels of the factor 'captivity status'.
-
-@TO-DO: problem in the below chunk when knitting to html (`object obsID not found`), not sure why because the chunks run fine one-byone.
 ```{r}
 # lnRR
-# model 1: ignoring additional moderators - Experimental.or.Observational.
+# providing an adjusted effect for each level of CaptivityC
 publication.bias.model.rr.v.1 <- rma.mv(yi, vi,
-                                       mods=~1+inv_n_tilda + 
-                                         year.c,
-                                       random=list(
-                                                   ~ 1 | Disturbance_category,
-                                                   ~ 1 | obsID, 
-                                                   ~ 1 | paperID),
-                                                 method="REML",
-                                                 test = "t", 
-                                                 data=dataset.rr,
-                                                 control=list(optimizer="optim", optmethod="Nelder-Mead"))
-
-# model 2: adding Experimental.or.Observational. as a random effect to provide an adjusted overall effect across levels
-#@TO-DO: Shinichi to change this; DN, OK. Will leave...
-publication.bias.model.rr.v.2 <- rma.mv(yi, vi,
-                                       mods=~1+inv_n_tilda + 
-                                         year.c,
-                                       random=list(
-                                                   ~ 1 | Disturbance_category,
-                                                   ~ 1 | Experimental.or.Observational.,
-                                                   ~ 1 | obsID, 
-                                                   ~ 1 | paperID),
-                                                 method ="REML",
-                                                   test = "t", 
-                                                   data = dataset.rr,
-                                                control = list(optimizer="optim", optmethod="Nelder-Mead"))
-
-# model 3: providing an adjusted effect for each level of CaptivityC
-publication.bias.model.rr.v.3 <- rma.mv(yi, vi,
                                        mods=~-1+inv_n_tilda + 
                                          year.c +
-                                         Experimental.or.Observational.,  
+                                         Experimental.or.Observational. + 
+                                         Disturbance_category,  # this can be a random effect but placing this here to show how emmeans works
                                         random=list(
-                                                   ~ 1 | Disturbance_category,
                                                    ~ 1 | obsID, 
                                                    ~ 1 | paperID),
                                                  method ="REML",
@@ -1452,11 +1337,19 @@ publication.bias.model.rr.v.3 <- rma.mv(yi, vi,
                                                    data = dataset.rr,
                                                 control = list(optimizer="optim", optmethod="Nelder-Mead"))
 
+# preparation to get marginalized mean (when inv_n_tilda = 0 and year.c = 0)
+res.publication.bias.model.rr.v.1 <- qdrg(object = publication.bias.model.rr.v.1, data = dataset.rr, at = list(inv_n_tilda = 0, year.c = 0))
+# marginalized overall mean at inv_n_tilda = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
+overall.res.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = ~1, df = publication.bias.model.rr.v.1$dfs, weights = "prop") # using effect size - 7 
+# marginalized means for different levels for Experimental.or.Observational.
+mm.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.v.1$dfs, weights = "prop")
+# estiamted marginalised mean
+#mm.publication.bias.model.r.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.v.1$dfs, weights = "equal")
+
 # model 3b: comparing results without correcting for publication bias
-publication.bias.model.rr.v.3b <- rma.mv(yi, vi,
+publication.bias.model.rr.v.1b <- rma.mv(yi, vi,
                                        mods=~-1+ Experimental.or.Observational., 
                                         random=list(
-                                                   ~ 1 | Disturbance_category,
                                                    ~ 1 | obsID, 
                                                    ~ 1 | paperID),
                                                  method = "REML",
@@ -1464,45 +1357,13 @@ publication.bias.model.rr.v.3b <- rma.mv(yi, vi,
                                                    data = dataset.rr,
                                                 control = list(optimizer="optim", optmethod="Nelder-Mead"))
 
-
 # extracting the mean and 95% confidence intervals
-estimates.publication.bias.model.rr.v.1 <- estimates.CI(publication.bias.model.rr.v.1)
-estimates.publication.bias.model.rr.v.2 <- estimates.CI(publication.bias.model.rr.v.2)
-estimates.publication.bias.model.rr.v.3 <- estimates.CI(publication.bias.model.rr.v.3)
-estimates.publication.bias.model.rr.v.3b <- estimates.CI(publication.bias.model.rr.v.3b)
-
+estimates.publication.bias.model.rr.v.1 <- estimates.CI2(mm.publication.bias.model.rr.v.1)
+estimates.publication.bias.model.rr.v.1b <- estimates.CI(publication.bias.model.rr.v.1b)
 
 # SMD
-# model 1: ignoring additional moderators - Experimental.or.Observational.
-publication.bias.model.smd.v.1 <- rma.mv(yi, vi,
-                                       mods=~1+inv_n_tilda + 
-                                         year.c,
-                                       random=list(
-                                                   ~ 1 | Disturbance_category,
-                                                   ~ 1 | obsID, 
-                                                   ~ 1 | paperID),
-                                                 method = "REML",
-                                                   test = "t", 
-                                                   data = dataset.smd,
-                                                control = list(optimizer="optim", optmethod="Nelder-Mead"))
-
-# model 2: adding Experimental.or.Observational. as a random effect to provide an adjusted overall effect across levels
-#@TO-DO: Shinichi to change this
-publication.bias.model.smd.v.2 <- rma.mv(yi, vi,
-                                       mods=~1+inv_n_tilda + 
-                                         year.c,
-                                       random=list(
-                                                   ~ 1 | Disturbance_category,
-                                                   #~1|Experimental.or.Observational.,
-                                                   ~ 1 | obsID, 
-                                                   ~ 1 | paperID),
-                                                 method = "REML",
-                                                   test = "t", 
-                                                   data = dataset.smd,
-                                                control = list(optimizer="optim", optmethod="Nelder-Mead"))
-
 # model 3: providing an adjusted effect for each level of CaptivityC
-publication.bias.model.smd.v.3 <- rma.mv(yi, vi,
+publication.bias.model.smd.v.1 <- rma.mv(yi, vi,
                                        mods=~-1+inv_n_tilda + 
                                          year.c +
                                          Experimental.or.Observational., 
@@ -1514,9 +1375,16 @@ publication.bias.model.smd.v.3 <- rma.mv(yi, vi,
                                                    test = "t", 
                                                    data = dataset.smd,
                                                 control = list(optimizer="optim", optmethod="Nelder-Mead"))
+# preparation to get marginalized mean (when inv_n_tilda = 0 and year.c = 0)
+res.publication.bias.model.smd.v.1 <- qdrg(object = publication.bias.model.smd.v.1, data = dataset.smd, at = list(inv_n_tilda = 0, year.c = 0))
+# marginalized overall mean at inv_n_tilda = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
+overall.res.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = ~1, df = publication.bias.model.smd.v.1$dfs, weights = "prop") # using effect size - 7 
+# marginalized means for different levels for Experimental.or.Observational.
+mm.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.smd.v.1$dfs, weights = "prop")
+
 
 # model 3b: comparing results without correcting for publication bias
-publication.bias.model.smd.v.3b <- rma.mv(yi, vi,
+publication.bias.model.smd.v.1b <- rma.mv(yi, vi,
                                        mods=~-1+ Experimental.or.Observational.,   
                                         random=list(
                                                    ~ 1 | Disturbance_category,
@@ -1529,20 +1397,16 @@ publication.bias.model.smd.v.3b <- rma.mv(yi, vi,
 
 
 # extracting the mean and 95% confidence intervals
-estimates.publication.bias.model.smd.v.1 <- estimates.CI(publication.bias.model.smd.v.1)
-estimates.publication.bias.model.smd.v.2 <- estimates.CI(publication.bias.model.smd.v.2)
-estimates.publication.bias.model.smd.v.3 <- estimates.CI(publication.bias.model.smd.v.3)
-estimates.publication.bias.model.smd.v.3b <- estimates.CI(publication.bias.model.smd.v.3b)
+estimates.publication.bias.model.smd.v.1 <- estimates.CI2(mm.publication.bias.model.smd.v.1)
+estimates.publication.bias.model.smd.v.1b <- estimates.CI(publication.bias.model.smd.v.1b)
 ```
 
-@TO-DO: re-write after changing the above
-Model 1 estimated an adjusted overall lnRR that was obviously smaller (adjusted effect = `r round(estimates.publication.bias.model.rr.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.v.1[1,3],2)`,`r round(estimates.publication.bias.model.rr.v.1[1,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.rr[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.rr[[3]],2)`,`r round(metaanalytic.mean.model.rr[[4]],2)`]; more in section S4.2.2), highlithing the downward correction of the overall effect after accounting for publication bias and time-lag bias. For this worked example, model 2 provides the same exact adjusted overall effect (adjusted effect<sub>Exp.or.Obs.</sub>  = `r round(estimates.publication.bias.model.rr.v.2[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.rr.v.2[1,3],2)`,`r round(estimates.publication.bias.model.rr.v.2[1,4],2)`]) than model 1 since the variance explained by the random effect 'Experimental.or.Observational.' is very small (actually the Experimental.or.Observational. should not be included as random effect since it only has two levels). The latter result agrees with the low variance explained by 'Experimental.or.Observational.' when included as a moderator (*R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.rr.v.3b)[[1]]*100,1)`%). Ideally, the moderators included in the all-in publication bias test would explain more variance, but this will depend on the specific meta-analytic dataset being analyzed. Last, model 3 also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' that the unadjusted model (Table S4.3).
-
+The full model provided an adjusted overall lnRR that was obviously smaller (adjusted effect = `r round(summary(overall.res.publication.bias.model.rr.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.rr.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.rr.v.1)[,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.rr[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.rr[[3]],2)`,`r round(metaanalytic.mean.model.rr[[4]],2)`]; more in section S4.2.2), highlighting the downward correction of the overall effect after accounting for publication bias and time-lag bias. The full model also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' that the unadjusted model (Table S4.3).
 
 ```{r}
 # creating a table to show the results of model 2
-table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.rr.v.3[c(3:4),],
-                                          estimates.publication.bias.model.rr.v.3b,
+table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.rr.v.1,
+                                          estimates.publication.bias.model.rr.v.1b,
                                           by="estimate",
                                           all.x=T)
 # rounding estimates
@@ -1578,12 +1442,13 @@ table.comparing.Exp.or.Obs.levels.gt
 ```
 
 
-Model 1 estimated an adjusted overall SMD that was obviously smaller (adjusted effect = `r round(estimates.publication.bias.model.smd.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.v.1[1,3],2)`,`r round(estimates.publication.bias.model.smd.v.1[1,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.smd[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.smd[[3]],2)`,`r round(metaanalytic.mean.model.smd[[4]],2)`]; more in section S4.2.2), highlithing the downward correction of the overall effect after accounting for publication bias and time-lag bias. For this worked example, model 2 provides the same exact adjusted overall effect (adjusted effect<sub>Exp.or.Obs.</sub>  = `r round(estimates.publication.bias.model.smd.v.2[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.smd.v.2[1,3],2)`,`r round(estimates.publication.bias.model.smd.v.2[1,4],2)`]) than model 1 since the variance explained by the random effect 'Experimental.or.Observational.' is very small (actually the Experimental.or.Observational. should not be included as random effect since it only has two levels). The latter result agrees with the low variance explained by 'Experimental.or.Observational.' when included as a moderator (*R<sup>2</sup><sub>marginal</sub>* = `r round(orchaRd::r2_ml(publication.bias.model.smd.v.3b)[[1]]*100,1)`%). Ideally, the moderators included in the all-in publication bias test would explain more variance, but this will depend on the specific meta-analytic dataset being analyzed. Last, model 3 also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' that the unadjusted model (Table S4.4).
+The full model provided an adjusted overall SMD that was obviously smaller (adjusted effect = `r round(summary(overall.res.publication.bias.model.smd.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.smd.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.smd.v.1)[,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.smd[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.smd[[3]],2)`,`r round(metaanalytic.mean.model.smd[[4]],2)`]; more in section S4.2.2), highlithing the downward correction of the overall effect after accounting for publication bias and time-lag bias. The full model also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' that the unadjusted model (Table S4.4).
+
 
 ```{r}
 # creating a table to show the results of model 2
-table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.smd.v.3[c(3:4),],
-                                          estimates.publication.bias.model.smd.v.3b,
+table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.smd.v.1,
+                                          estimates.publication.bias.model.smd.v.1b,
                                           by="estimate",
                                           all.x=T)
 # rounding estimates
@@ -1618,7 +1483,8 @@ table.comparing.Exp.or.Obs.levels.gt <- table.comparing.Exp.or.Obs.levels %>%
 table.comparing.Exp.or.Obs.levels.gt
 ```
 
-### S5.1: Correlation effect sizes (*Zr*)
+
+### S5.1: Averaging and sampling: correlation effect sizes (*Zr*)
 
 #### S5.1.1: Averaging 
 
@@ -1634,7 +1500,7 @@ dataset.r.agg <- aggregate(dataset.r, cluster=study, struct="CS", rho = 0.5)
 
 ##### S5.1.1.1: Trim-and-fill test 
 
-Using the aggregated data (see above), we will then fit the trim-and-fill method (Duval and Tweedie 2000a,b). The trim-and-fill method is a non-parametric method that can be used to both detect and correct for publication bias and, although it can handle some heterogeneity, it performs worse as heterogeneity increases (Peters et al., 2007; Moreno et al., 2009; more in the main text). Since we aggregated our data, we can now run a random-effects meta-analytic model rather than a multilevel model as used in section S.4, and we will run the trim-and-fill method using this model. 
+Using the aggregated data (see above), we will then fit the trim-and-fill method (Duval and Tweedie 2000a,b). The trim-and-fill method is a non-parametric method that can be used to both detect and correct for publication bias and, although it can handle some heterogeneity, it performs worse as heterogeneity increases (Peters et al., 2007; Moreno et al., 2009; more in the main text). Since we aggregated our data, we can now run a random-effects meta-analytic model rather than a multilevel model as used in section S.4, and we will run the trim-and-fill method using this model. Note that we used the method by Knapp and Hartung (2003; `test = "knha"`) rather than the default z (Wald-type) tests; this test has been shown to perform better. 
 
 ```{r}
 # random/mixed-effects meta-analytic model
@@ -1658,13 +1524,13 @@ funnel(trimfill.r, yaxis="seinv")
 
 ##### S5.1.1.2: Selection model (3 PSM)
 
-Using the aggregated data (see above), we will also fit a selection model-based method (reviewed by Marks-Anglin & Chen, 2020). Although there are many selection model methods, all of them model how effect sizes are missing based on p values, effect sizes and/or sampling variance, and can provide an adjusted overall effect (e.g. Rodgers & Pustejovsky, 2020; more in the main text). Contrary to other methods, selection models can deal with and model heterogeneity (e.g. Citkowicz and Vevea 2017), but cannot deal with non-independent effect sizes. We will run a step function selection model based on one cut-point ($\alpha = 0.05$); this model is sometimes referred to as a 3 parameter selection model (3PM; more in the main text; Rodgers & Pustejovsky, 2020; more by typing `?metafor::selmodel`). 
+Using the aggregated data (see above), we will also fit a selection model-based method (reviewed by Marks-Anglin & Chen, 2020). Although there are many selection model methods, all of them model how effect sizes are missing based on p values, effect sizes and/or sampling variance, and can provide an adjusted overall effect (e.g. Rodgers & Pustejovsky, 2020; more in the main text). Contrary to other methods, selection models can deal with and model heterogeneity (e.g. Citkowicz and Vevea 2017), but cannot deal with non-independent effect sizes. We will run a step function selection model based on one cut-point ($\alpha = 0.05$); this model is sometimes referred to as a 3 parameter selection model (3PM; more in the main text; Rodgers & Pustejovsky, 2020; more by typing `?metafor::selmodel`). Note that here we need to use the maximum likehoold method (ML) rather than restricted maximum likelihood (REML).
 
 ```{r}
 # without moderators
 meta.analysis.r.agg0 <- rma(yi, vi, 
-                            method="ML", #method needs to set to "ML" rather than "REML" as in all models above @TO-DO: this isn't clear, not all models above use ML
-                            test="knha", #knha is meant to be better than Z and t, but it is not implemented for multilevel models @TO-DO: explain why knha is meant to be better, or else delete
+                            method="ML", #method needs to set to "ML" rather than "REML" as in all models above 
+                            test="knha", #knha is meant to be better than Z and t, but it is not implemented for multilevel models
                             data=dataset.r)
 
 
@@ -1707,7 +1573,7 @@ plot(three.PSM.r, ylim = c(0,2),col="red", lty = 3)
 ```{r}
 # creating a table to show the results of the selection model
 table.comparing.captivity.levels.3PSM <- merge(estimates.three.PSM.r[c(2:6),],
-                                               estimates.publication.bias.model.r.v.3b,
+                                               estimates.publication.bias.model.r.v.1b,
                                                by="estimate",
                                                all.x=T)
 
@@ -1788,7 +1654,7 @@ func_S5.1.2.1 <- function(sim = 1){
     x[sample(1:nrow(x), 1),c("study","yi","vi")]))
   
   # running the model on the dataframe now each study only has a single effect size
-  model.tmp.r <- rma(yi, vi, test="knha",data=SingleStudyES_dataset.r) #@TO-DO: should the method be ML here?
+  model.tmp.r <- rma(yi, vi, test="knha",data=SingleStudyES_dataset.r) 
   
   # applying trim-and-fill method
   TAF <- trimfill(model.tmp.r)
@@ -1873,7 +1739,7 @@ func_S5.1.2.2 <- function(sim = 1){
 load(here("data","3PSM_sampling_r_1000s.RData"))
 ```
 
-@TO-DO: here and throughout, the numbers from the different methods seem so similar that contrasting them seems misleading? "slightly smaller than...", and "slightly larger than..." but the confidence intervals suggest they're pretty much the same?
+<!--- @TO-DO: here and throughout, the numbers from the different methods seem so similar that contrasting them seems misleading? "slightly smaller than...", and "slightly larger than..." but the confidence intervals suggest they're pretty much the same? --->
 
 The median adjusted overall effect according to the 3 parameter selection model was `r round(median(threePSM.sampling.r$beta),2)` (range = `r round(min(threePSM.sampling.r$beta),2)` - `r round(max(threePSM.sampling.r$beta),2)`; Figure S5.4B), which is slightly smaller than the adjusted overall effect estimated using the aggregated data (`r round(three.PSM.r0$beta[[1]],2)`; 95% CI = [`r round(three.PSM.r0$ci.lb[[1]],2)`,`r round(three.PSM.r0$ci.ub[[1]],2)`]; more in section S5.1.1.2), but still slightly larger than the adjusted overall effect estimated by our suggested multilevel meta-regession method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
 
@@ -1950,7 +1816,7 @@ ggplot(data=cumul.sampling.r.summarized, aes(x=order, y=median, ymin=lowCI, ymax
 
 <br/><br/>
 
-### S5.2: Mean differences between two groups (lnRR and SMD)
+### S5.2: Averaging and sampling: mean differences between two groups (lnRR and SMD)
 
 #### S5.2.1: Averaging 
 ```{r}
@@ -2068,7 +1934,7 @@ The step function selection model based on one cut-point ($\alpha = 0.05$) for t
 
 Results of a step function selection model based on one cut-point ($\alpha = 0.05$) for a model without any moderators (left-hand figure, top panel for lnRR, bottom for SMD) and a model including both 'year of publication' and 'Experimental.or.Observational.' as moderators (right-hand figure, top panel for lnRR, bottom for SMD).
 
-```{r fig.align = "center",fig.caption=}
+```{r fig.align = "center"}
 par(mfrow = c(1, 2))
 plot(three.PSM.rr0, col="red", lty = 3)
 plot(three.PSM.rr, col="red", lty = 3)
@@ -2087,7 +1953,7 @@ plot(three.PSM.smd, col="red", lty = 3)
 ```{r}
 # creating a table to show the results of the selection model
 table.comparing.Exp.or.Obs.levels.3PSM <- merge(estimates.three.PSM.rr[c(2:3),],
-                                               estimates.publication.bias.model.rr.v.3b,
+                                               estimates.publication.bias.model.rr.v.1b,
                                                by="estimate",
                                                all.x=T)
 # rounding estimates
@@ -2128,7 +1994,7 @@ table.model.rr.Exp.or.Obs.gt.3PSM
 ```{r}
 # creating a table to show the results of the selection model
 table.comparing.Exp.or.Obs.levels.3PSM <- merge(estimates.three.PSM.smd[c(2:3),],
-                                               estimates.publication.bias.model.smd.v.3b,
+                                               estimates.publication.bias.model.smd.v.1b,
                                                by="estimate",
                                                all.x=T)
 # rounding estimates
@@ -2516,13 +2382,15 @@ colcol = "#cad7ed"
 
 ## Plot of the types of tests
 
-ggplot(Ntests) + tm + theme(plot.title = element_text(hjust = -1)) +
+fig2 <- ggplot(Ntests) + tm + theme(plot.title = element_text(hjust = -1)) +
   geom_col(aes(PB_label, n), fill = colcol, colour = "black", width = 0.75, size = 1) +
   geom_text(aes(x = PB_label, y = n, label = percent), hjust = -0.1, size = 5, family = "Arial") +
   scale_y_continuous(expand = c(0,0), limits = c(0, 80)) +
   coord_flip() +
   labs(x = "type of publication bias test",
        y = "number of papers reporting test") 
+
+#fig2
 ```
 
 
@@ -3061,6 +2929,10 @@ fig6
 
 There is no code for Fig. 7 (created in PowerPoint)
 
+## Acknowledgement
+
+SN is extremely grateful to Russell Lenth for making his `emmeans` work for `metafor` objects. 
+
 ## R Session Information
 
 ```{r}
@@ -3069,4 +2941,3 @@ sessionInfo() %>% pander::pander()
 
 ## References
 
-To be added.
