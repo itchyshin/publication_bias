@@ -1011,7 +1011,6 @@ To test for publication bias (evidence of small-study effects), we first fitted 
 ```{r}
 # calculating the inverse of the "effective sample size" to account for unbalanced sampling, for SMD and lnRR (see Equation 25 from the main manuscript)
 
-# @DanCOMMENT: Question for Shin. I understand the inverse, but what happened to 4* in the equation? Not clear why this should "go away". I know you say reduces to 2n when n1=n2, but this won't always be the case. So, should we stick with 4*? More of a clarification.
      dataset.rr$inv_n_tilda <-  with(dataset.rr, (C_N + T_N)/(C_N*T_N))
 dataset.rr$sqrt_inv_n_tilda <-  with(dataset.rr, sqrt(inv_n_tilda))
 
@@ -1655,7 +1654,7 @@ func_S5.1.2.1 <- function(sim = 1){
     x[sample(1:nrow(x), 1),c("study","yi","vi")]))
   
   # running the model on the dataframe now each study only has a single effect size
-  model.tmp.r <- rma(yi, vi, test="knha",data=SingleStudyES_dataset.r) #@TO-DO: should the method be ML here?
+  model.tmp.r <- rma(yi, vi, test="knha",data=SingleStudyES_dataset.r) 
   
   # applying trim-and-fill method
   TAF <- trimfill(model.tmp.r)
