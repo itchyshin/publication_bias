@@ -44,11 +44,12 @@ options(digits=3)
 # devtools::install_github("itchyshin/orchard_plot", subdir = "orchaRd", force = TRUE, build_vignettes = TRUE)
 # devtools::install_github("MathiasHarrer/dmetar")
 # devtools::install_github("daniel1noble/metaAidR")
-#remotes::install_github("rlesur/klippy")
 
 # these packages need be obtained from github not from cran
 #remotes::install_github("rvlenth/emmeans", dependencies = TRUE, build_opts = "")
 # remotes::install_github("wviechtb/metafor")
+# @TO-DO -  I do not think it is working yet
+##remotes::install_github("rlesur/klippy")
 ```
 
 ```{r klippy, echo=FALSE, include=TRUE}
