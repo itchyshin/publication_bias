@@ -53,7 +53,7 @@ options(digits=3)
 ```
 
 ```{r klippy, echo=FALSE, include=TRUE}
-#TO-DO: package ‘klippy’ is not available (for R version 4.0.2)
+# @TO-DO: package ‘klippy’ is not available (for R version 4.0.2)
 #klippy::klippy(tooltip_message = 'Click to Copy Code', tooltip_success = 'Done', position = 'right', color = "red")
 ```
 
@@ -241,7 +241,7 @@ fsn(yi, vi, data=dat, type="Rosenberg")
 
 ## Appendix S4: Multilevel meta-regression method for publication bias
 
-In this section, we provide worked examples to show how to test for publication bias in meta-analytic datasets with high heterogeneity and several layers of non-independence, including phylogenetic non-independence (a common feature of meta-analytic datasets in ecology and evolution; Senior et al. 2016, Noble et al. 2017). We used two openly available meta-analytic datasets to show how to implement our suggested multilevel meta-regression method (see main text) on meta-analytic datasets with correlation effect sizes (*Zr*: section S4.1) and effect sizes based on mean differences between two groups (SMD, lnRR: section S4.2).
+In this section, we provide worked examples to show how to test for publication bias in meta-analytic datasets with high heterogeneity and several layers of non-independence, including phylogenetic non-independence (a common feature of meta-analytic datasets in ecology and evolution; Senior et al. 2016, Noble et al. 2017). We used two openly available meta-analytic datasets to show how to implement our suggested multilevel meta-regression method (see main text) on correlation effect sizes (*Zr*: section S4.1) and effect sizes based on mean differences between two groups (SMD, lnRR: section S4.2).
 
 ### S4.1: Correlation effect sizes (*Zr*)
 
@@ -267,7 +267,7 @@ For our first worked example, we use the dataset provided by Garamszegi et al. (
 
 #### S4.1.1 - Phylogenetic relationships   
 
-Since multiple species (n = `r length(unique(dataset.r.original$Species))` animal species) are included in this dataset, we need to consider phylogenetic non-independence in our statistical models (Chamberlain et al. 2012, Cinar et al. 2020). For that, we first search for the the species names in the Open Tree Taxonomy (Rees and Cranston 2017) to confirm and correct species names, then build a phylogenetic tree for all the species included in the dataset (Figure S1) by retrieving their phylogenetic relationships from the Open Tree of Life (Hinchliff et al. 2015) using the R package `rotl` (Michonneau et al. 2016). We then estimate branch lengths following Grafen (1989) as implemented in the function 'compute.brlen()' of the *R* package `ape` (Paradis and Schliep 2019). Finally, we construct a phylogenetic relatedness correlation matrix that will be fitted as part of the random effect structure of our models (see below).
+Since multiple animal species (n = `r length(unique(dataset.r.original$Species))`) are included in this dataset, we need to consider phylogenetic non-independence in our statistical models (Chamberlain et al. 2012, Cinar et al. 2020). For that, we first search for the species in the Open Tree Taxonomy (Rees and Cranston 2017) to confirm and correct the species names, then build a phylogenetic tree for all the species included in the dataset (Figure S1) by retrieving their phylogenetic relationships from the Open Tree of Life (Hinchliff et al. 2015) using the R package `rotl` (Michonneau et al. 2016). Next, we estimate branch lengths following Grafen (1989) as implemented in the function 'compute.brlen()' of the R package `ape` (Paradis and Schliep 2019). Finally, we construct a phylogenetic relatedness correlation matrix that will be fitted as part of the random effect structure of our models (see below).
 
 ```{r}
 # fixing a typo in the original list of species names
@@ -382,7 +382,7 @@ phylo_cor <- vcv(phylo_branch, cor = T)
 
 ##### Figure S4.1
 
-```{r, fig.height = 9, fig.width = 9.5, fig.align = "center", fig.caption="Phylogenetic tree of all species included in the meta-analytic dataset. Notice that some of the names shown in the tree correspond to the most updated synonyms according to the Open Tree Taxonomy (Rees and Cranston 2017) of those originally avialable in the dataset of Garamszegi et al. (2012)."}
+```{r, fig.height = 9, fig.width = 9.5, fig.align = "center", fig.cap="Phylogenetic tree of all species included in the meta-analytic dataset. Notice that some of the names shown in the tree correspond to the most updated synonyms according to the Open Tree Taxonomy (Rees and Cranston 2017) of those originally avialable in the dataset of Garamszegi et al. (2012)."}
 plot(tree, type = "fan", cex=0.65, label.offset =.05, no.margin = TRUE) #check: https://www.rdocumentation.org/packages/ape/versions/5.3/topics/plot.phylo
 ```
 
@@ -390,11 +390,11 @@ plot(tree, type = "fan", cex=0.65, label.offset =.05, no.margin = TRUE) #check: 
 
 #### S4.1.2: Exploratiory data analysis
 
-Before running any meta-analytic model, it is important to explore the meta-analytic dataset in search of potential outliers that could represent data extraction errors. To do so, we can draw funnel plots showing the standard error and the inverse of the standard error (i.e. precision) as the y-axes (Figure S4.2). From these funnel plots, we conclude that no clear outliers seem to be present in this meta-analytic dataset.   
+Before running any meta-analytic model, it is important to explore the meta-analytic dataset to search for potential outliers that could represent data extraction errors. To do so, we can draw funnel plots showing the standard error and the inverse of the standard error (i.e. precision) as the y-axes (Figure S4.2). From these funnel plots (Figure S4.2), we conclude that no clear outliers seem to be present in this meta-analytic dataset.   
 
 ##### Figure S4.2     
 
-```{r, fig.caption="Funnel plots with SE (left-hand side) and precision (1/SE; right-hand side) as measures of uncertainty to explore the existence of outliers in the meta-analytic dataset."}
+```{r, fig.cap="Funnel plots with SE (left-hand side) and precision (1/SE; right-hand side) as measures of uncertainty to explore the existence of outliers in the meta-analytic dataset."}
 par(mfrow = c(1, 2))
 funnel(dataset.r$yi, dataset.r$vi, yaxis="sei",
        #xlim = c(-3, 3),
@@ -469,13 +469,13 @@ table.model.r.gt
 
 ```
 
-**Table S4.1.** Results of the phylogenetic multilevel intercept-only meta-analysis testing the relationship between behaviours across species. Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*).
+**Table S4.1.** Results of the phylogenetic multilevel intercept-only meta-analysis testing the relationship between behaviours across species. Estimates are presented as standardized effect sizes using Fisher’s transformation of the correlation coefficient (i.e. *Zr*).
 
 <br/><br/>
 
 ##### Figure S4.3
 
-```{r, fig.caption="Funnel plot, using precision (1/SE) as a measure of uncertainty, showing the meta-analytic mean obtained in the phylogenetic multilevel intercept-only meta-analysis as a dotted vertical line."}
+```{r, fig.cap="Funnel plot, using precision (1/SE) as a measure of uncertainty, showing the meta-analytic mean obtained in the phylogenetic multilevel intercept-only meta-analysis as a dotted vertical line."}
 funnel(meta.analysis.model.r, yaxis="seinv",
        xlab = "Effect size (Zr)")
 ```
@@ -545,7 +545,7 @@ According to this uni-moderator meta-regression, there is no indication of decli
 
 ##### S4.1.4.3: All-in publication bias test (multi-moderator)     
 
-When heterogeneity exists (which is normally the case in ecology and evolution; Senior et al. 2016), it is best to combine Equations 21 and 23 with other moderators since those additional moderators will generally be expected to explain some of the heterogeneity. That is, this all-in publication bias test (multi-moderator meta-regression) would be the best test of small-study (publication bias) and decline effects (time-lag bias) in most meta-analytic datasets. For our data, we will run a multi-moderator phylogenetic multilevel meta-regression including the effect sizes' standard errors, the year of publication (mean-centred) and a moderator originally included in Garamszegi et al. (2012), 'captivity status'. Although Garamszegi et al. (2012) included other moderators in their model (i.e. species, taxonomic class, spatial overlap, age, sex and season), we decided to focus only on those moderators that were available for the entire dataset (i.e. no NA's or missing data, see Table 2 in Garamszegi et al. 2012), and we also excluded 'species' (and 'taxonomic class') since species effects are captured as a random effect and correlation matrix in our phylogenetic approach.
+When heterogeneity exists (which is normally the case in ecology and evolution; Senior et al. 2016), it is best to combine Equations 21 and 23 with other moderators since those additional moderators will generally be expected to explain some of the heterogeneity. That is, this all-in publication bias test (multi-moderator meta-regression) would be the best test of small-study (publication bias) and decline effects (time-lag bias) in most meta-analytic datasets. For our data, we will run a multi-moderator phylogenetic multilevel meta-regression including the effect sizes' standard errors, the year of publication (mean-centred) and a moderator originally included in Garamszegi et al. (2012), 'captivity status' (`CaptivityC`). Although Garamszegi et al. (2012) included other moderators in their model (i.e. species, taxonomic class, spatial overlap, age, sex and season), we decided to focus only on those moderators that were available for the entire dataset (i.e. no NA's or missing data, see Table 2 in Garamszegi et al. 2012), and we also excluded 'species' (and 'taxonomic class') since species effects are already captured as a random effect and correlation matrix in our phylogenetic approach.
 
 ```{r}
 # Application of Equation 24 from the main manuscript
@@ -702,7 +702,7 @@ Once we have confirmed that there is evidence of small-study effects (see above)
 
 If the slope for the moderator 'SE' in the all-in publication bias test shown above was not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test (i.e. the one with SE; Stanley and Doucouliagos 2012, 2014; more in the main text). Since the slope for the moderator 'SE' was statistically significant in this dataset, the approach to estimate the adjusted overall effect is to fit a similar multi-moderator regression to the one above but including the effect sizes' sampling variances (SV or vi) instead of their standard errors as a moderator. The reason for using sampling variance instead of standard errors when calculating the adjusted overall effect when the slope for 'SE' is statistically significant is because in that scenario using 'SV' leads to an adjusted overall effect that is less downwardly biased than when using 'SE' (more in the main text; Stanley and Doucouliagos 2012, 2014).
 
-What moderators one should include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect. Keep in mind that one of the purposes of including moderators in this all-in test is to explain as much heterogeneity as possible. We are going to add one more moderator `CaptivityC` which has 5 levels (we refer it as the full model). We will obtain marginalized means, using the R package `emmeans`. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017). Importantly, none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published.
+What moderators one should include in this version of the all-in publication bias test depends on what we want the adjusted overall effect size to reflect. Keep in mind that one of the purposes of including moderators in this all-in test is to explain as much heterogeneity as possible. We are going to add one more moderator 'captivity status' (`CaptivityC`), which has 5 levels (we refer to it as the full model). We will obtain marginalized means, using the R package `emmeans`. Importantly, we should keep in mind that publication bias tests should be treated as sensitivity analyses to test the robustness of results from the original analysis (Noble et al., 2017). Importantly, none of the estimated adjusted overall effects should be treated as the real overall value if publication bias did not exist; after all, we can never be sure of what has not been published.
 
 ```{r}
 # full model
@@ -744,7 +744,7 @@ estimates.publication.bias.model.r.v.1 <- estimates.CI2(mm.publication.bias.mode
 estimates.publication.bias.model.r.v.1b <- estimates.CI(publication.bias.model.r.v.1b)
 ```
 
-The full model provided an adjusted overall effect size that was slightly smaller (adjusted effect = `r round(summary(overall.res.publication.bias.model.r.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.r.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.r.v.1)[,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]; more in section S4.1.3), highlighting the downward correction of the overall effect after accounting for publication bias. The full model also showed slightly smaller effects for all levels of the categorical factor 'captivity status' that the unadjusted model (Table S4.2). 
+The full model provided an adjusted overall effect size that was slightly smaller (adjusted effect = `r round(summary(overall.res.publication.bias.model.r.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.r.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.r.v.1)[,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.r[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.r[[3]],2)`,`r round(metaanalytic.mean.model.r[[4]],2)`]; more in section S4.1.3), highlighting the downward correction of the overall effect after accounting for publication bias. The full model also showed slightly smaller effects for all levels of the categorical factor 'captivity status' than the unadjusted model (Table S4.2). 
 
 ```{r}
 # creating a table to show the results of model 2
@@ -776,8 +776,7 @@ table.model.r.captivity.gt <- table.comparing.captivity.levels %>%
 table.model.r.captivity.gt
 ```
 
-<!-- @DanComment: Note you can add table legends with Kable. This is useful for keeping all the figure and table legends together as currently they are disjointed at times. --->
-**Table S4.2.** Results for all levels of the moderator 'captivity status', both adjusted and unadjusted for publication bias using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as standardized effect sizes using Fisher’s transformation (i.e. *Zr*).
+**Table S4.2.** Results for all levels of the moderator 'captivity status', both adjusted and unadjusted for publication bias using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as standardized effect sizes using Fisher’s transformation of the correlation coefficient (i.e. *Zr*).
 
 <br/><br/>
 
@@ -832,7 +831,7 @@ Before analysis, it is important to explore the meta-analytic dataset. To identi
 
 
 
-```{r, fig.width=7, fig.height= 8, fig.caption="Funnel plots with 1/SE for lnRR (left-hand side) and SMD (right-hand side) as measures of uncertainty to visualise outliers in the meta-analytic dataset."}
+```{r, fig.width=7, fig.height= 8, fig.cap="Funnel plots with 1/SE for lnRR (left-hand side) and SMD (right-hand side) as measures of uncertainty to visualise outliers in the meta-analytic dataset."}
 # we find some strange data in SMD and lnRR 
 par(mfrow = c(1, 2))
 funnel(dataset.rr$yi, dataset.rr$vi, yaxis="seinv",
@@ -852,7 +851,7 @@ Data exploration found usual outliers in both the lnRR and SMD data. For this ex
 
 Funnel plots with 1/SE as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side) after removing outliers in the meta-analytic dataset.
 
-```{r, fig.width=7, fig.height= 8, fig.caption="Funnel plots with effective sample size as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side)."}
+```{r, fig.width=7, fig.height= 8, fig.cap="Funnel plots with effective sample size as the measure of uncertainty for lnRR (left-hand side) and SMD (right-hand side)."}
 # removing outliers
 dataset.rr <- dataset.rr[dataset.rr$vi != min(dataset.rr$vi), ]
 
@@ -879,7 +878,7 @@ To avoid ‘artefactual’ funnel asymmetry, we suggest using the "effective sam
 ```{r, fig.width=7, fig.height= 8}
 # calculating "effective sample size" to account for unbalanced sampling, for SMD and lnRR (e_n, hereafter, see Equation 25 from the main manuscript)
 
- dataset.rr$e_n <- with(dataset.rr, (4*(C_N*T_N)) / (C_N + T_N))
+dataset.rr$e_n <- with(dataset.rr, (4*(C_N*T_N)) / (C_N + T_N))
 dataset.smd$e_n <- with(dataset.smd, (4*(C_N*T_N)) / (C_N + T_N))
 
 #using effective sampling size
@@ -903,7 +902,7 @@ Next, we showcase how to test for the presence of publication bias using the mul
 
 ```{r}
 # creating a unit-level random effect to model residual variance in metafor
- dataset.rr$obsID <- 1:nrow(dataset.rr)
+dataset.rr$obsID <- 1:nrow(dataset.rr)
 dataset.smd$obsID <- 1:nrow(dataset.smd)
 
 # running multilevel intercept-only meta-analytic model
@@ -1012,10 +1011,10 @@ To test for publication bias (evidence of small-study effects), we first fitted 
 ```{r}
 # calculating the inverse of the "effective sample size" to account for unbalanced sampling, for SMD and lnRR (see Equation 25 from the main manuscript)
 
-     dataset.rr$inv_n_tilda <-  with(dataset.rr, (C_N + T_N)/(C_N*T_N))
+dataset.rr$inv_n_tilda <-  with(dataset.rr, (C_N + T_N)/(C_N*T_N))
 dataset.rr$sqrt_inv_n_tilda <-  with(dataset.rr, sqrt(inv_n_tilda))
 
-     dataset.smd$inv_n_tilda <- with(dataset.smd, (C_N + T_N)/(C_N*T_N))
+dataset.smd$inv_n_tilda <- with(dataset.smd, (C_N + T_N)/(C_N*T_N))
 dataset.smd$sqrt_inv_n_tilda <- with(dataset.smd, sqrt(inv_n_tilda))
 
 # Application of Equation 27 from the main manuscript
@@ -1052,7 +1051,7 @@ To test for time-lag bias (or the decline effect), we include the year of public
 
 ```{r}
 # mean-centring year of publication to help with interpretation, particularly in S4.1.4.3.
- dataset.rr$year.c <- as.vector(scale(dataset.rr$year, scale = F))
+dataset.rr$year.c <- as.vector(scale(dataset.rr$year, scale = F))
 dataset.smd$year.c <- as.vector(scale(dataset.smd$year, scale = F))
 
 # Application of Equation 23 from the main manuscript
@@ -1134,7 +1133,7 @@ Second, the all-in publication bias test show no evidence of decline effects for
 ##### Figure S4.9
 
 
-```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.caption="More negative estimates of lnRR are less certain (larger square root of inverse of effective sample size), showing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals."}
+```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.cap="More negative estimates of lnRR are less certain (larger square root of inverse of effective sample size), showing evidence of small-study effects in the meta-analytic dataset. The solid line represents the model estimate and the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
 # conditioned on observational studies
 predict.publication.bias.model.rr.all.srin.plot.1 <- 
@@ -1228,7 +1227,7 @@ polygon(c(newdat$sei,rev(newdat$sei)),
 
 
 
-```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.caption="The average effect, as measured by lnRR, did not statistically significantly change with time. The solid line represents the model estimate, the shading shows its 95% confidence intervals."}
+```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.cap="The average effect, as measured by lnRR, did not statistically significantly change with time. The solid line represents the model estimate, the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
 #conditioned on observational studies
 predict.publication.bias.model.rr.all.srin.plot.2 <- 
@@ -1273,7 +1272,7 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 ##### Figure S4.12
 
-```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.caption="The average effect, as measured by SMD, has marginally declined over the timespan captured by this dataset. The solid line represents the model estimate, the shading shows its 95% confidence intervals."}
+```{r fig.height = 5.5, fig.width = 7.5, fig.align = "center", fig.cap="The average effect, as measured by SMD, has marginally declined over the timespan captured by this dataset. The solid line represents the model estimate, the shading shows its 95% confidence intervals."}
 # predicting effect sizes for a range of sqrt(inv_n_tilda) from the minimum observed in the data to the maximum observed in data, while year is kept at its mean value, in this case 0 since year was mean-centred
 # conditioned observational studies
 predict.publication.bias.model.smd.all.srin.plot.2 <- 
@@ -1411,20 +1410,7 @@ table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.rr.v
                                           by="estimate",
                                           all.x=T)
 # rounding estimates
-table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
-#@TO-DO:
-# Warning message:
-# `funs()` is deprecated as of dplyr 0.8.0.
-# Please use a list of either functions or lambdas: 
-# 
-#   # Simple named list: 
-#   list(mean = mean, median = median)
-# 
-#   # Auto named with `tibble::lst()`: 
-#   tibble::lst(mean, median)
-# 
-#   # Using lambdas
-#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), list(~round(., 2)))
 
 table.comparing.Exp.or.Obs.levels <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels[,1],
                                                adjusted.mean=table.comparing.Exp.or.Obs.levels[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",table.comparing.Exp.or.Obs.levels[,4],"]"),
@@ -1452,20 +1438,7 @@ table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.smd.
                                           by="estimate",
                                           all.x=T)
 # rounding estimates
-table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
-#@TO-DO:
-# Warning message:
-# `funs()` is deprecated as of dplyr 0.8.0.
-# Please use a list of either functions or lambdas: 
-# 
-#   # Simple named list: 
-#   list(mean = mean, median = median)
-# 
-#   # Auto named with `tibble::lst()`: 
-#   tibble::lst(mean, median)
-# 
-#   # Using lambdas
-#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), list(~round(., 2)))
 
 table.comparing.Exp.or.Obs.levels <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels[,1],
                                                adjusted.mean=table.comparing.Exp.or.Obs.levels[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",table.comparing.Exp.or.Obs.levels[,4],"]"),
@@ -1488,12 +1461,12 @@ table.comparing.Exp.or.Obs.levels.gt
 
 #### S5.1.1: Averaging 
 
-To aggregate (average) effect sizes per study we will use the function 'aggregate()' from the R package `metafor` (Viechtbauer 2010) using a compound symmetric structure ('struct=CS') and a value of 0.5 for rho following Noble et al. (2017). That is, when averaging effect sizes per study we are not assuming that the effect sizes of a study are independent to each other, but instead that they are correlated and, since we do not know the real value of that correlation, we will estimate 0.5 for all studies. The function 'aggregate()' will then combine multiple estimates within the same study using inverse-variance weighting taking the 0.5 correlation into consideration. More information about the function 'aggregate()' can be found by typing `?metafor::aggregate`, including how 'aggregate()' deals with other variables (e.g. moderators) in the dataset.
+To aggregate (average) effect sizes per study we will use the function 'aggregate()' from the R package `metafor` (Viechtbauer 2010) using a compound symmetric structure ('struct=CS') and a value of 0.5 for rho following Noble et al. (2017). That is, when averaging effect sizes per study we are not assuming that the effect sizes of a study are independent to each other, but instead that they are correlated and, since we do not know the real value of that correlation, we will estimate it as 0.5 for all studies. The function 'aggregate()' will then combine multiple estimates within the same study using inverse-variance weighting taking the 0.5 correlation into consideration. More information about the function 'aggregate()' can be found by typing `?metafor::aggregate`, including how 'aggregate()' deals with other variables (e.g. moderators) in the dataset.
 
 ```{r}
 # you will need the development version of "metafor" package to run this bit
 # rho = 0.5 is as in Noble et al (Mol Ecol)
-    dataset.r <- escalc(yi=yi, vi=vi, data=dataset.r)
+dataset.r <- escalc(yi=yi, vi=vi, data=dataset.r)
 dataset.r.agg <- aggregate(dataset.r, cluster=study, struct="CS", rho = 0.5)
 ```
 
@@ -1510,13 +1483,13 @@ meta.analysis.model.r.agg <- rma(yi, vi, test="knha",data=dataset.r,slab=study)
 trimfill.r <- trimfill(meta.analysis.model.r.agg)
 ```
 
-The trim-and-fill method identified `r trimfill.r$k0` (SE = `r round(trimfill.r$se.k0,2)`) missing studies (Figure S5.1) and estimated an adjusted overall effect of `r round(trimfill.r$beta[[1]],2)` (95% CI = [`r round(trimfill.r$ci.lb[[1]],2)`,`r round(trimfill.r$ci.ub[[1]],2)`]), which is slightly lower than the adjusted overall effect estimated by our suggested multilevel meta-regression method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
+The trim-and-fill method identified `r trimfill.r$k0` (SE = `r round(trimfill.r$se.k0,2)`) missing studies (Figure S5.1) and estimated an adjusted overall effect of `r round(trimfill.r$beta[[1]],2)` (95% CI = [`r round(trimfill.r$ci.lb[[1]],2)`,`r round(trimfill.r$ci.ub[[1]],2)`]), which is similar to the adjusted overall effect estimated by our suggested multilevel meta-regression method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
 
 <br/><br/>
 
 ##### Figure S5.1
 
-```{r fig.align = "center", fig.caption="Funnel plot using precision (1/SE) as a measure of uncertainty and showing the adjusted meta-analytic mean (vertical line) and the  missing effect sizes (white points) according to the trim-and-fill method."}
+```{r fig.align = "center", fig.cap="Funnel plot using precision (1/SE) as a measure of uncertainty and showing the adjusted meta-analytic mean (vertical line) and the  missing effect sizes (white points) according to the trim-and-fill method."}
 funnel(trimfill.r, yaxis="seinv")
 ```
 
@@ -1562,7 +1535,7 @@ The step function selection model based on one cut-point ($\alpha = 0.05$) for t
 
 ##### Figure S5.2
 
-```{r fig.align = "center", fig.caption="Results of a step function selection model based on one cut-point ($\alpha = 0.05$) for a model without any moderators (left-hand figure) and a model including both 'year of publication' and 'captivity status' as moderators (right-hand figure)."}
+```{r fig.align = "center", fig.cap="Results of a step function selection model based on one cut-point ($\alpha = 0.05$) for a model without any moderators (left-hand figure) and a model including both 'year of publication' and 'captivity status' as moderators (right-hand figure)."}
 par(mfrow = c(1, 2))
 plot(three.PSM.r0, ylim = c(0,2),col="red", lty = 3)
 plot(three.PSM.r, ylim = c(0,2),col="red", lty = 3)
@@ -1578,21 +1551,7 @@ table.comparing.captivity.levels.3PSM <- merge(estimates.three.PSM.r[c(2:6),],
                                                all.x=T)
 
 # rounding estimates
-table.comparing.captivity.levels.3PSM <- table.comparing.captivity.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
-#@TO-DO:
-# Warning message:
-# `funs()` is deprecated as of dplyr 0.8.0.
-# Please use a list of either functions or lambdas: 
-# 
-#   # Simple named list: 
-#   list(mean = mean, median = median)
-# 
-#   # Auto named with `tibble::lst()`: 
-#   tibble::lst(mean, median)
-# 
-#   # Using lambdas
-#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
-
+table.comparing.captivity.levels.3PSM <- table.comparing.captivity.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), list(~round(., 2)))
 
 table.comparing.captivity.levels.3PSM <- data.frame(captivity.level = table.comparing.captivity.levels.3PSM[,1],
                                                     adjusted.mean=table.comparing.captivity.levels.3PSM[,2],               adjusted.CI=paste0("[",table.comparing.captivity.levels.3PSM[,3],",",table.comparing.captivity.levels.3PSM[,4],"]"),
@@ -1613,19 +1572,19 @@ table.model.r.captivity.gt.3PSM <- table.comparing.captivity.levels.3PSM %>%
 table.model.r.captivity.gt.3PSM
 ```
 
-**Table S5.1.** Adjusted and unadjusted for publication bias results for all levels of the moderator 'captivity status' using a step function selection model based on one cut-point ($\alpha = 0.05$). Estimates are presented as standardized effect sizes using Fisher’s transformation of the correlation coefficient (i.e. *Zr*).
+**Table S5.1.** Results adjusted and unadjusted for publication bias for all levels of the moderator 'captivity status' using a step function selection model based on one cut-point ($\alpha = 0.05$). Estimates are presented as standardized effect sizes using Fisher’s transformation of the correlation coefficient (i.e. *Zr*).
 
 <br/><br/>
 
 ##### S5.1.1.3: Cumulative meta-analysis 
 
-Last, using the aggregated data (see above), we will also perform a cumulative meta-analysis using the function `cumul()` from the R package `metafor` (Viechtbauer 2010). By displaying the results of this cumulative meta-analysis as a forest plot, we can see if there is evidence of decline effects (more in the text), which we do not seem to have for this data (Figure S5.3).
+Last, using the aggregated data (see above), we will also perform a cumulative meta-analysis using the function `cumul()` from the R package `metafor` (Viechtbauer 2010). By displaying the results of this cumulative meta-analysis as a forest plot, we can see if there is evidence of decline effects (more in the text), which we do not seem to have in this dataset (Figure S5.3).
 
 <br/><br/>
 
 ##### Figure S5.3
 
-```{r fig.align = "center", fig.caption="Forest plot showing the results of a cumulative meta-analysis, showing no clear evidence of decline effects."}
+```{r fig.align = "center", fig.cap="Forest plot showing the results of a cumulative meta-analysis, showing no clear evidence of decline effects."}
 cum.meta.analysis.model.r.agg <- cumul(meta.analysis.model.r.agg,order=order(dataset.r$year))
 forest(cum.meta.analysis.model.r.agg, xlab = "Overall estimate (Zr)",digits=c(2,1),cex=0.3, header="Author(s) and year")
 ```
@@ -1685,7 +1644,7 @@ The median number of missing studies was `r median(trimfill.sampling.r$n)` (rang
 ##### Figure S5.4
 
 
-```{r fig.align = "center", fig.caption="Distribution of 1000 (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall effect sizes according to the trim-and-fill method. The dashed line shows the median value."}
+```{r fig.align = "center", fig.cap="Distribution of 1000 (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall effect sizes according to the trim-and-fill method. The dashed line shows the median value."}
 # plotting the distribution of the number of missing studies according to the trim-and-fill method
 n.r <- ggplot(data=trimfill.sampling.r,aes(x=n)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -1739,16 +1698,14 @@ func_S5.1.2.2 <- function(sim = 1){
 load(here("data","3PSM_sampling_r_1000s.RData"))
 ```
 
-<!--- @TO-DO: here and throughout, the numbers from the different methods seem so similar that contrasting them seems misleading? "slightly smaller than...", and "slightly larger than..." but the confidence intervals suggest they're pretty much the same? --->
-
-The median adjusted overall effect according to the 3 parameter selection model was `r round(median(threePSM.sampling.r$beta),2)` (range = `r round(min(threePSM.sampling.r$beta),2)` - `r round(max(threePSM.sampling.r$beta),2)`; Figure S5.4B), which is slightly smaller than the adjusted overall effect estimated using the aggregated data (`r round(three.PSM.r0$beta[[1]],2)`; 95% CI = [`r round(three.PSM.r0$ci.lb[[1]],2)`,`r round(three.PSM.r0$ci.ub[[1]],2)`]; more in section S5.1.1.2), but still slightly larger than the adjusted overall effect estimated by our suggested multilevel meta-regession method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
+The median adjusted overall effect according to the 3 parameter selection model was `r round(median(threePSM.sampling.r$beta),2)` (range = `r round(min(threePSM.sampling.r$beta),2)` - `r round(max(threePSM.sampling.r$beta),2)`; Figure S5.4B), which is similar to the adjusted overall effect estimated using the aggregated data (`r round(three.PSM.r0$beta[[1]],2)`; 95% CI = [`r round(three.PSM.r0$ci.lb[[1]],2)`,`r round(three.PSM.r0$ci.ub[[1]],2)`]; more in section S5.1.1.2) and to the adjusted overall effect estimated by our suggested multilevel meta-regession method (`r round(estimates.publication.bias.model.r.v.1[1,2],2)`, 95% CI = [`r round(estimates.publication.bias.model.r.v.1[1,3],2)`,`r round(estimates.publication.bias.model.r.v.1[1,4],2)`]; more in section S4.1.4.3).
 
 <br/><br/>
 
 ##### Figure S5.5
 
 
-```{r fig.align = "center", fig.caption="Distribution of 1000 adjusted overall effect sizes according to the 3 parameter selection model. The dashed line shows the median value."}
+```{r fig.align = "center", fig.cap="Distribution of 1000 adjusted overall effect sizes according to the 3 parameter selection model. The dashed line shows the median value."}
 # plotting the distribution of adjusted overall effect sizes according to the 3 parameter selection model
 ggplot(data=threePSM.sampling.r,aes(x=beta)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -1795,7 +1752,7 @@ load(here("data","cumul_sampling_r_1000s.RData"))
 
 ##### Figure S5.6
 
-```{r fig.align = "center", fig.caption="Median and 95% quantiles of 1000 effect sizes estimated according to cumulative meta-analysis showing no evidence of decline effects."}
+```{r fig.align = "center", fig.cap="Median and 95% quantiles of 1000 effect sizes estimated according to cumulative meta-analysis showing no evidence of decline effects."}
 cumul.sampling.r.summarized <- as.data.frame(cumul.sampling.r 
                                              %>% group_by(order) %>% 
                                                summarise(median = median(beta), 
@@ -1851,7 +1808,7 @@ The trim-and-fill method identified `r trimfill.rr$k0` (SE = `r round(trimfill.r
 
 ##### Figure S5.7
 
-```{r fig.align = "center", fig.caption="Funnel plot using precision (1/SE) as a measure of uncertainty and showing the adjusted meta-analytic mean (vertical line) and the  missing effect sizes (white points) according to the trim-and-fill method."}
+```{r fig.align = "center", fig.cap="Funnel plot using precision (1/SE) as a measure of uncertainty and showing the adjusted meta-analytic mean (vertical line) and the  missing effect sizes (white points) according to the trim-and-fill method."}
 par(mfrow = c(1,2))
 funnel(trimfill.rr, yaxis="seinv",
        ylab = "Precision (1/SE)",
@@ -1957,20 +1914,8 @@ table.comparing.Exp.or.Obs.levels.3PSM <- merge(estimates.three.PSM.rr[c(2:3),],
                                                by="estimate",
                                                all.x=T)
 # rounding estimates
-table.comparing.Exp.or.Obs.levels.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
-#@TO-DO:
-# Warning message:
-# `funs()` is deprecated as of dplyr 0.8.0.
-# Please use a list of either functions or lambdas: 
-# 
-#   # Simple named list: 
-#   list(mean = mean, median = median)
-# 
-#   # Auto named with `tibble::lst()`: 
-#   tibble::lst(mean, median)
-# 
-#   # Using lambdas
-#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+table.comparing.Exp.or.Obs.levels.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), list(~round(., 2)))
+
 table.comparing.Exp.or.Obs.levels.3PSM <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels.3PSM[,1],
                                                     adjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,3],",",table.comparing.Exp.or.Obs.levels.3PSM[,4],"]"),
                                                     unadjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,6],",",table.comparing.Exp.or.Obs.levels.3PSM[,7],"]"))
@@ -1998,20 +1943,8 @@ table.comparing.Exp.or.Obs.levels.3PSM <- merge(estimates.three.PSM.smd[c(2:3),]
                                                by="estimate",
                                                all.x=T)
 # rounding estimates
-table.comparing.Exp.or.Obs.levels.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), funs(round(., 2)))
-#@TO-DO:
-# Warning message:
-# `funs()` is deprecated as of dplyr 0.8.0.
-# Please use a list of either functions or lambdas: 
-# 
-#   # Simple named list: 
-#   list(mean = mean, median = median)
-# 
-#   # Auto named with `tibble::lst()`: 
-#   tibble::lst(mean, median)
-# 
-#   # Using lambdas
-#   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+table.comparing.Exp.or.Obs.levels.3PSM <- table.comparing.Exp.or.Obs.levels.3PSM %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), list(~round(., 2)))
+
 table.comparing.Exp.or.Obs.levels.3PSM <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels.3PSM[,1],
                                                     adjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,3],",",table.comparing.Exp.or.Obs.levels.3PSM[,4],"]"),
                                                     unadjusted.mean=table.comparing.Exp.or.Obs.levels.3PSM[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels.3PSM[,6],",",table.comparing.Exp.or.Obs.levels.3PSM[,7],"]"))
@@ -2108,7 +2041,7 @@ The median number of missing studies for lnRR was `r median(trimfill.sampling.rr
 
 ##### Figure S5.9
 
-```{r fig.align = "center", fig.caption="Distribution of `r n.randomization.rr.TAF` (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall lnRR according to the trim-and-fill method. The dashed line shows the median value."}
+```{r fig.align = "center", fig.cap="Distribution of `r n.randomization.rr.TAF` (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall lnRR according to the trim-and-fill method. The dashed line shows the median value."}
 # plotting the distribution of the number of missing studies according to the trim-and-fill method
 n.rr <- ggplot(data=trimfill.sampling.rr,aes(x=n)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -2132,7 +2065,7 @@ The median number of missing studies for SMD was `r median(trimfill.sampling.smd
 
 ##### Figure S5.10
 
-```{r fig.align = "center", fig.caption="Distribution of `r n.randomization.smd.TAF` (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall SMD according to the trim-and-fill method. The dashed line shows the median value."}
+```{r fig.align = "center", fig.cap="Distribution of `r n.randomization.smd.TAF` (A) estimated number of missing studies according to the trim-and-fill method, and (B) adjusted overall SMD according to the trim-and-fill method. The dashed line shows the median value."}
 # plotting the distribution of the number of missing studies according to the trim-and-fill method
 n.smd <- ggplot(data=trimfill.sampling.smd,aes(x=n)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -2193,7 +2126,7 @@ The median adjusted overall lnRR according to the 3 parameter selection model wa
 
 ##### Figure S5.11
 
-```{r fig.align = "center", fig.caption="Distribution of `r n.randomization.rr.3PSM` adjusted overall lnRR according to the 3 parameter selection model. The dashed line shows the median value."}
+```{r fig.align = "center", fig.cap="Distribution of `r n.randomization.rr.3PSM` adjusted overall lnRR according to the 3 parameter selection model. The dashed line shows the median value."}
 # plotting the distribution of adjusted overall effect sizes according to the 3 parameter selection model
 ggplot(data=threePSM.sampling.rr,aes(x=beta)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -2219,7 +2152,7 @@ The median adjusted overall SMD according to the 3 parameter selection model was
 
 ##### Figure S5.12
 
-```{r fig.align = "center", fig.caption="Distribution of `r n.randomization.smd.3PSM` adjusted overall SMD according to the 3 parameter selection model. The dashed line shows the median value."}
+```{r fig.align = "center", fig.cap="Distribution of `r n.randomization.smd.3PSM` adjusted overall SMD according to the 3 parameter selection model. The dashed line shows the median value."}
 # plotting the distribution of adjusted overall effect sizes according to the 3 parameter selection model
 ggplot(data=threePSM.sampling.smd,aes(x=beta)) +
   geom_density(alpha=.5,fill="darkorchid4") +
@@ -2276,7 +2209,7 @@ load(here("data","cumul_sampling_smd_1000s.RData"))
 
 ##### Figure S5.13
 
-```{r fig.align = "center", fig.caption="Median and 95% quantiles of `r n.randomization.rr.CM` lnRR estimated according to cumulative meta-analysis showing evidence of decline effects."}
+```{r fig.align = "center", fig.cap="Median and 95% quantiles of `r n.randomization.rr.CM` lnRR estimated according to cumulative meta-analysis showing evidence of decline effects."}
 cumul.sampling.rr.summarized <- as.data.frame(cumul.sampling.rr 
                                              %>% group_by(order) %>% 
                                                summarise(median = median(beta), 
@@ -2297,7 +2230,7 @@ ggplot(data=cumul.sampling.rr.summarized, aes(x=order, y=median, ymin=lowCI, yma
 
 ##### Figure S5.13
 
-```{r fig.align = "center", fig.caption="Median and 95% quantiles of `r n.randomization.smd.CM` SMD estimated according to cumulative meta-analysis showing evidence of decline effects."}
+```{r fig.align = "center", fig.cap="Median and 95% quantiles of `r n.randomization.smd.CM` SMD estimated according to cumulative meta-analysis showing evidence of decline effects."}
 cumul.sampling.smd.summarized <- as.data.frame(cumul.sampling.smd 
                                              %>% group_by(order) %>% 
                                                summarise(median = median(beta), 
@@ -2940,4 +2873,3 @@ sessionInfo() %>% pander::pander()
 ```
 
 ## References
-
