@@ -1427,7 +1427,7 @@ table.comparing.Exp.or.Obs.levels.gt <- table.comparing.Exp.or.Obs.levels %>%
   cols_align(align = "center")
 table.comparing.Exp.or.Obs.levels.gt
 ```
-
+**Table S4.3**. The estimates of all levels of the moderator ‘Experimental.or.Observational.’ and their adjusted estimates using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as lnRR.
 
 SMD also show the downward correction of the overall effect after accounting for publication bias and time-lag bias: (adjusted effect = `r round(summary(overall.res.publication.bias.model.smd.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.smd.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.smd.v.1)[,4],2)`]) and (unadjusted effect = `r round(metaanalytic.mean.model.smd[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.smd[[3]],2)`,`r round(metaanalytic.mean.model.smd[[4]],2)`]; more in section S4.2.2). Table S4.4 also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' compared to unadjusted model.
 
@@ -1455,7 +1455,7 @@ table.comparing.Exp.or.Obs.levels.gt <- table.comparing.Exp.or.Obs.levels %>%
   cols_align(align = "center")
 table.comparing.Exp.or.Obs.levels.gt
 ```
-
+**Table S4.4**. The estimates of all levels of the moderator ‘Experimental.or.Observational.’ and their adjusted estimates using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as SMD.
 
 ### S5.1: Averaging and sampling: correlation effect sizes (*Zr*)
 
