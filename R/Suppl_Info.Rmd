@@ -2584,7 +2584,7 @@ p_dat <- data.frame("studlab" = as.factor(1:nrow(dat2)), "TE" = dat2$yi, "seTE" 
 
 pdf(NULL)
 dev.control(displaylist="enable")
-par(mar=c(4,4,0.1,0) + 0.1)
+par(mar=c(4,4,0.1,0) + 0.1) # NOTE: here is where you can change the font size for at least some parts of the graph. E.g. add cex = 2. 
 invisible(pcurve(p_dat))
 plot<- recordPlot()
 invisible(dev.off())
