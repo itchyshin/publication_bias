@@ -89,7 +89,7 @@ pacman::p_load(R.rsp,
                viridis,
                metaAidR,
                ggpubr,
-               klippy,
+               #klippy,
                emmeans,
 )
 
