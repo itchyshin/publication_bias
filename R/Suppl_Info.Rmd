@@ -697,7 +697,7 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 <br/><br/>
 
-##### Adjusting for small study effects
+#### S4.1.5: Adjusting overall effect size estimates for Zr
 
 Once we have confirmed that there is evidence of small-study effects (see above), the next step in our suggested two-step approach is to calculate the adjusted overall effect size, that is, the overall effect once we account for publication bias (see the main text). 
 
@@ -1318,7 +1318,7 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 <br/><br/>
 
-##### Adjusting overall effect size estimates for lnRR and SMD
+#### S4.2.4: Adjusting overall effect size estimates for lnRR and SMD
 
 In the main text we provide a two-step approach to calculate the bias-corrected overall effect size estiamte. The rationale is that, when no uncertainty exists (theoretically), we can get the potential true effect from a multiple-moderator multilevel-model (i.e. all-in publication bias test, where the inclusion of moderator variables reduces heterogeneity). We add two more moderators `Experimental.or.Observational.` (2 levels) and `Disturbance_category` (10 levels; we refer to this model as the full model). Note that, if the slope for the moderator 'sqrt_inv_n_tilda' in the all-in publication bias test shown above is not statistically significant, then the best estimate for the adjusted overall effect size would be the *intercept* of that all-in publication bias test. Otherwise, we should use inv_n_tilda instead as moderator (detailed in the main text). 
 
@@ -1457,6 +1457,16 @@ table.comparing.Exp.or.Obs.levels.gt <- table.comparing.Exp.or.Obs.levels %>%
 table.comparing.Exp.or.Obs.levels.gt
 ```
 **Table S4.4**. The estimates of all levels of the moderator ‘Experimental.or.Observational.’ and their adjusted estimates using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as SMD.
+
+### S4.3: Extra plot -- Figure 6a-d (redrawn using effective sample size)
+
+Here we redraw Figure 6a-d using effective sample size or more accurately, $\tilde{n}$. We note that Figure 6b-d in the main text use standard errors (SE) of different types of residuals so panels b, c and d may not be directly comparable between Figure 6 and this redrawn figure. 
+
+```{r, dpi = 10, fig.align = "center", fig.cap="Figure 6a-d redrawn"}
+knitr::include_graphics(here('figs', 'fig6_extra.png'))
+```
+
+## Appendix S5: Alternative approches
 
 ### S5.1: Averaging and sampling: correlation effect sizes (*Zr*)
 
@@ -1773,14 +1783,6 @@ ggplot(data=cumul.sampling.r.summarized, aes(x=order, y=median, ymin=lowCI, ymax
 ```
 
 <br/><br/>
-
-##### Figure 6a-d (redrawn using effective sample size)
-
-Here we redraw Figure 6a-d using effective sample size or more accurately, $\tilde{n}$. We note that Figure 6b-d in the main text use standard errors (SE) of different types of residuals so panels b, c and d may not be directly comparable between Figure 6 and this redrawn figure. 
-
-```{r, dpi = 10, fig.align = "center", fig.cap="Figure 6a-d redrawn"}
-knitr::include_graphics(here('figs', 'fig6_extra.png'))
-```
 
 
 ### S5.2: Averaging and sampling: mean differences between two groups (lnRR and SMD)
@@ -2589,8 +2591,11 @@ fig4
 #devtools::install_github("MathiasHarrer/dmetar")
 #library(dmetar)
 
-# prepration
-# chaning the pcurve function in dmetar so fonts are large enough to see
+####################
+# preparation#######
+####################
+
+# chanting the pcurve function in dmetar so fonts are large enough to see
 pcurve2 <- function (x, effect.estimation = FALSE, N, dmin = 0, dmax = 1) 
 {
     metaobject = x
@@ -3100,9 +3105,13 @@ pcurve2 <- function (x, effect.estimation = FALSE, N, dmin = 0, dmax = 1)
     return.list
 }
 
+# this is required for pcurve function
 library(poibin)
 
-######
+#########################
+# Drawing starts here ###
+#########################
+
 p_dat <- data.frame("studlab" = as.factor(1:nrow(dat2)), "TE" = dat2$yi, "seTE" = dat2$sei)
 #pcurve(p_dat)
 
@@ -3351,9 +3360,6 @@ pa2 <- recordPlot()
 invisible(dev.off())
 
 
-
-
-
 # Panel B
 pdf(NULL)
 dev.control(displaylist="enable")
@@ -3372,7 +3378,7 @@ funnel(residm, vi = vi_residm, ni = dat3$n_tilde, yaxis="ni",
        #refline=mod1$beta, 
        col =inferno(25)[pos],
        ylim = c(0, 250), xlim = c(-0.6, 0.8),
-       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Effect size (lnRR)") 
+       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Residual marginal (lnRR)") 
 pb2 <- recordPlot()
 invisible(dev.off())
 
@@ -3383,7 +3389,8 @@ dev.control(displaylist="enable")
 par(mar=c(4,4,0.1,0) + 0.1)
 funnel(residc1, vi = vi_residc1, yaxis = "sei",  col = inferno(25)[pos],
        ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
-       ylab = "Standard error (SE)", xlab = "Residuals conditional 1 (lnRR)")
+       ylab = "Standard error (SE)", 
+       xlab = "Residuals conditional 1 (lnRR)")
 pc <- recordPlot()
 invisible(dev.off())
 
@@ -3395,7 +3402,7 @@ funnel(residc1, vi = vi_residc1, ni = dat3$n_tilde, yaxis="ni",
        #refline=mod1$beta, 
        col =inferno(25)[pos],
        ylim = c(0, 250), xlim = c(-0.6, 0.8),
-       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Effect size (lnRR)") 
+       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Residuals conditional 1 (lnRR)") 
 pc2 <- recordPlot()
 invisible(dev.off())
 
@@ -3406,7 +3413,8 @@ dev.control(displaylist="enable")
 par(mar=c(4,4,0.1,0) + 0.1)
 funnel(residc2, vi = vi_residc2, yaxis = "sei",  col = inferno(25)[pos],
        ylim = c(0, 0.26), xlim = c(-0.6, 0.8),
-       ylab = "Standard error (SE)", xlab = "Residuals conditional 2 (lnRR)")
+       ylab = "Standard error (SE)", 
+       xlab = "Residuals conditional 2 (lnRR)")
 pd <- recordPlot()
 invisible(dev.off())
 
@@ -3418,7 +3426,7 @@ funnel(residc2, vi = vi_residc2, ni = dat3$n_tilde, yaxis="ni",
        #refline=mod1$beta, 
        col =inferno(25)[pos],
        ylim = c(0, 250), xlim = c(-0.6, 0.8),
-       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Effect size (lnRR)") 
+       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Residuals conditional 2 (lnRR)") 
 pd2 <- recordPlot()
 invisible(dev.off())
 
