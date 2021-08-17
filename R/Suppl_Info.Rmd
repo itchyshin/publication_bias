@@ -48,6 +48,7 @@ options(digits=3)
 # these packages need be obtained from github not from cran
 #remotes::install_github("rvlenth/emmeans", dependencies = TRUE, build_opts = "")
 # remotes::install_github("wviechtb/metafor")
+#devtools::install_github("MathiasHarrer/dmetar")
 # @TO-DO -  I do not think it is working yet
 ##remotes::install_github("rlesur/klippy")
 ```
@@ -89,7 +90,7 @@ pacman::p_load(R.rsp,
                metaAidR,
                ggpubr,
                klippy,
-               emmeans
+               emmeans,
 )
 
 # custom function for extracting mean and CI from each metafor model
@@ -1340,9 +1341,9 @@ publication.bias.model.rr.v.1 <- rma.mv(yi, vi,
 # preparation to get marginalized mean (when inv_n_tilda = 0 and year.c = 0)
 res.publication.bias.model.rr.v.1 <- qdrg(object = publication.bias.model.rr.v.1, data = dataset.rr, at = list(inv_n_tilda = 0, year.c = 0))
 # marginalized overall mean at inv_n_tilda = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
-overall.res.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = ~1, df = publication.bias.model.rr.v.1$dfs, weights = "prop") # using effect size - 7 
+overall.res.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = ~1, df = publication.bias.model.rr.v.1$ddfs, weights = "prop") # using effect size - 7 
 # marginalized means for different levels for Experimental.or.Observational.
-mm.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.v.1$dfs, weights = "prop")
+mm.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.v.1$ddfs, weights = "prop")
 # estiamted marginalised mean
 #mm.publication.bias.model.r.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.v.1$dfs, weights = "equal")
 
@@ -1378,9 +1379,9 @@ publication.bias.model.smd.v.1 <- rma.mv(yi, vi,
 # preparation to get marginalized mean (when inv_n_tilda = 0 and year.c = 0)
 res.publication.bias.model.smd.v.1 <- qdrg(object = publication.bias.model.smd.v.1, data = dataset.smd, at = list(inv_n_tilda = 0, year.c = 0))
 # marginalized overall mean at inv_n_tilda = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
-overall.res.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = ~1, df = publication.bias.model.smd.v.1$dfs, weights = "prop") # using effect size - 7 
+overall.res.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = ~1, df = publication.bias.model.smd.v.1$ddfs, weights = "prop") # using effect size - 7 
 # marginalized means for different levels for Experimental.or.Observational.
-mm.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.smd.v.1$dfs, weights = "prop")
+mm.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.smd.v.1$ddfs, weights = "prop")
 
 
 # model 3b: comparing results without correcting for publication bias
@@ -1772,6 +1773,15 @@ ggplot(data=cumul.sampling.r.summarized, aes(x=order, y=median, ymin=lowCI, ymax
 ```
 
 <br/><br/>
+
+##### Figure 6a-d (redrawn using effective sample size)
+
+Here we redraw Figure 6a-d using effective sample size or more accurately, $\tilde{n}$. We note that Figure 6b-d in the main text use standard errors (SE) of different types of residuals so panels b, c and d may not be directly comparable between Figure 6 and this redrawn figure. 
+
+```{r, dpi = 10, fig.align = "center", fig.cap="Figure 6a-d redrawn"}
+knitr::include_graphics(here('figs', 'fig6_extra.png'))
+```
+
 
 ### S5.2: Averaging and sampling: mean differences between two groups (lnRR and SMD)
 
@@ -2255,7 +2265,7 @@ There is no code for Fig. 1 (created in PowerPoint)
 
 ##### Code for Fig. 2
 
-```{r}
+```{r, eval = FALSE}
 # loading data
 PB <- read.csv("./Survey/PubBias_tests.csv")
 Item16 <- read.csv("./Survey/Item16PRISMAEcoEvo.csv")
@@ -2447,7 +2457,7 @@ par(mar=c(4,4,0.1,0) + 0.1)
 #radial.rma(mod_fe, xlim = c(0, 12.5), zlab = "Z score", xlab = "Precision (1/SE)") 
 #legend(1,1, "test", bty = "n")
 radial(mod, level = 0.95, pch = 19,  xlab = "Precision (1/SE)", ylab = "Z score")
-#abline(a = 0, b = 0.1908, lwd = 1.5)
+abline(a = 0, b = 0.1908, lwd = 1.5)
 f <- recordPlot()
 invisible(dev.off())
 
@@ -2579,13 +2589,528 @@ fig4
 #devtools::install_github("MathiasHarrer/dmetar")
 #library(dmetar)
 
+# prepration
+# chaning the pcurve function in dmetar so fonts are large enough to see
+pcurve2 <- function (x, effect.estimation = FALSE, N, dmin = 0, dmax = 1) 
+{
+    metaobject = x
+    rm(x)
+    if (!(class(metaobject)[1] %in% c("metagen", "metabin", "metacont", 
+        "metacor", "metainc", "meta", "metaprop"))) {
+        for (i in 1:length(colnames(metaobject))) {
+            te.exists = FALSE
+            if (colnames(metaobject)[i] == "TE") {
+                te.exists = TRUE
+                break
+            }
+            else {
+            }
+        }
+        for (i in 1:length(colnames(metaobject))) {
+            sete.exists = FALSE
+            if (colnames(metaobject)[i] == "seTE") {
+                sete.exists = TRUE
+                break
+            }
+            else {
+            }
+        }
+        for (i in 1:length(colnames(metaobject))) {
+            studlab.exists = FALSE
+            if (colnames(metaobject)[i] == "studlab") {
+                studlab.exists = TRUE
+                break
+            }
+            else {
+            }
+        }
+        if (te.exists == FALSE | sete.exists == FALSE | studlab.exists == 
+            FALSE) {
+            stop("x must be a meta-analysis object generated by meta functions or a data.frame with columns labeled studlab, TE, and seTE.")
+        }
+    }
+    options(scipen = 999)
+    zvalues.input = abs(metaobject$TE/metaobject$seTE)
+    getncp.f = function(df1, df2, power) {
+        error = function(ncp_est, power, x, df1, df2) pf(x, df1 = df1, 
+            df2 = df2, ncp = ncp_est) - (1 - power)
+        xc = qf(p = 0.95, df1 = df1, df2 = df2)
+        return(uniroot(error, c(0, 1000), x = xc, df1 = df1, 
+            df2 = df2, power = power)$root)
+    }
+    getncp.c = function(df, power) {
+        xc = qchisq(p = 0.95, df = df)
+        error = function(ncp_est, power, x, df) pchisq(x, df = df, 
+            ncp = ncp_est) - (1 - power)
+        return(uniroot(error, c(0, 1000), x = xc, df = df, power = power)$root)
+    }
+    getncp = function(family, df1, df2, power) {
+        if (family == "f") 
+            ncp = getncp.f(df1 = df1, df2 = df2, power = power)
+        if (family == "c") 
+            ncp = getncp.c(df = df1, power = power)
+        return(ncp)
+    }
+    percent <- function(x, digits = 0, format = "f", ...) {
+        paste(formatC(100 * x, format = format, digits = digits, 
+            ...), "%", sep = "")
+    }
+    pbound = function(p) pmin(pmax(p, 0.00000000000000022), 1 - 
+        0.00000000000000022)
+    prop33 = function(pc) {
+        prop = ifelse(family == "f" & p < 0.05, 1 - pf(qf(1 - 
+            pc, df1 = df1, df2 = df2), df1 = df1, df2 = df2, 
+            ncp = ncp33), NA)
+        prop = ifelse(family == "c" & p < 0.05, 1 - pchisq(qchisq(1 - 
+            pc, df = df1), df = df1, ncp = ncp33), prop)
+        prop
+    }
+    stouffer = function(pp) sum(qnorm(pp), na.rm = TRUE)/sqrt(sum(!is.na(pp)))
+    zvalues.input = paste("z=", zvalues.input, sep = "")
+    filek = "input"
+    raw = zvalues.input
+    raw = tolower(raw)
+    ktot = length(raw)
+    k = seq(from = 1, to = length(raw))
+    stat = substring(raw, 1, 1)
+    test = ifelse(stat == "r", "t", stat)
+    family = test
+    family = ifelse(test == "t", "f", family)
+    family = ifelse(test == "z", "c", family)
+    par1 = str_locate(raw, "\\(")[, 1]
+    par2 = str_locate(raw, "\\)")[, 1]
+    comma = str_locate(raw, ",")[, 1]
+    eq = str_locate(raw, "=")[, 1]
+    df = as.numeric(ifelse(test == "t", substring(raw, par1 + 
+        1, par2 - 1), NA))
+    df1 = as.numeric(ifelse(test == "f", substring(raw, par1 + 
+        1, comma - 1), NA))
+    df1 = as.numeric(ifelse(test == "z", 1, df1))
+    df1 = as.numeric(ifelse(test == "t", 1, df1))
+    df1 = as.numeric(ifelse(test == "c", substring(raw, par1 + 
+        1, par2 - 1), df1))
+    df2 = as.numeric(ifelse(test == "f", substring(raw, comma + 
+        1, par2 - 1), NA))
+    df2 = as.numeric(ifelse(test == "t", df, df2))
+    equal = abs(as.numeric(substring(raw, eq + 1)))
+    value = ifelse((stat == "f" | stat == "c"), equal, NA)
+    value = ifelse(stat == "r", (equal/(sqrt((1 - equal^2)/df2)))^2, 
+        value)
+    value = ifelse(stat == "t", equal^2, value)
+    value = ifelse(stat == "z", equal^2, value)
+    p = ifelse(family == "f", 1 - pf(value, df1 = df1, df2 = df2), 
+        NA)
+    p = ifelse(family == "c", 1 - pchisq(value, df = df1), p)
+    p = pbound(p)
+    ksig = sum(p < 0.05, na.rm = TRUE)
+    khalf = sum(p < 0.025, na.rm = TRUE)
+    if (ksig <= 2) {
+        stop("Two or less significant (p<0.05) effect sizes were detected, so p-curve analysis cannot be conducted.")
+    }
+    ppr = as.numeric(ifelse(p < 0.05, 20 * p, NA))
+    ppr = pbound(ppr)
+    ppr.half = as.numeric(ifelse(p < 0.025, 40 * p, NA))
+    ppr.half = pbound(ppr.half)
+    ncp33 = mapply(getncp, df1 = df1, df2 = df2, power = 1/3, 
+        family = family)
+    pp33 = ifelse(family == "f" & p < 0.05, 3 * (pf(value, df1 = df1, 
+        df2 = df2, ncp = ncp33) - 2/3), NA)
+    pp33 = ifelse(family == "c" & p < 0.05, 3 * (pchisq(value, 
+        df = df1, ncp = ncp33) - 2/3), pp33)
+    pp33 = pbound(pp33)
+    prop25 = 3 * prop33(0.025)
+    prop25.sig = prop25[p < 0.05]
+    pp33.half = ifelse(family == "f" & p < 0.025, (1/prop25) * 
+        (pf(value, df1 = df1, df2 = df2, ncp = ncp33) - (1 - 
+            prop25)), NA)
+    pp33.half = ifelse(family == "c" & p < 0.025, (1/prop25) * 
+        (pchisq(value, df = df1, ncp = ncp33) - (1 - prop25)), 
+        pp33.half)
+    pp33.half = pbound(pp33.half)
+    Zppr = stouffer(ppr)
+    Zpp33 = stouffer(pp33)
+    Zppr.half = stouffer(ppr.half)
+    Zpp33.half = stouffer(pp33.half)
+    p.Zppr = pnorm(Zppr)
+    p.Zpp33 = pnorm(Zpp33)
+    p.Zppr.half = pnorm(Zppr.half)
+    p.Zpp33.half = pnorm(Zpp33.half)
+    main.results = as.numeric(c(ktot, ksig, khalf, Zppr, p.Zppr, 
+        Zpp33, p.Zpp33, Zppr.half, p.Zppr.half, Zpp33.half, p.Zpp33.half))
+    prop25.obs = sum(p < 0.025)/sum(p < 0.05)
+    binom.r = 1 - pbinom(q = prop25.obs * ksig - 1, prob = 0.5, 
+        size = ksig)
+    binom.33 = ppoibin(kk = prop25.obs * ksig, pp = prop25[p < 
+        0.05])
+    binomial = c(mean(prop25.sig), prop25.obs, binom.r, binom.33)
+    cleanp = function(p) {
+        p.clean = round(p, 4)
+        p.clean = substr(p.clean, 2, 6)
+        p.clean = paste0("= ", p.clean)
+        if (p < 0.0001) 
+            p.clean = " < .0001"
+        if (p > 0.9999) 
+            p.clean = " > .9999"
+        return(p.clean)
+    }
+    if (khalf == 0) {
+        Zppr.half = "N/A"
+        p.Zppr.half = "=N/A"
+        Zpp33.half = "N/A"
+        p.Zpp33.half = "=N/A"
+    }
+    if (khalf > 0) {
+        Zppr.half = round(Zppr.half, 2)
+        Zpp33.half = round(Zpp33.half, 2)
+        p.Zppr.half = cleanp(p.Zppr.half)
+        p.Zpp33.half = cleanp(p.Zpp33.half)
+    }
+    Zppr = round(Zppr, 2)
+    Zpp33 = round(Zpp33, 2)
+    p.Zppr = cleanp(p.Zppr)
+    p.Zpp33 = cleanp(p.Zpp33)
+    binom.r = cleanp(binom.r)
+    binom.33 = cleanp(binom.33)
+    powerfit = function(power_est) {
+        ncp_est = mapply(getncp, df1 = df1, df2 = df2, power = power_est, 
+            family = family)
+        pp_est = ifelse(family == "f" & p < 0.05, (pf(value, 
+            df1 = df1, df2 = df2, ncp = ncp_est) - (1 - power_est))/power_est, 
+            NA)
+        pp_est = ifelse(family == "c" & p < 0.05, (pchisq(value, 
+            df = df1, ncp = ncp_est) - (1 - power_est))/power_est, 
+            pp_est)
+        pp_est = pbound(pp_est)
+        return(stouffer(pp_est))
+    }
+    fit = c()
+    fit = abs(powerfit(0.051))
+    for (i in 6:99) fit = c(fit, abs(powerfit(i/100)))
+    mini = match(min(fit, na.rm = TRUE), fit)
+    hat = (mini + 4)/100
+    x.power = seq(from = 5, to = 99)/100
+    get.power_pct = function(pct) {
+        z = qnorm(pct)
+        error = function(power_est, z) powerfit(power_est) - 
+            z
+        return(uniroot(error, c(0.0501, 0.99), z)$root)
+    }
+    p.power.05 = pnorm(powerfit(0.051))
+    p.power.99 = pnorm(powerfit(0.99))
+    if (p.power.05 <= 0.95) 
+        power.ci.lb = 0.05
+    if (p.power.99 >= 0.95) 
+        power.ci.lb = 0.99
+    if (p.power.05 > 0.95 && p.power.99 < 0.95) 
+        power.ci.lb = get.power_pct(0.95)
+    if (p.power.05 <= 0.05) 
+        power.ci.ub = 0.05
+    if (p.power.99 >= 0.05) 
+        power.ci.ub = 0.99
+    if (p.power.05 > 0.05 && p.power.99 < 0.05) 
+        power.ci.ub = get.power_pct(0.05)
+    power_results = c(power.ci.lb, hat, power.ci.ub)
+    gcdf1 = prop33(0.01)
+    gcdf2 = prop33(0.02)
+    gcdf3 = prop33(0.03)
+    gcdf4 = prop33(0.04)
+    green1 = mean(gcdf1, na.rm = TRUE) * 3
+    green2 = mean(gcdf2 - gcdf1, na.rm = TRUE) * 3
+    green3 = mean(gcdf3 - gcdf2, na.rm = TRUE) * 3
+    green4 = mean(gcdf4 - gcdf3, na.rm = TRUE) * 3
+    green5 = mean(1/3 - gcdf4, na.rm = TRUE) * 3
+    green = 100 * c(green1, green2, green3, green4, green5)
+    ps = ceiling(p[p < 0.05] * 100)/100
+    blue = c()
+    for (i in c(0.01, 0.02, 0.03, 0.04, 0.05)) blue = c(blue, 
+        sum(ps == i, na.rm = TRUE)/ksig * 100)
+    red = c(20, 20, 20, 20, 20)
+    x = c(0.01, 0.02, 0.03, 0.04, 0.05)
+    par(mar = c(6, 5.5, 1.5, 3))
+    moveup = max(max(blue[2:5]) - 66, 0)
+    ylim = c(0, 105 + moveup)
+    legend.top = 100 + moveup
+    plot(x, blue, type = "l", col = "dodgerblue2", main = "", 
+        lwd = 2, xlab = "", ylab = "", xaxt = "n", yaxt = "n", 
+        xlim = c(0.01, 0.051), ylim = ylim, bty = "L", las = 1, 
+        axes = F)
+    x_ = c(".01", ".02", ".03", ".04", ".05")
+    axis(1, at = x, labels = x_)
+    y_ = c("0%", "25%", "50%", "75%", "100%")
+    y = c(0, 25, 50, 75, 100)
+    axis(2, at = y, labels = y_, las = 1, cex.axis = 1.2)
+    mtext("Percentage of test results", font = 2, side = 2, line = 3.85, 
+        cex = 1.25)
+    mtext("p            ", font = 4, side = 1, line = 2.3, cex = 1.25)
+    mtext(" -value", font = 2, side = 1, line = 2.3, cex = 1.5)
+    points(x, blue, type = "p", pch = 20, bg = "dodgerblue2", 
+        col = "dodgerblue2")
+    text(x + 0.00075, blue + 3.5, percent(round(blue)/100), col = "black", 
+        cex = 0.75)
+    lines(x, red, type = "l", col = "firebrick2", lwd = 1.25, 
+        lty = 3)
+    lines(x, green, type = "l", col = "springgreen4", lwd = 1.5, 
+        lty = 5)
+    tab1 = 0.017
+    tab2 = tab1 + 0.0015
+    gap1 = 9
+    gap2 = 4
+    font.col = "gray44"
+    text.blue = paste0("Power estimate: ", percent(hat), ", CI(", 
+        percent(power.ci.lb), ",", percent(power.ci.ub), ")")
+    text(tab1, legend.top, adj = 0, cex = 0.85, bquote("Observed " * 
+        italic(p) * "-curve"))
+    text(tab2, legend.top - gap2, adj = 0, cex = 0.68, text.blue, 
+        col = font.col)
+    text.red = bquote("Tests for right-skewness: " * italic(p) * 
+        ""[Full] ~ .(p.Zppr) * ",  " * italic(p) * ""[Half] ~ 
+        .(p.Zppr.half))
+    text(tab1, legend.top - gap1, adj = 0, cex = 0.85, "Null of no effect")
+    text(tab2, legend.top - gap1 - gap2, adj = 0, cex = 0.68, 
+        text.red, col = font.col)
+    text.green = bquote("Tests for flatness: " * italic(p) * 
+        ""[Full] ~ .(p.Zpp33) * ",  " * italic(p) * ""[half] ~ 
+        .(p.Zpp33.half) * ",  " * italic(p) * ""[Binomial] ~ 
+        .(binom.33))
+    text(tab1, legend.top - 2 * gap1, adj = 0, cex = 0.85, "Null of 33% power")
+    text(tab2, legend.top - 2 * gap1 - gap2, adj = 0, cex = 0.68, 
+        text.green, col = font.col)
+    segments(x0 = tab1 - 0.005, x1 = tab1 - 0.001, y0 = legend.top, 
+        y1 = legend.top, col = "dodgerblue2", lty = 1, lwd = 1.5)
+    segments(x0 = tab1 - 0.005, x1 = tab1 - 0.001, y0 = legend.top - 
+        gap1, y1 = legend.top - gap1, col = "firebrick2", lty = 3, 
+        lwd = 1.5)
+    segments(x0 = tab1 - 0.005, x1 = tab1 - 0.001, y0 = legend.top - 
+        2 * gap1, y1 = legend.top - 2 * gap1, col = "springgreen4", 
+        lty = 2, lwd = 1.5)
+    rect(tab1 - 0.0065, legend.top - 2 * gap1 - gap2 - 3, tab1 + 
+        0.032, legend.top + 3, border = "gray85")
+    msgx = bquote("Note: The observed " * italic(p) * "-curve includes " * 
+        .(ksig) * " statistically significant (" * italic(p) * 
+        " < .05) results, of which " * .(khalf) * " are " * italic(p) * 
+        " < .025.")
+    mtext(msgx, side = 1, line = 4, cex = 0.9, adj = 0)
+    kns = ktot - ksig
+    if (kns == 0) 
+        ns_msg = "There were no non-significant results entered."
+    if (kns == 1) 
+        ns_msg = bquote("There was one additional result entered but excluded from " * 
+            italic(p) * "-curve because it was " * italic(p) * 
+            " > .05.")
+    if (kns > 1) 
+        ns_msg = bquote("There were " * .(kns) * " additional results entered but excluded from " * 
+            italic(p) * "-curve because they were " * italic(p) * 
+            " > .05.")
+    mtext(ns_msg, side = 1, line = 4.75, cex = 0.9, adj = 0)
+    table_calc = data.frame(raw, p, ppr, ppr.half, pp33, pp33.half, 
+        qnorm(ppr), qnorm(ppr.half), qnorm(pp33), qnorm(pp33.half))
+    headers1 = c("Entered statistic", "p-value", "ppr", "ppr half", 
+        "pp33%", "pp33 half", "Z-R", "Z-R half", "Z-33", "z-33 half")
+    table_calc = setNames(table_calc, headers1)
+    headers2 = c("p-value", "Observed (blue)", "Power 33% (Green)", 
+        "Flat (Red)")
+    table_figure = setNames(data.frame(x, blue, green, red), 
+        headers2)
+    dropk = function(pp, k, droplow) {
+        pp = pp[!is.na(pp)]
+        n = length(pp)
+        pp = sort(pp)
+        if (k == 0) 
+            ppk = pp
+        if (droplow == 1 & k > 0) {
+            ppk = (pp[(1 + k):n])
+            ppmin = min(pp[k], k/(n + 1))
+            ppk = (ppk - ppmin)/(1 - ppmin)
+        }
+        if (droplow == 0 & k > 0) {
+            ppk = pp[1:(n - k)]
+            ppmax = max(pp[n - k + 1], (n - k)/(n + 1))
+            ppk = ppk/ppmax
+        }
+        ppk = pmax(ppk, 0.00001)
+        ppk = pmin(ppk, 0.99999)
+        Z = sum(qnorm(ppk))/sqrt(n - k)
+        return(pnorm(Z))
+    }
+    droplow.r = droplow.33 = drophigh.r = drophigh.33 = c()
+    for (i in 0:(round(ksig/2) - 1)) {
+        droplow.r = c(droplow.r, dropk(pp = ppr, k = i, droplow = 1))
+        drophigh.r = c(drophigh.r, dropk(pp = ppr, k = i, droplow = 0))
+        droplow.33 = c(droplow.33, dropk(pp = pp33, k = i, droplow = 1))
+        drophigh.33 = c(drophigh.33, dropk(pp = pp33, k = i, 
+            droplow = 0))
+    }
+    if (khalf > 0) {
+        droplow.halfr = drophigh.halfr = c()
+        for (i in 0:(round(khalf/2) - 1)) {
+            droplow.halfr = c(droplow.halfr, dropk(pp = ppr.half, 
+                k = i, droplow = 1))
+            drophigh.halfr = c(drophigh.halfr, dropk(pp = ppr.half, 
+                k = i, droplow = 0))
+        }
+    }
+    plotdrop = function(var, col) {
+        k = length(var)
+        plot(0:(k - 1), var, xlab = "", ylab = "", type = "b", 
+            yaxt = "n", xaxt = "n", main = "", cex.main = 1.15, 
+            ylim = c(0, 1), col = col)
+        points(0, var[1], pch = 19, cex = 1.6)
+        abline(h = 0.05, col = "red")
+        axis(2, c(0.05, 2:9/10), labels = c(".05", ".2", ".3", 
+            ".4", ".5", "6", "7", ".8", ".9"), las = 1, cex.axis = 1.5)
+        axis(1, c(0:(k - 1)), las = 1, cex.axis = 1.4)
+    }
+    if (effect.estimation == TRUE) {
+        ci.to.t = function(TE, lower, upper, n) {
+            z.to.d = function(z, n) {
+                d = (2 * z)/sqrt(n)
+                return(abs(d))
+            }
+            ci.to.p = function(est, lower, upper) {
+                SE = (upper - lower)/(2 * 1.96)
+                z = abs(est/SE)
+                p = exp(-0.717 * z - 0.416 * z^2)
+                return(p)
+            }
+            d.to.t = function(d, n) {
+                df = n - 2
+                t = (d * sqrt(df))/2
+                return(t)
+            }
+            p = ci.to.p(TE, lower, upper)
+            z = abs(qnorm(p/2))
+            d = z.to.d(z, n)
+            t = d.to.t(d, n)
+            return(t)
+        }
+        loss = function(t_obs, df_obs, d_est) {
+            t_obs = abs(t_obs)
+            p_obs = 2 * (1 - pt(t_obs, df = df_obs))
+            t.sig = subset(t_obs, p_obs < 0.05)
+            df.sig = subset(df_obs, p_obs < 0.05)
+            ncp_est = sqrt((df.sig + 2)/4) * d_est
+            tc = qt(0.975, df.sig)
+            power_est = 1 - pt(tc, df.sig, ncp_est)
+            p_larger = pt(t.sig, df = df.sig, ncp = ncp_est)
+            ppr = (p_larger - (1 - power_est))/power_est
+            KSD = ks.test(ppr, punif)$statistic
+            return(KSD)
+        }
+        if (missing(N)) {
+            stop("If 'effect.estimation=TRUE', argument 'N' must be provided.")
+        }
+        if (length(N) != length(metaobject$TE)) {
+            stop("N must be of same length as the number of studies contained in x.")
+        }
+        lower = metaobject$TE - (metaobject$seTE * 1.96)
+        upper = metaobject$TE + (metaobject$seTE * 1.96)
+        t_obs = ci.to.t(metaobject$TE, lower, upper, N)
+        df_obs = N - 2
+        loss.all = c()
+        di = c()
+        for (i in 0:((dmax - dmin) * 100)) {
+            d = dmin + i/100
+            di = c(di, d)
+            options(warn = -1)
+            loss.all = c(loss.all, loss(df_obs = df_obs, t_obs = t_obs, 
+                d_est = d))
+            options(warn = 0)
+        }
+        imin = match(min(loss.all), loss.all)
+        dstart = dmin + imin/100
+        dhat = optimize(loss, c(dstart - 0.1, dstart + 0.1), 
+            df_obs = df_obs, t_obs = t_obs)
+        options(warn = -0)
+        plot(di, loss.all, xlab = "Effect size\nCohen-d", ylab = "Loss (D stat in KS test)", 
+            ylim = c(0, 1), main = "How well does each effect size fit? (lower is better)")
+        points(dhat$minimum, dhat$objective, pch = 19, col = "red", 
+            cex = 2)
+        text(dhat$minimum, dhat$objective - 0.08, paste0("p-curve's estimate of effect size:\nd=", 
+            round(dhat$minimum, 3)), col = "red")
+    }
+    main.results = round(main.results, 3)
+    ktotal = round(main.results[1])
+    k.sign = round(main.results[2])
+    k.025 = round(main.results[3])
+    skew.full.z = main.results[4]
+    skew.full.p = main.results[5]
+    flat.full.z = main.results[6]
+    flat.full.p = main.results[7]
+    skew.half.z = main.results[8]
+    skew.half.p = main.results[9]
+    flat.half.z = main.results[10]
+    flat.half.p = main.results[11]
+    skew.binomial.p = round(binomial[3], 3)
+    flat.binomial.p = round(binomial[4], 3)
+    skewness = c(skew.binomial.p, skew.full.z, skew.full.p, skew.half.z, 
+        skew.half.p)
+    flatness = c(flat.binomial.p, flat.full.z, flat.full.p, flat.half.z, 
+        flat.half.p)
+    colnames.df = c("pBinomial", "zFull", "pFull", "zHalf", "pHalf")
+    rownames.df = c("Right-skewness test", "Flatness test")
+    pcurveResults = rbind(skewness, flatness)
+    colnames(pcurveResults) = colnames.df
+    rownames(pcurveResults) = rownames.df
+    power_results = round(power_results, 3)
+    powerEstimate = power_results[2]
+    powerLower = power_results[1]
+    powerUpper = power_results[3]
+    Power = as.data.frame(cbind(powerEstimate, powerLower, powerUpper))
+    rownames(Power) = ""
+    if (skew.half.p < 0.05 | (skew.half.p < 0.1 & skew.full.p < 
+        0.1)) {
+        presence.ev = "yes"
+    }
+    else {
+        presence.ev = "no"
+    }
+    if (flat.full.p < 0.05 | (flat.half.p < 0.1 & flat.binomial.p < 
+        0.1)) {
+        absence.ev = "yes"
+    }
+    else {
+        absence.ev = "no"
+    }
+    PlotData = round(table_figure, 3)
+    table_calc[, 1] = NULL
+    colnames(table_calc) = c("p", "ppSkewFull", "ppSkewHalf", 
+        "ppFlatFull", "ppFlatHalf", "zSkewFull", "zSkewHalf", 
+        "zFlatFull", "zFlatHalf")
+    Input = cbind(metaobject$TE, round(table_calc, 3))
+    rownames(Input) = paste(1:length(metaobject$TE), metaobject$studlab)
+    colnames(Input)[1] = "TE"
+    if (effect.estimation == TRUE) {
+        dEstimate = round(dhat$minimum, 3)
+        return.list = list(pcurveResults = pcurveResults, Power = Power, 
+            PlotData = PlotData, Input = Input, EvidencePresent = presence.ev, 
+            EvidenceAbsent = absence.ev, kInput = ktot, kAnalyzed = k.sign, 
+            kp0.25 = k.025, dEstimate = dEstimate, I2 = metaobject$I2, 
+            class.meta.object = class(metaobject)[1])
+        class(return.list) = c("pcurve", "effect.estimation")
+    }
+    else {
+        return.list = list(pcurveResults = pcurveResults, Power = Power, 
+            PlotData = PlotData, Input = Input, EvidencePresent = presence.ev, 
+            EvidenceAbsent = absence.ev, kInput = ktot, kAnalyzed = k.sign, 
+            kp0.25 = k.025, I2 = metaobject$I2, class.meta.object = class(metaobject)[1])
+        class(return.list) = c("pcurve", "no.effect.estimation")
+    }
+    cat("  ", "\n")
+    invisible(return.list)
+    return.list
+}
+
+library(poibin)
+
+######
 p_dat <- data.frame("studlab" = as.factor(1:nrow(dat2)), "TE" = dat2$yi, "seTE" = dat2$sei)
 #pcurve(p_dat)
 
 pdf(NULL)
 dev.control(displaylist="enable")
-par(mar=c(4,4,0.1,0) + 0.1) # NOTE: here is where you can change the font size for at least some parts of the graph. E.g. add cex = 2. 
-invisible(pcurve(p_dat))
+par(mar=c(4,4,0,0) + 0.1, cex = 1.2) # NOTE: here is where you can change the font size for at least some parts of the graph. E.g. add cex = 2 - this did ont seem to work well. 
+invisible(pcurve2(p_dat))
+#mtext(msgx, side = 1, line = 4, cex = 2, adj = 0)
 plot<- recordPlot()
 invisible(dev.off())
 
@@ -2648,11 +3173,13 @@ fig5 <- pA /(ggdraw(pB) + ggdraw(pC)) + plot_annotation(tag_levels = 'a')
 fig5
 ```
 
-##### Code for Fig. 6
+##### Code for Fig. 6 (+ Fig 6 redrawn)
 
 ```{r, fig.height= 8, fig.width= 7, message = FALSE, eval = FALSE}
+########################
+# Zr data creation #####
+#######################
 
-# Zr data creation
 set.seed(777)
 # setting parameters
 n.study  <- 70
@@ -2712,7 +3239,9 @@ y =  mod_mb$beta[[1]] + sqrt(x)* mod_mb$beta[[2]]
 
 vi_curve <- tibble(x = x, y = y)
 
-# lnRR
+############################
+# lnRR - data creation #####
+############################
 
 set.seed(777)
 # setting parameters
@@ -2739,7 +3268,9 @@ cv <- sample(seq(0.3, 0.35,by = 0.001), n.effect, replace = T)
 rep_sample <- rep(n.sample, times = n.es.per.s)
 
 # variance for lnRR
+# balanced design
 vi <- (2*cv^2)/rep_sample
+
 
 # In the text, we have two moderators
 # moderator x 1 - study level
@@ -2755,6 +3286,10 @@ pos <- rep(1:n.study, n.es.per.s)
 
 dat3 <- data.frame(vi = vi, sei = sqrt(vi), x1 = x1j[pos], x2 = x2i, ni = n.sample[pos], prec = 1 / sqrt(vi), wi = 1/vi, studyID = pos, effectID = 1:n.effect)
 
+# ni here is sample size per group - we have the same N for control and treatment groups
+dat3$n_tilde <- (dat3$ni^2)/dat3$ni*2
+# 
+
 # M matrix (V = VCV)
 sigma <- make_VCV_matrix(dat3, "vi", "studyID", "effectID", rho = 0)
 
@@ -2765,7 +3300,7 @@ dat3$yi <- lnRR
 
 mod_ml <- rma.mv(yi, vi, mod = ~ x1 + x2, random = list(~ 1 | studyID, ~1 | effectID), data = dat3)
 
-# residuals - stadnarised
+# residuals - standardized
 #summary(mod_ml)
 #funnel(mod_ml, yaxis="seinv", col = inferno(25)[pos])
 
@@ -2802,6 +3337,23 @@ funnel(mod1, col =inferno(25)[pos],
 pa <- recordPlot()
 invisible(dev.off())
 
+#Panel A+
+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(dat3$yi, dat3$vi, ni = dat3$n_tilde, yaxis="ni",
+       refline=mod1$beta, 
+       col =inferno(25)[pos],
+       ylim = c(0, 250), xlim = c(-0.6, 0.8),
+      ylab = bquote("Effective sample size " (tilde(n))), xlab = "Effect size (lnRR)") 
+pa2 <- recordPlot()
+invisible(dev.off())
+
+
+
+
+
 # Panel B
 pdf(NULL)
 dev.control(displaylist="enable")
@@ -2811,6 +3363,19 @@ funnel (residm, vi = vi_residm, yaxis = "sei",  col = inferno(25)[pos],
         ylab = "Standard error (SE)", xlab = "Residuals marginal (lnRR)")
 pb <- recordPlot()
 invisible(dev.off())
+
+# Panel B+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(residm, vi = vi_residm, ni = dat3$n_tilde, yaxis="ni",
+       #refline=mod1$beta, 
+       col =inferno(25)[pos],
+       ylim = c(0, 250), xlim = c(-0.6, 0.8),
+       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Effect size (lnRR)") 
+pb2 <- recordPlot()
+invisible(dev.off())
+
 
 # Panel C
 pdf(NULL)
@@ -2822,6 +3387,19 @@ funnel(residc1, vi = vi_residc1, yaxis = "sei",  col = inferno(25)[pos],
 pc <- recordPlot()
 invisible(dev.off())
 
+# Panel C+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(residc1, vi = vi_residc1, ni = dat3$n_tilde, yaxis="ni",
+       #refline=mod1$beta, 
+       col =inferno(25)[pos],
+       ylim = c(0, 250), xlim = c(-0.6, 0.8),
+       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Effect size (lnRR)") 
+pc2 <- recordPlot()
+invisible(dev.off())
+
+
 # Panel D
 pdf(NULL)
 dev.control(displaylist="enable")
@@ -2831,6 +3409,19 @@ funnel(residc2, vi = vi_residc2, yaxis = "sei",  col = inferno(25)[pos],
        ylab = "Standard error (SE)", xlab = "Residuals conditional 2 (lnRR)")
 pd <- recordPlot()
 invisible(dev.off())
+
+# Panel D+
+pdf(NULL)
+dev.control(displaylist="enable")
+par(mar=c(4,4,0.1,0) + 0.1)
+funnel(residc2, vi = vi_residc2, ni = dat3$n_tilde, yaxis="ni",
+       #refline=mod1$beta, 
+       col =inferno(25)[pos],
+       ylim = c(0, 250), xlim = c(-0.6, 0.8),
+       ylab = bquote("Effective sample size " (tilde(n))), xlab = "Effect size (lnRR)") 
+pd2 <- recordPlot()
+invisible(dev.off())
+
 
 # Panel E
 pe <- ggplot(datB, aes(sei, yi)) + geom_point() + 
@@ -2857,6 +3448,13 @@ pf <- ggplot(datB, aes(vi, yi)) + geom_point() +
 fig6 <- (ggdraw(pa) + ggdraw(pb)) /(ggdraw(pc) + ggdraw(pd))/(plot_grid(pe) + plot_grid(pf)) + plot_annotation(tag_levels = 'a')
 
 fig6
+
+#fig6+
+
+fig6_extra <-  (ggdraw(pa2) + ggdraw(pb2)) /(ggdraw(pc2) + ggdraw(pd2)) + plot_annotation(tag_levels = 'a')
+
+fig6_extra
+
 ```
 ##### Code for Fig. 7
 
