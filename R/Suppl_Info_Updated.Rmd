@@ -1304,13 +1304,13 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 In the main text we provide a two-step approach to calculate the bias-corrected overall effect size estimate. The rationale is that, when no uncertainty exists (theoretically), we can get the potential true effect from a multiple-moderator multilevel-model (i.e. all-in publication bias test, where the inclusion of moderator variables reduces heterogeneity). We add two more moderators `Experimental.or.Observational.` (2 levels) and `Disturbance_category` (10 levels; we refer to this model as the full model). 
 
-The models above do not provide strong evidence that there are a significant overall effect (or a significant intercept or at least, one group being significant at the alpha level at 10%, which translates to a t value of > ~1.65 in magnitude). Therefore, we here fit $\sqrt(1/\tilde{n})$ rather than $1/\tilde{n}$, which should be used when there is evidence an overall effect exists or some groups have non-zero effects.
+The models above do not provide strong evidence that there are a significant overall effect (or a significant intercept or at least, one group being significant at the alpha level at 10%, which translates to a t value of > ~1.65 in magnitude). However, the meta-regression model only with `Experimental.or.Observational.` provides good evidence that there are some overall effects.  Therefore, here, we should try both scenarios: $\sqrt(1/\tilde{n})$ and $1/\tilde{n}$. The former provides the best estimate when there is no evidence that an overall effect exists or some groups have non-zero effects while the latter is best when there is such evidence. Note that we already have the models with $\sqrt(1/\tilde{n})$. 
 
 ```{r}
 # lnRR
 # providing an adjusted effect for each level of CaptivityC
 publication.bias.model.rr.v.1 <- rma.mv(yi, vi,
-                                       mods=~-1+sqrt_inv_n_tilda + 
+                                       mods=~-1+inv_n_tilda + 
                                          year.c +
                                          Experimental.or.Observational. + 
                                          Disturbance_category,  # this can be a random effect but placing this here to show how emmeans works
@@ -1349,7 +1349,7 @@ estimates.publication.bias.model.rr.v.1b <- estimates.CI(publication.bias.model.
 # SMD
 # model 3: providing an adjusted effect for each level of CaptivityC
 publication.bias.model.smd.v.1 <- rma.mv(yi, vi,
-                                       mods=~-1+sqrt_inv_n_tilda + 
+                                       mods=~-1+ inv_n_tilda + 
                                          year.c +
                                          Experimental.or.Observational., 
                                         random=list(
@@ -1389,6 +1389,11 @@ estimates.publication.bias.model.smd.v.1b <- estimates.CI(publication.bias.model
 The full model provided an adjusted overall lnRR that was obviously smaller (adjusted effect = `r round(summary(overall.res.publication.bias.model.rr.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.rr.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.rr.v.1)[,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.rr[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.rr[[3]],2)`,`r round(metaanalytic.mean.model.rr[[4]],2)`]; more in section S4.2.2), highlighting the downward correction of the overall effect after accounting for publication bias and time-lag bias. The full model also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' than that of the unadjusted model (Table S4.3).
 
 ```{r}
+
+
+
+
+
 # creating a table to show the results of model 2
 table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.rr.v.1,
                                           estimates.publication.bias.model.rr.v.1b,
@@ -1415,7 +1420,7 @@ table.comparing.Exp.or.Obs.levels.gt
 
 **Table S4.3**. The estimates of all levels of the moderator 'Experimental.or.Observational.' and their adjusted estimates using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as lnRR.
 
-SMD also show the downward correction of the overall effect after accounting for publication bias and time-lag bias: (adjusted effect = `r round(summary(overall.res.publication.bias.model.smd.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.smd.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.smd.v.1)[,4],2)`]) and (unadjusted effect = `r round(metaanalytic.mean.model.smd[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.smd[[3]],2)`,`r round(metaanalytic.mean.model.smd[[4]],2)`]; more in section S4.2.2). Table S4.4 also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' compared to unadjusted model.
+SMD also show the downward correction of the overall effect after accounting for publication bias and time-lag bias: (adjusted effect = `r round(summary(overall.res.publication.bias.model.smd.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.smd.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.smd.v.1)[,4],2)`]) and (unadjusted effect = `r round(metaanalytic.mean.model.smd[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.smd[[3]],2)`,`r round(metaanalytic.mean.model.smd[[4]],2)`]; more in section S4.2.2). Table S4.4 also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' compared to the unadjusted model.
 
 ```{r}
 # creating a table to show the results of model 2
