@@ -430,7 +430,7 @@ meta.analysis.model.r <- rma.mv(yi, vi,
 metaanalytic.mean.model.r <- predict(meta.analysis.model.r, digits=3)
 
 # estimating I2 as measure of heterogeneity
-I2.model.r <- i2_ml(meta.analysis.model.r, method = "wv")
+I2.model.r <- i2_ml(meta.analysis.model.r, method = "matrix")
 
 # creating a data.frame with the meta-analytic mean and heterogeneity estimates
 table.model.r <- data.frame(n=length(unique(dataset.r$study)),
@@ -442,7 +442,7 @@ table.model.r <- data.frame(n=length(unique(dataset.r$study)),
                             I2_paperID=round(I2.model.r[["I2_study"]]*100,1),
                             I2_nonphylo=round(I2.model.r[["I2_Species"]]*100,1), 
                             I2_phylo=round(I2.model.r[["I2_Species.updated"]]*100,1),
-                            I2_total=round(I2.model.r[["I2_total"]]*100,1)
+                            I2_total=round(I2.model.r[["I2_Total"]]*100,1)
 )
 
 # creating a nicely-formatted table using the R package 'gt'
@@ -1304,10 +1304,20 @@ polygon(c(newdat$year,rev(newdat$year)),
 
 In the main text we provide a two-step approach to calculate the bias-corrected overall effect size estimate. The rationale is that, when no uncertainty exists (theoretically), we can get the potential true effect from a multiple-moderator multilevel-model (i.e. all-in publication bias test, where the inclusion of moderator variables reduces heterogeneity). We add two more moderators `Experimental.or.Observational.` (2 levels) and `Disturbance_category` (10 levels; we refer to this model as the full model). 
 
-The models above do not provide strong evidence that there are a significant overall effect (or a significant intercept or at least, one group being significant at the alpha level at 10%, which translates to a t value of > ~1.65 in magnitude). However, the meta-regression model only with `Experimental.or.Observational.` provides good evidence that there are some overall effects.  Therefore, here, we should try both scenarios: $\sqrt(1/\tilde{n})$ and $1/\tilde{n}$. The former provides the best estimate when there is no evidence that an overall effect exists or some groups have non-zero effects while the latter is best when there is such evidence. Note that we already have the models with $\sqrt(1/\tilde{n})$. 
+The models above do not provide strong evidence that there are a significant overall effect (or a significant intercept or at least, one group being significant at the alpha level at 10%, which translates to a t value of > ~1.65 in magnitude). However, the meta-regression model only with `Experimental.or.Observational.` provides good evidence that there are some overall effects.  Therefore, here, we should try both scenarios: $\sqrt(1/\tilde{n})$ and $1/\tilde{n}$. The former provides the best estimate when there is no evidence that an overall effect exists or some groups have non-zero effects while the latter is best when there is such evidence. 
 
 ```{r}
 # lnRR
+
+# with sqrt(1/~n)
+# preparation to get marginalized mean (when sqrt_inv_n_tilda = 0 and year.c = 0)
+res.publication.bias.model.rr.v.0 <- qdrg(object = publication.bias.model.rr.all.srin, data = dataset.rr, at = list(inv_n_tilda = 0, year.c = 0))
+# marginalized overall mean at inv_n_tilda = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
+overall.res.publication.bias.model.rr.v.0 <- emmeans(res.publication.bias.model.rr.v.0, specs = ~1, df = publication.bias.model.rr.all.srin$ddf, weights = "prop") # using effect size - 7 
+# marginalized means for different levels for Experimental.or.Observational.
+mm.publication.bias.model.rr.v.0 <- emmeans(res.publication.bias.model.rr.v.0, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.all.srin$ddf, weights = "prop")
+
+# with 1/~n
 # providing an adjusted effect for each level of CaptivityC
 publication.bias.model.rr.v.1 <- rma.mv(yi, vi,
                                        mods=~-1+inv_n_tilda + 
@@ -1325,9 +1335,9 @@ publication.bias.model.rr.v.1 <- rma.mv(yi, vi,
 # preparation to get marginalized mean (when inv_n_tilda = 0 and year.c = 0)
 res.publication.bias.model.rr.v.1 <- qdrg(object = publication.bias.model.rr.v.1, data = dataset.rr, at = list(inv_n_tilda = 0, year.c = 0))
 # marginalized overall mean at inv_n_tilda = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
-overall.res.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = ~1, df = publication.bias.model.rr.v.1$ddfs, weights = "prop") # using effect size - 7 
+overall.res.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = ~1, df = publication.bias.model.rr.v.1$ddf, weights = "prop") # using effect size - 7 
 # marginalized means for different levels for Experimental.or.Observational.
-mm.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.v.1$ddfs, weights = "prop")
+mm.publication.bias.model.rr.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.v.1$ddf, weights = "prop")
 # estiamted marginalised mean
 #mm.publication.bias.model.r.v.1 <- emmeans(res.publication.bias.model.rr.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.rr.v.1$dfs, weights = "equal")
 
@@ -1343,10 +1353,19 @@ publication.bias.model.rr.v.1b <- rma.mv(yi, vi,
                                                 control = list(optimizer="optim", optmethod="Nelder-Mead"))
 
 # extracting the mean and 95% confidence intervals
+estimates.publication.bias.model.rr.v.0 <- estimates.CI2(mm.publication.bias.model.rr.v.0)
 estimates.publication.bias.model.rr.v.1 <- estimates.CI2(mm.publication.bias.model.rr.v.1)
 estimates.publication.bias.model.rr.v.1b <- estimates.CI(publication.bias.model.rr.v.1b)
 
 # SMD
+# with sqrt(1/~n)
+# preparation to get marginalized mean (when sqrt_inv_n_tilda = 0 and year.c = 0)
+res.publication.bias.model.smd.v.0 <- qdrg(object = publication.bias.model.smd.all.srin, data = dataset.smd, at = list(inv_n_tilda = 0, year.c = 0))
+# marginalized overall mean at inv_n_tilda = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
+overall.res.publication.bias.model.smd.v.0 <- emmeans(res.publication.bias.model.smd.v.0, specs = ~1, df = publication.bias.model.smd.all.srin$ddf, weights = "prop") # using effect size - 7 
+# marginalized means for different levels for Experimental.or.Observational.
+mm.publication.bias.model.smd.v.0 <- emmeans(res.publication.bias.model.smd.v.0, specs = "Experimental.or.Observational.", df = publication.bias.model.smd.all.srin$ddf, weights = "prop")
+
 # model 3: providing an adjusted effect for each level of CaptivityC
 publication.bias.model.smd.v.1 <- rma.mv(yi, vi,
                                        mods=~-1+ inv_n_tilda + 
@@ -1363,9 +1382,9 @@ publication.bias.model.smd.v.1 <- rma.mv(yi, vi,
 # preparation to get marginalized mean (when inv_n_tilda = 0 and year.c = 0)
 res.publication.bias.model.smd.v.1 <- qdrg(object = publication.bias.model.smd.v.1, data = dataset.smd, at = list(inv_n_tilda = 0, year.c = 0))
 # marginalized overall mean at inv_n_tilda = 0 and year.c = 0; also weights = "prop" or "cells" average things over proportionally. if not specified, all groups (levels) get the same weights
-overall.res.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = ~1, df = publication.bias.model.smd.v.1$ddfs, weights = "prop") # using effect size - 7 
+overall.res.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = ~1, df = publication.bias.model.smd.v.1$ddf, weights = "prop") # using effect size - 7 
 # marginalized means for different levels for Experimental.or.Observational.
-mm.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.smd.v.1$ddfs, weights = "prop")
+mm.publication.bias.model.smd.v.1 <- emmeans(res.publication.bias.model.smd.v.1, specs = "Experimental.or.Observational.", df = publication.bias.model.smd.v.1$ddf, weights = "prop")
 
 
 # model 3b: comparing results without correcting for publication bias
@@ -1382,80 +1401,116 @@ publication.bias.model.smd.v.1b <- rma.mv(yi, vi,
 
 
 # extracting the mean and 95% confidence intervals
+estimates.publication.bias.model.smd.v.0 <- estimates.CI2(mm.publication.bias.model.smd.v.0)
 estimates.publication.bias.model.smd.v.1 <- estimates.CI2(mm.publication.bias.model.smd.v.1)
 estimates.publication.bias.model.smd.v.1b <- estimates.CI(publication.bias.model.smd.v.1b)
 ```
 
-The full model provided an adjusted overall lnRR that was obviously smaller (adjusted effect = `r round(summary(overall.res.publication.bias.model.rr.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.rr.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.rr.v.1)[,4],2)`]) than that obtained by the multilevel meta-analysis (unadjusted effect = `r round(metaanalytic.mean.model.rr[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.rr[[3]],2)`,`r round(metaanalytic.mean.model.rr[[4]],2)`]; more in section S4.2.2), highlighting the downward correction of the overall effect after accounting for publication bias and time-lag bias. The full model also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' than that of the unadjusted model (Table S4.3).
+The full model with $\sqrt(1/\tilde{n})$ provided an adjusted overall lnRR that was slightly larger in magnitude from the unadjusted estimate (adjusted effect = `r round(summary(overall.res.publication.bias.model.rr.v.0)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.rr.v.0)[,3],2)`,`r round(summary(overall.res.publication.bias.model.rr.v.0)[,4],2)`]; unadjusted effect = `r round(metaanalytic.mean.model.rr[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.rr[[3]],2)`,`r round(metaanalytic.mean.model.rr[[4]],2)`]; th model in section S4.2.2). This is unexpected as the adjusted estimate should be closer to zero than the unadjusted one). On the other hand, the model with $1/\tilde{n}$ provided a smaller overall value as expected (adjusted effect = `r round(summary(overall.res.publication.bias.model.rr.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.rr.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.rr.v.1)[,4],2)`]). . Given those, we conclude that it is probably more appropriate to take the adjusted estimates from the model with $1/\tilde{n}$ than the model with $\sqrt(1/\tilde{n})$. In Table S4.3,  show that the estimates from the unadjusted model and the adjusted model with  $\sqrt(1/\tilde{n})$ while the adjusted model with  $\sqrt(1/\tilde{n})$ gave smaller estimates in magnitude, which should be expected for adjusted effects. We suggest that we use the estimates from the method with $1/\tilde{n}$ (Adjusted mean 2 and Adjusted 95% CI 2)
 
 ```{r}
 
-
-
-
-
 # creating a table to show the results of model 2
-table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.rr.v.1,
+table.comparing.Exp.or.Obs.levels0 <- merge(estimates.publication.bias.model.rr.v.0,
+                                          estimates.publication.bias.model.rr.v.1,
+                                          by="estimate",
+                                          all.x=T)
+
+table.comparing.Exp.or.Obs.levels <- merge(table.comparing.Exp.or.Obs.levels0,
                                           estimates.publication.bias.model.rr.v.1b,
                                           by="estimate",
                                           all.x=T)
 # rounding estimates
-table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), list(~round(., 2)))
+table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y, mean,lower,upper), list(~round(., 2)))
 
 table.comparing.Exp.or.Obs.levels <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels[,1],
-                                               adjusted.mean=table.comparing.Exp.or.Obs.levels[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",table.comparing.Exp.or.Obs.levels[,4],"]"),
-                                               unadjusted.mean=table.comparing.Exp.or.Obs.levels[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,6],",",table.comparing.Exp.or.Obs.levels[,7],"]"))
+                                               adjusted.mean1=table.comparing.Exp.or.Obs.levels[,2],               
+                                               adjusted.CI1 = paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",
+                                                                    table.comparing.Exp.or.Obs.levels[,4],"]"),
+                                               adjusted.mean2=table.comparing.Exp.or.Obs.levels[,5],               
+                                               adjusted.CI2 = paste0("[",table.comparing.Exp.or.Obs.levels[,6],",",
+                                                                    table.comparing.Exp.or.Obs.levels[,7],"]"),
+                                               unadjusted.mean = table.comparing.Exp.or.Obs.levels[,8],                     
+                                               unadjusted.CI = paste0("[",table.comparing.Exp.or.Obs.levels[,9],",",
+                                                                    table.comparing.Exp.or.Obs.levels[,10],"]")
+                                               )
+
 table.comparing.Exp.or.Obs.levels[,1] <- c("Experimental","Observational")
 # creating a formatted table using the R package 'gt'
 table.comparing.Exp.or.Obs.levels.gt <- table.comparing.Exp.or.Obs.levels %>% 
   gt() %>% 
-  cols_label(Exp.or.Obs.level=md("**Experimental.or.Observational.**"),
-             adjusted.mean=md("**Adjusted mean**"),
-             adjusted.CI=md("**Adjusted 95% CI**"),
+  cols_label(Exp.or.Obs.level=md("**Study type**"),
+             adjusted.mean1=md("**Adjusted mean 1**"),
+             adjusted.CI1=md("**Adjusted 95% CI 1**"),
+             adjusted.mean2=md("**Adjusted mean 2**"),
+             adjusted.CI2=md("**Adjusted 95% CI 2**"),
              unadjusted.mean=md("**Unadjusted mean**"),
-             unadjusted.CI=md("**Unadjusted 95% CI**")) %>%
+             unadjusted.CI=md("**Unadjusted 95% CI**"),
+             ) %>%
   cols_align(align = "center")
 table.comparing.Exp.or.Obs.levels.gt
 ```
 
-**Table S4.3**. The estimates of all levels of the moderator 'Experimental.or.Observational.' and their adjusted estimates using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as lnRR.
+**Table S4.3**. The estimates of all levels of the moderator `Experimental.or.Observational.` and their adjusted estimates (1 and 2) using the all-in publication bias test (multi-moderator meta-regression). 'Adjusted 1' is with $\sqrt(1/\tilde{n})$ while 'Adjusted 2' with $1/\tilde{n}$. Estimates are presented as lnRR.
 
-SMD also show the downward correction of the overall effect after accounting for publication bias and time-lag bias: (adjusted effect = `r round(summary(overall.res.publication.bias.model.smd.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.smd.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.smd.v.1)[,4],2)`]) and (unadjusted effect = `r round(metaanalytic.mean.model.smd[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.smd[[3]],2)`,`r round(metaanalytic.mean.model.smd[[4]],2)`]; more in section S4.2.2). Table S4.4 also showed slightly smaller effects for all levels of the categorical factor 'Experimental.or.Observational.' compared to the unadjusted model.
+SMD also show similar patterns for the adjusted overall effects (Adjusted 1 with $\sqrt(1/\tilde{n})$  and Adjusted 2 with $1/\tilde{n}$ ) after accounting for publication bias and time-lag bias: (Adjusted 2 = `r round(summary(overall.res.publication.bias.model.smd.v.0)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.smd.v.0)[,3],2)`,`r round(summary(overall.res.publication.bias.model.smd.v.0)[,4],2)`]; Adjusted 1 with $\sqrt(1/\tilde{n})$  and Adjusted 2 with $1/\tilde{n}$ ) after accounting for publication bias and time-lag bias: (Ajusted 2 = `r round(summary(overall.res.publication.bias.model.smd.v.1)[,2],2)`, 95% CI = [`r round(summary(overall.res.publication.bias.model.smd.v.1)[,3],2)`,`r round(summary(overall.res.publication.bias.model.smd.v.1)[,4],2)`]; unadjusted effect = `r round(metaanalytic.mean.model.smd[[1]],2)`, 95% CI = [`r round(metaanalytic.mean.model.smd[[3]],2)`,`r round(metaanalytic.mean.model.smd[[4]],2)`]; more in section S4.2.2). As with lnRR, Table S4.4 show that the estimates from the unadjusted model and the adjusted model with  $\sqrt(1/\tilde{n})$ while the adjusted model with  $\sqrt(1/\tilde{n})$ gave smaller estimates in magnitude. Therefore, for SMD, we also suggest that we use the estimates from the method with $1/\tilde{n}$ (Adjusted mean 2 and Adjusted 95% CI 2)
 
 ```{r}
+
 # creating a table to show the results of model 2
-table.comparing.Exp.or.Obs.levels <- merge(estimates.publication.bias.model.smd.v.1,
+table.comparing.Exp.or.Obs.levels0 <- merge(estimates.publication.bias.model.smd.v.0,
+                                          estimates.publication.bias.model.smd.v.1,
+                                          by="estimate",
+                                          all.x=T)
+
+table.comparing.Exp.or.Obs.levels <- merge(table.comparing.Exp.or.Obs.levels0,
                                           estimates.publication.bias.model.smd.v.1b,
                                           by="estimate",
                                           all.x=T)
 # rounding estimates
-table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y), list(~round(., 2)))
+table.comparing.Exp.or.Obs.levels <- table.comparing.Exp.or.Obs.levels %>% mutate_at(vars(mean.x, lower.x,upper.x,mean.y,lower.y,upper.y, mean,lower,upper), list(~round(., 2)))
 
 table.comparing.Exp.or.Obs.levels <- data.frame(Exp.or.Obs.level = table.comparing.Exp.or.Obs.levels[,1],
-                                               adjusted.mean=table.comparing.Exp.or.Obs.levels[,2],               adjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",table.comparing.Exp.or.Obs.levels[,4],"]"),
-                                               unadjusted.mean=table.comparing.Exp.or.Obs.levels[,5],                                               unadjusted.CI=paste0("[",table.comparing.Exp.or.Obs.levels[,6],",",table.comparing.Exp.or.Obs.levels[,7],"]"))
+                                               adjusted.mean1=table.comparing.Exp.or.Obs.levels[,2],               
+                                               adjusted.CI1 = paste0("[",table.comparing.Exp.or.Obs.levels[,3],",",
+                                                                    table.comparing.Exp.or.Obs.levels[,4],"]"),
+                                               adjusted.mean2=table.comparing.Exp.or.Obs.levels[,5],               
+                                               adjusted.CI2 = paste0("[",table.comparing.Exp.or.Obs.levels[,6],",",
+                                                                    table.comparing.Exp.or.Obs.levels[,7],"]"),
+                                               unadjusted.mean = table.comparing.Exp.or.Obs.levels[,8],                     
+                                               unadjusted.CI = paste0("[",table.comparing.Exp.or.Obs.levels[,9],",",
+                                                                    table.comparing.Exp.or.Obs.levels[,10],"]")
+                                               )
+
 table.comparing.Exp.or.Obs.levels[,1] <- c("Experimental","Observational")
 # creating a formatted table using the R package 'gt'
 table.comparing.Exp.or.Obs.levels.gt <- table.comparing.Exp.or.Obs.levels %>% 
   gt() %>% 
-  cols_label(Exp.or.Obs.level=md("**Experimental.or.Observational.**"),
-             adjusted.mean=md("**Adjusted mean**"),
-             adjusted.CI=md("**Adjusted 95% CI**"),
+  cols_label(Exp.or.Obs.level=md("**Study type**"),
+             adjusted.mean1=md("**Adjusted mean 1**"),
+             adjusted.CI1=md("**Adjusted 95% CI 1**"),
+             adjusted.mean2=md("**Adjusted mean 2**"),
+             adjusted.CI2=md("**Adjusted 95% CI 2**"),
              unadjusted.mean=md("**Unadjusted mean**"),
-             unadjusted.CI=md("**Unadjusted 95% CI**")) %>%
+             unadjusted.CI=md("**Unadjusted 95% CI**"),
+             ) %>%
   cols_align(align = "center")
 table.comparing.Exp.or.Obs.levels.gt
 ```
 
-**Table S4.4**. The estimates of all levels of the moderator 'Experimental.or.Observational.' and their adjusted estimates using the all-in publication bias test (multi-moderator meta-regression). Estimates are presented as SMD.
+**Table S4.4**. The estimates of all levels of the moderator `Experimental.or.Observational.` and their adjusted estimates (1 and 2) using the all-in publication bias test (multi-moderator meta-regression). 'Adjusted 1' is with $\sqrt(1/\tilde{n})$ while 'Adjusted 2' with $1/\tilde{n}$. Estimates are presented as SMD.
 
 ### S4.3: Extra plot -- Figure 6a-d (redrawn using effective sample size)
 
 Here we redraw Figure 6a-d using effective sample size or more accurately, $\tilde{n}$. We note that Figure 6b-d in the main text use standard errors (SE) of different types of residuals so panels b, c and d may not be directly comparable between Figure 6 and this redrawn figure.
 
 ```{r, dpi = 10, fig.align = "center", fig.cap="Figure 6a-d redrawn"}
-knitr::include_graphics(here('figs', 'fig6_extra.png'))
+#include_graphics("./R/fig.png")
 ```
+
+![](fig.png)
+
+**Figure 6a-d redrawn**
 
 ## Appendix S5: Alternative approches
 
