@@ -438,11 +438,11 @@ table.model.r <- data.frame(n=length(unique(dataset.r$study)),
                             mean=round(metaanalytic.mean.model.r[[1]],2),
                             CI=paste0("[",round(metaanalytic.mean.model.r[[3]],2),",",round(metaanalytic.mean.model.r[[4]],2),"]"),
                             PI=paste0("[",round(metaanalytic.mean.model.r[[5]],2),",",round(metaanalytic.mean.model.r[[6]],2),"]"),
-                            I2_obsID=round(I2.model.r[["I2_obsID"]]*100,1),
-                            I2_paperID=round(I2.model.r[["I2_study"]]*100,1),
-                            I2_nonphylo=round(I2.model.r[["I2_Species"]]*100,1), 
+                            I2_obsID=round(I2.model.r[["I2_obsID"]],1),
+                            I2_paperID=round(I2.model.r[["I2_study"]],1),
+                            I2_nonphylo=round(I2.model.r[["I2_Species"]],1), 
                             I2_phylo=round(I2.model.r[["I2_Species.updated"]]*100,1),
-                            I2_total=round(I2.model.r[["I2_Total"]]*100,1)
+                            I2_total=round(I2.model.r[["I2_Total"]],1)
 )
 
 # creating a nicely-formatted table using the R package 'gt'
@@ -921,8 +921,8 @@ meta.analysis.model.smd <- rma.mv(yi, vi,
 metaanalytic.mean.model.smd <- predict(meta.analysis.model.smd, digits=3)
 
 # estimating relative heterogeneity I2
- I2.model.rr <- i2_ml(meta.analysis.model.rr)*100
-I2.model.smd <- i2_ml(meta.analysis.model.smd)*100
+ I2.model.rr <- i2_ml(meta.analysis.model.rr)
+I2.model.smd <- i2_ml(meta.analysis.model.smd)
 
 # creating a table to show the heterogeneity estimates
 table.model.rr <- data.frame(n=length(unique(dataset.rr$paperID)),
