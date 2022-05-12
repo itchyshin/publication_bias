@@ -8,7 +8,7 @@
 # publication bias
 
 ### article
-Nakagawa, Shinichi, Malgorzata Lagisz, Michael D. Jennions, Julia Koricheva, Daniel W. Noble, Timothy H. Parker, Alfredo Sánchez-Tójar,Yefeng Yang, Rose E. O'Dea “Methods for Testing Publication Bias in Ecological and Evolutionary Meta-analyses.” (accepted) *Methods in Ecology and Evolution*  https://doi.org/10.1111/2041-210X.13724 (preprint: EcoEvoRxiv. [www.ecoevorxiv.org/k7pmz]).
+Nakagawa S, Lagisz M, Jennions M D, et al. Methods for testing publication bias in ecological and evolutionary meta‐analyses[J]. *Methods in Ecology and Evolution*, 2022, 13(1): 4-21. https://doi.org/10.1111/2041-210X.13724 (preprint: EcoEvoRxiv. [www.ecoevorxiv.org/k7pmz]).
 
 The HTML file for the supplmentary materials can be accessed from here:
 
