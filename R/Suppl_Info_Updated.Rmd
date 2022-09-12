@@ -547,10 +547,8 @@ When heterogeneity exists (which is normally the case in ecology and evolution; 
 
 ```{r}
 # Application of Equation 24 from the main manuscript
-
-# Note that we are removing the intercept in this model (using '-1') because the intercept is not of interest at this point. Instead we prefer to see the slopes of the continues moderators and the estimates of all the levels of the categorical moderator 'CaptivityC'. Note that whether or not the intercept is removed, it does not change the conclusions of the small-study effects test or the decline effects test.
 publication.bias.model.r.all.se <- rma.mv(yi, vi,
-                                          mods=~1+ # -1 removes the intercept
+                                          mods=~1+
                                             sei+
                                             year.c+
                                             CaptivityC,   
